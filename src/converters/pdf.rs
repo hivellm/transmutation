@@ -385,19 +385,36 @@ impl PdfConverter {
         path: &Path,
         _options: &ConversionOptions,
     ) -> Result<Vec<ConversionOutput>> {
-        use pdf_extract::extract_text;
+        // Load PDF using lopdf to extract text blocks with position/font info
+        let parser = PdfParser::load(path)?;
+        let pages = parser.extract_all_pages()?;
         
-        // Use pdf-extract for best quality text extraction
-        let raw_text = extract_text(path)
-            .map_err(|e| crate::TransmutationError::engine_error("PDF Parser", format!("pdf-extract failed: {:?}", e)))?;
+        // Collect all text blocks from all pages
+        let mut all_blocks = Vec::new();
+        let mut total_width: f32 = 0.0;
+        let mut total_height: f32 = 0.0;
         
-        // Apply enhanced paragraph joining logic with more aggressive improvements
-        let markdown = Self::join_paragraph_lines_enhanced(&raw_text);
+        for page in &pages {
+            all_blocks.extend(page.text_blocks.clone());
+            total_width = total_width.max(page.width);
+            total_height += page.height;
+        }
         
+        // Use layout-aware markdown generation if blocks available
+        let markdown = if !all_blocks.is_empty() {
+            Self::docling_style_markdown_from_blocks(&all_blocks, total_width, total_height)
+        } else {
+            // Fallback to pdf-extract if no blocks
+            use pdf_extract::extract_text;
+            let raw_text = extract_text(path)
+                .map_err(|e| crate::TransmutationError::engine_error("PDF Parser", format!("pdf-extract failed: {:?}", e)))?;
+            Self::join_paragraph_lines_enhanced(&raw_text)
+        };
+
         let token_count = markdown.len() / 4;
         let data = markdown.into_bytes();
         let size_bytes = data.len() as u64;
-        
+
         Ok(vec![ConversionOutput {
             page_number: 0,
             data,

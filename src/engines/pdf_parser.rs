@@ -314,6 +314,37 @@ impl PdfParser {
     fn extract_text_blocks(&self, page_num: usize) -> Result<Vec<TextBlock>> {
         #[cfg(feature = "pdf")]
         {
+            let page_ids = self.get_page_ids();
+            if page_num >= page_ids.len() {
+                return Ok(Vec::new());
+            }
+            
+            let page_id = page_ids[page_num];
+            
+            // Get page content
+            let pages = self.document.get_pages();
+            let page_ref = match pages.get(&page_id) {
+                Some(r) => r,
+                None => return Ok(Vec::new()),
+            };
+            
+            // Parse content stream
+            let content = match self.document.get_and_decode_page_content(*page_ref) {
+                Ok(c) => c,
+                Err(_) => return Ok(Vec::new()),
+            };
+            
+            self.parse_content_operations(&content)
+        }
+        
+        #[cfg(not(feature = "pdf"))]
+        Ok(Vec::new())
+    }
+    
+    /// OLD UNUSED CODE - keeping for reference
+    fn extract_text_blocks_OLD(&self, page_num: usize) -> Result<Vec<TextBlock>> {
+        #[cfg(feature = "pdf")]
+        {
             use lopdf::Object;
             
             let page_ids = self.get_page_ids();
