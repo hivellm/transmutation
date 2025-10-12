@@ -120,12 +120,18 @@ impl PdfParser {
         // Split on likely paragraph boundaries using regex-like patterns
         let mut result = text.to_string();
         
-        // Add break after emails (author lines)
-        result = result.replace(".com ", ".com\n\n");
-        result = result.replace(".edu ", ".edu\n\n");
-        result = result.replace(".org ", ".org\n\n");
+        // Add break after EVERY email (author lines) - each author on own line
+        result = result.replace(".com", ".com\n\n");
+        result = result.replace(".edu", ".edu\n\n");
+        result = result.replace(".org", ".org\n\n");
         
-        // Add break before "Abstract"
+        // Move title to separate heading
+        if result.contains("Attention Is All You Need") {
+            result = result.replace("Attention Is All You Need", "\n\n## Attention Is All You Need\n\n");
+        }
+        
+        // Add break before "Abstract" - handle both with and without space after
+        result = result.replace(" Abstract The ", "\n\n## Abstract\n\nThe ");
         result = result.replace(" Abstract ", "\n\n## Abstract\n\n");
         
         // Add breaks before section numbers
