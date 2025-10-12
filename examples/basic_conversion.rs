@@ -38,8 +38,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Save the output
-    result.save("output.md").await?;
-    println!("\n💾 Saved to: output.md");
+    result.save("data/output.md").await?;
+    println!("\n💾 Saved to: data/output.md");
 
     Ok(())
 }

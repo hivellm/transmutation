@@ -48,8 +48,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Save to file
-    result.save("output.md").await?;
-    println!("  Saved to: output.md");
+    result.save("data/output.md").await?;
+    println!("  Saved to: data/output.md");
 
     // Example 2: Split by pages
     println!("\n=== Example 2: Split by Pages ===");
@@ -78,8 +78,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     println!("✓ Converted to structured JSON");
-    result.save("output.json").await?;
-    println!("  Saved to: output.json");
+    result.save("data/output.json").await?;
+    println!("  Saved to: data/output.json");
 
     // Example 4: Custom options
     println!("\n=== Example 4: Custom Options ===");
