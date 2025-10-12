@@ -4,6 +4,9 @@
 
 use crate::types::ConversionOptions;
 
+#[cfg(feature = "pdf")]
+use crate::engines::layout_analyzer::{AnalyzedBlock, BlockType};
+
 /// Markdown generator
 pub struct MarkdownGenerator {
     options: ConversionOptions,
@@ -23,6 +26,60 @@ impl MarkdownGenerator {
     pub fn from_text(text: &str, options: ConversionOptions) -> String {
         let mut generator = Self::new(options);
         generator.add_text(text);
+        
+        if generator.options.optimize_for_llm {
+            generator.optimize_for_llm();
+        }
+        
+        generator.buffer
+    }
+
+    /// Generate Markdown from analyzed blocks (semantic layout)
+    #[cfg(feature = "pdf")]
+    pub fn from_analyzed_blocks(blocks: &[AnalyzedBlock], options: ConversionOptions) -> String {
+        let mut generator = Self::new(options);
+        
+        for block in blocks {
+            match &block.block_type {
+                BlockType::Title => {
+                    // Title gets ## (level 2)
+                    generator.add_heading(2, &block.content);
+                }
+                BlockType::Heading(level) => {
+                    // Section headings: level 1 -> ##, level 2 -> ##, level 3 -> ###
+                    let md_level = (*level + 1).min(6);
+                    generator.add_heading(md_level, &block.content);
+                }
+                BlockType::Paragraph => {
+                    generator.buffer.push_str(&block.content);
+                    generator.buffer.push_str("\n\n");
+                }
+                BlockType::ListItem => {
+                    generator.buffer.push_str("- ");
+                    generator.buffer.push_str(&block.content);
+                    generator.buffer.push('\n');
+                }
+                BlockType::Image => {
+                    generator.buffer.push_str("<!-- image -->\n\n");
+                    if !block.content.is_empty() {
+                        generator.buffer.push_str(&block.content);
+                        generator.buffer.push_str("\n\n");
+                    }
+                }
+                BlockType::Formula => {
+                    generator.buffer.push_str("<!-- formula-not-decoded -->\n\n");
+                }
+                BlockType::Table => {
+                    // Tables are handled separately by TableDetector
+                    generator.buffer.push_str(&block.content);
+                    generator.buffer.push_str("\n\n");
+                }
+                BlockType::Reference => {
+                    generator.buffer.push_str(&block.content);
+                    generator.buffer.push('\n');
+                }
+            }
+        }
         
         if generator.options.optimize_for_llm {
             generator.optimize_for_llm();

@@ -3,6 +3,7 @@
 //! Pure Rust PDF to Markdown converter using lopdf for parsing.
 
 use super::traits::{ConverterMetadata, DocumentConverter};
+use crate::engines::layout_analyzer::LayoutAnalyzer;
 use crate::engines::pdf_parser::{PdfParser, PdfPage};
 use crate::optimization::text::TextOptimizer;
 use crate::output::{Chunker, MarkdownGenerator};
@@ -36,21 +37,60 @@ impl PdfConverter {
     ) -> Result<Vec<ConversionOutput>> {
         let pages = parser.extract_all_pages()?;
         
-        // Extract page texts
-        let page_texts: Vec<(usize, String)> = pages
-            .iter()
-            .map(|page| {
-                let optimized = if options.optimize_for_llm {
-                    self.text_optimizer.optimize(&page.text)
+        // Use layout analysis if text blocks are available
+        let analyzer = LayoutAnalyzer::new();
+        let markdown_outputs: Vec<String> = if options.split_pages {
+            // Generate separate markdown for each page
+            pages
+                .iter()
+                .map(|page| {
+                    if !page.text_blocks.is_empty() {
+                        // Use semantic layout analysis
+                        let analyzed = analyzer.analyze(&page.text_blocks);
+                        MarkdownGenerator::from_analyzed_blocks(&analyzed, options.clone())
+                    } else {
+                        // Fallback to simple text extraction
+                        let text = if options.optimize_for_llm {
+                            self.text_optimizer.optimize(&page.text)
+                        } else {
+                            page.text.clone()
+                        };
+                        MarkdownGenerator::from_text(&text, options.clone())
+                    }
+                })
+                .collect()
+        } else {
+            // Combined document with all pages
+            let mut all_analyzed_blocks = Vec::new();
+            
+            for page in &pages {
+                if !page.text_blocks.is_empty() {
+                    let analyzed = analyzer.analyze(&page.text_blocks);
+                    all_analyzed_blocks.extend(analyzed);
                 } else {
-                    page.text.clone()
-                };
-                (page.number, optimized)
-            })
-            .collect();
-
-        // Generate Markdown
-        let markdown_outputs = MarkdownGenerator::from_pages(&page_texts, options.clone());
+                    // Fallback to text extraction
+                    let text = if options.optimize_for_llm {
+                        self.text_optimizer.optimize(&page.text)
+                    } else {
+                        page.text.clone()
+                    };
+                    // Convert text to simple paragraph blocks
+                    for para in text.split("\n\n") {
+                        if !para.trim().is_empty() {
+                            all_analyzed_blocks.push(crate::engines::layout_analyzer::AnalyzedBlock {
+                                block_type: crate::engines::layout_analyzer::BlockType::Paragraph,
+                                content: para.to_string(),
+                                level: None,
+                                font_size: 10.0,
+                                y_position: 0.0,
+                            });
+                        }
+                    }
+                }
+            }
+            
+            vec![MarkdownGenerator::from_analyzed_blocks(&all_analyzed_blocks, options.clone())]
+        };
 
         // Convert to ConversionOutput with optional chunking
         let outputs = markdown_outputs
