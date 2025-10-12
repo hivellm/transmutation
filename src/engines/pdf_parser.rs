@@ -117,44 +117,83 @@ impl PdfParser {
 
     /// Improve paragraph breaks in extracted text
     fn improve_paragraph_breaks(&self, text: &str) -> Result<String> {
-        // Split on likely paragraph boundaries using regex-like patterns
-        let mut result = text.to_string();
+        let mut result = String::new();
+        let lines: Vec<&str> = text.lines().collect();
+        let mut i = 0;
         
-        // Add break after EVERY email (author lines) - each author on own line
-        result = result.replace(".com", ".com\n\n");
-        result = result.replace(".edu", ".edu\n\n");
-        result = result.replace(".org", ".org\n\n");
-        
-        // Move title to separate heading
-        if result.contains("Attention Is All You Need") {
-            result = result.replace("Attention Is All You Need", "\n\n## Attention Is All You Need\n\n");
+        while i < lines.len() {
+            let line = lines[i].trim();
+            
+            if line.is_empty() {
+                i += 1;
+                continue;
+            }
+            
+            // Handle title
+            if line.contains("Attention Is All You Need") {
+                result.push_str("\n\n## Attention Is All You Need\n\n");
+                i += 1;
+                continue;
+            }
+            
+            // Handle author lines (contains email)
+            if line.contains("@") && (line.contains(".com") || line.contains(".edu") || line.contains(".org")) {
+                // Split multiple authors in same line
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                let mut current_author = String::new();
+                
+                for part in parts {
+                    current_author.push_str(part);
+                    current_author.push(' ');
+                    
+                    // If this part ends with email domain, end the author line
+                    if part.ends_with(".com") || part.ends_with(".edu") || part.ends_with(".org") {
+                        result.push_str(current_author.trim());
+                        result.push_str("\n\n");
+                        current_author.clear();
+                    }
+                }
+                
+                i += 1;
+                continue;
+            }
+            
+            // Handle Abstract
+            if line.starts_with("Abstract ") || line == "Abstract" {
+                result.push_str("## Abstract\n\n");
+                // If Abstract has text on same line, add it
+                if line.len() > "Abstract ".len() {
+                    result.push_str(&line["Abstract ".len()..]);
+                    result.push_str("\n\n");
+                }
+                i += 1;
+                continue;
+            }
+            
+            // Handle numbered sections (1 Introduction, 2 Background, etc.)
+            if line.len() > 3 && line.chars().next().unwrap().is_numeric() {
+                let first_word = line.split_whitespace().nth(1).unwrap_or("");
+                if ["Introduction", "Background", "Model", "Training", "Results", "Conclusion"].contains(&first_word) {
+                    result.push_str(&format!("## {}\n\n", line));
+                    i += 1;
+                    continue;
+                }
+            }
+            
+            // Regular line - add it
+            result.push_str(line);
+            result.push_str("\n\n");
+            
+            i += 1;
         }
         
-        // Add break before "Abstract" - more specific to avoid double ##
-        if !result.contains("## Abstract") {
-            result = result.replace(" Abstract The ", "\n\n## Abstract\n\nThe ");
-            result = result.replace(" Abstract ", "\n\n## Abstract\n\n");
-        }
+        // Clean up extra whitespace
+        result = result.replace("\n\n\n\n", "\n\n");
+        result = result.replace("\n\n\n", "\n\n");
         
-        // Add breaks before section numbers
-        for num in 1..20 {
-            result = result.replace(&format!(" {} Introduction", num), &format!("\n\n## {} Introduction", num));
-            result = result.replace(&format!(" {} Background", num), &format!("\n\n## {} Background", num));
-            result = result.replace(&format!(" {} Model", num), &format!("\n\n## {} Model", num));
-            result = result.replace(&format!(" {} Training", num), &format!("\n\n## {} Training", num));
-            result = result.replace(&format!(" {} Results", num), &format!("\n\n## {} Results", num));
-            result = result.replace(&format!(" {} Conclusion", num), &format!("\n\n## {} Conclusion", num));
-        }
-        
-        // Add breaks before "References", "Acknowledgements"
-        result = result.replace(" References ", "\n\n## References\n\n");
-        result = result.replace(" Acknowledgements ", "\n\n## Acknowledgements\n\n");
-        result = result.replace(" Attention Visualizations ", "\n\n## Attention Visualizations\n\n");
-        
-        // Add breaks before subsections - but only if followed by a capital letter (real section)
+        // Handle subsections like 3.1, 3.2, etc.
         for major in 1..10 {
             for minor in 1..10 {
-                // Only add heading if followed by capital letter word (section title)
                 for word in ["Encoder", "Decoder", "Attention", "Positional", "Position-wise", 
                             "Embeddings", "Applications", "Scaled", "Multi-Head", "Training", 
                             "Hardware", "Optimizer", "Regularization", "Machine", "Model", "English"] {
@@ -163,7 +202,6 @@ impl PdfParser {
                     result = result.replace(&pattern, &replacement);
                 }
                 
-                // Also handle subsub sections (3.2.1, 3.2.2) with specific keywords
                 for subminor in 1..10 {
                     for word in ["Scaled", "Multi-Head", "Applications", "Training", "Data", "Hardware"] {
                         let pattern2 = format!(" {}.{}.{} {}", major, minor, subminor, word);
@@ -174,26 +212,26 @@ impl PdfParser {
             }
         }
         
-        // Add breaks after sentences that end paragraphs (period followed by capital)
-        // This is tricky to do with simple string replacement, so we'll use a basic heuristic
-        let lines: Vec<&str> = result.lines().collect();
+        // Clean up double ## that might have been created
+        result = result.replace("## ## ", "## ");
+        
+        // Final cleanup
         let mut final_result = String::new();
+        let lines: Vec<&str> = result.lines().collect();
         
         for (i, line) in lines.iter().enumerate() {
             final_result.push_str(line);
             final_result.push('\n');
             
-            // Add extra break if this line ends with period and next line starts with capital letter
+            // Add extra break after certain patterns
             if let Some(next) = lines.get(i + 1) {
                 let trimmed_current = line.trim();
                 let trimmed_next = next.trim();
                 
                 if trimmed_current.ends_with('.') 
                     && trimmed_next.len() > 0
+                    && !trimmed_next.starts_with("##")
                     && trimmed_next.chars().next().map(|c| c.is_uppercase()).unwrap_or(false)
-                    && !trimmed_next.starts_with("In ")  // Avoid breaking mid-sentence references
-                    && !trimmed_next.starts_with("The ")
-                    && !trimmed_next.starts_with("We ")
                 {
                     final_result.push('\n');
                 }

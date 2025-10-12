@@ -22,10 +22,55 @@ impl MarkdownGenerator {
         }
     }
 
-    /// Generate Markdown from plain text
+    /// Generate Markdown from plain text with smart heading detection
     pub fn from_text(text: &str, options: ConversionOptions) -> String {
         let mut generator = Self::new(options);
-        generator.add_text(text);
+        let mut result = String::new();
+        let lines: Vec<&str> = text.lines().collect();
+        let mut i = 0;
+        
+        while i < lines.len() {
+            let line = lines[i];
+            let trimmed = line.trim();
+            
+            // Check if this is a standalone heading (short line, preceded by empty line or start of document)
+            let is_potential_heading = trimmed.len() > 0 && trimmed.len() < 100 && 
+                (i == 0 || lines.get(i-1).map(|l| l.trim().is_empty()).unwrap_or(false));
+            
+            // Detect main title (e.g., "Attention Is All You Need")
+            if is_potential_heading && i < 10 && trimmed.chars().filter(|c| c.is_uppercase()).count() > 3 {
+                result.push_str(&format!("\n## {}\n\n", trimmed));
+                i += 1;
+                continue;
+            }
+            
+            // Detect "Abstract" heading
+            if trimmed == "Abstract" && is_potential_heading {
+                result.push_str("\n## Abstract\n\n");
+                i += 1;
+                continue;
+            }
+            
+            // Detect numbered sections (e.g., "1 Introduction", "2 Background", "3.1 Encoder")
+            if trimmed.len() > 2 && (trimmed.chars().next().unwrap().is_numeric() || trimmed.starts_with("0")) {
+                let parts: Vec<&str> = trimmed.split_whitespace().collect();
+                if parts.len() >= 2 && parts[0].chars().all(|c| c.is_numeric() || c == '.') {
+                    // Check if the next word starts with uppercase (likely a section title)
+                    if parts[1].chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
+                        result.push_str(&format!("\n## {}\n\n", trimmed));
+                        i += 1;
+                        continue;
+                    }
+                }
+            }
+            
+            // Regular line
+            result.push_str(line);
+            result.push('\n');
+            i += 1;
+        }
+        
+        generator.buffer = result;
         
         if generator.options.optimize_for_llm {
             generator.optimize_for_llm();

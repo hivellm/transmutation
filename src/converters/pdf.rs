@@ -29,6 +29,34 @@ impl PdfConverter {
         }
     }
 
+    /// Convert PDF to Markdown using pdf-extract (high quality)
+    #[cfg(feature = "pdf")]
+    async fn convert_to_markdown_pdf_extract(
+        &self,
+        path: &Path,
+        options: &ConversionOptions,
+    ) -> Result<Vec<ConversionOutput>> {
+        use pdf_extract::extract_text;
+        
+        // Extract all text at once (better quality than lopdf)
+        let text = extract_text(path)
+            .map_err(|e| crate::TransmutationError::engine_error("PDF Parser", format!("pdf-extract failed: {:?}", e)))?;
+        
+        // Generate markdown
+        let markdown = MarkdownGenerator::from_text(&text, options.clone());
+        let data = markdown.into_bytes();
+        let size_bytes = data.len() as u64;
+        
+        Ok(vec![ConversionOutput {
+            page_number: 0,
+            data,
+            metadata: OutputMetadata {
+                size_bytes,
+                ..Default::default()
+            },
+        }])
+    }
+    
     /// Convert PDF to Markdown
     async fn convert_to_markdown(
         &self,
@@ -238,7 +266,15 @@ impl DocumentConverter for PdfConverter {
         // Convert based on output format
         let content = match output_format {
             OutputFormat::Markdown { .. } => {
-                self.convert_to_markdown(&parser, &options).await?
+                // Use pdf-extract for best quality (if available)
+                #[cfg(feature = "pdf")]
+                {
+                    self.convert_to_markdown_pdf_extract(input, &options).await?
+                }
+                #[cfg(not(feature = "pdf"))]
+                {
+                    self.convert_to_markdown(&parser, &options).await?
+                }
             }
             OutputFormat::Json { .. } => {
                 self.convert_to_json(&parser, &options).await?
