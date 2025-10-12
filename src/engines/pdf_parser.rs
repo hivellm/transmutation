@@ -130,9 +130,11 @@ impl PdfParser {
             result = result.replace("Attention Is All You Need", "\n\n## Attention Is All You Need\n\n");
         }
         
-        // Add break before "Abstract" - handle both with and without space after
-        result = result.replace(" Abstract The ", "\n\n## Abstract\n\nThe ");
-        result = result.replace(" Abstract ", "\n\n## Abstract\n\n");
+        // Add break before "Abstract" - more specific to avoid double ##
+        if !result.contains("## Abstract") {
+            result = result.replace(" Abstract The ", "\n\n## Abstract\n\nThe ");
+            result = result.replace(" Abstract ", "\n\n## Abstract\n\n");
+        }
         
         // Add breaks before section numbers
         for num in 1..20 {

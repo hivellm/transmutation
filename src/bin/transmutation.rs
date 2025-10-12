@@ -192,7 +192,7 @@ async fn run_command(cli: Cli) -> Result<()> {
             let output_format = match format {
                 OutputFormatArg::Markdown => OutputFormat::Markdown {
                     split_pages,
-                    optimize_for_llm,
+                    optimize_for_llm: optimize_llm,
                 },
                 OutputFormatArg::Json => OutputFormat::Json {
                     structured: true,
