@@ -318,20 +318,53 @@ impl ConversionResult {
             tokio::fs::write(output_path, &self.content[0].data).await?;
         } else {
             // Multiple files (e.g., split by pages)
-            let parent = output_path.parent().unwrap_or_else(|| Path::new("."));
+            // Create a directory with the output name
             let stem = output_path
                 .file_stem()
                 .and_then(|s| s.to_str())
                 .unwrap_or("output");
+            let parent = output_path.parent().unwrap_or_else(|| Path::new("."));
+            let output_dir = parent.join(stem);
+            
+            // Create directory
+            tokio::fs::create_dir_all(&output_dir).await?;
+
             let ext = output_path
                 .extension()
                 .and_then(|s| s.to_str())
                 .unwrap_or("md");
 
+            // Save each page
             for (i, output) in self.content.iter().enumerate() {
-                let file_path = parent.join(format!("{}_page_{:04}.{}", stem, i + 1, ext));
+                let file_path = output_dir.join(format!("page_{:04}.{}", i + 1, ext));
                 tokio::fs::write(&file_path, &output.data).await?;
             }
+            
+            // Save metadata JSON
+            let metadata_json = serde_json::json!({
+                "input": self.input_path.to_string_lossy(),
+                "format": format!("{:?}", self.input_format),
+                "pages": self.content.len(),
+                "metadata": {
+                    "title": self.metadata.title,
+                    "author": self.metadata.author,
+                    "page_count": self.metadata.page_count,
+                    "created": self.metadata.created,
+                    "modified": self.metadata.modified,
+                },
+                "statistics": {
+                    "input_size_bytes": self.statistics.input_size_bytes,
+                    "output_size_bytes": self.statistics.output_size_bytes,
+                    "duration_ms": self.statistics.duration.as_millis(),
+                    "pages_processed": self.statistics.pages_processed,
+                    "tables_extracted": self.statistics.tables_extracted,
+                }
+            });
+            
+            let metadata_path = output_dir.join("metadata.json");
+            let json_str = serde_json::to_string_pretty(&metadata_json)
+                .map_err(|e| crate::TransmutationError::SerializationError(e))?;
+            tokio::fs::write(&metadata_path, json_str).await?;
         }
 
         Ok(())

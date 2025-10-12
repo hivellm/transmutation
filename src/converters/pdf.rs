@@ -215,25 +215,113 @@ impl PdfConverter {
     ) -> Result<Vec<ConversionOutput>> {
         use pdf_extract::extract_text;
         
-        // Extract all text at once (better quality than lopdf)
-        let raw_text = extract_text(path)
-            .map_err(|e| crate::TransmutationError::engine_error("PDF Parser", format!("pdf-extract failed: {:?}", e)))?;
-        
-        // Post-process: join lines that belong to same paragraph (like Docling does)
-        let markdown = Self::join_paragraph_lines(&raw_text);
-        
-        // The text is already in markdown format, no need for additional processing
-        let data = markdown.into_bytes();
-        let size_bytes = data.len() as u64;
-        
-        Ok(vec![ConversionOutput {
-            page_number: 0,
-            data,
-            metadata: OutputMetadata {
-                size_bytes,
-                ..Default::default()
-            },
-        }])
+        if options.split_pages {
+            // For split pages: use pdf-extract for quality, then split by sections/headings
+            let raw_text = extract_text(path)
+                .map_err(|e| crate::TransmutationError::engine_error("PDF Parser", format!("pdf-extract failed: {:?}", e)))?;
+            
+            // Process full document with intelligent paragraph joining
+            let full_markdown = Self::join_paragraph_lines(&raw_text);
+            
+            // Get page count
+            let parser = PdfParser::load(path)?;
+            let page_count = parser.page_count();
+            
+            // Split by section headings (##) for better semantic chunking
+            let sections: Vec<&str> = full_markdown.split("\n## ").collect();
+            
+            if sections.len() > 1 {
+                // Split by sections
+                let mut outputs = Vec::new();
+                let sections_per_page = (sections.len() / page_count).max(1);
+                
+                for page_num in 0..page_count {
+                    let start = page_num * sections_per_page;
+                    let end = ((page_num + 1) * sections_per_page).min(sections.len());
+                    
+                    if start >= sections.len() {
+                        break;
+                    }
+                    
+                    let page_sections = &sections[start..end];
+                    let page_content = if start == 0 {
+                        // First page includes the part before first ##
+                        page_sections.join("\n## ")
+                    } else {
+                        // Other pages need ## prefix
+                        "## ".to_string() + &page_sections.join("\n## ")
+                    };
+                    
+                    let token_count = page_content.len() / 4;
+                    let data = page_content.into_bytes();
+                    let size_bytes = data.len() as u64;
+                    
+                    outputs.push(ConversionOutput {
+                        page_number: page_num,
+                        data,
+                        metadata: OutputMetadata {
+                            size_bytes,
+                            chunk_count: 1,
+                            token_count: Some(token_count),
+                        },
+                    });
+                }
+                
+                Ok(outputs)
+            } else {
+                // No sections found, split by character count
+                let chars_per_page = (full_markdown.len() / page_count).max(100);
+                let mut outputs = Vec::new();
+                
+                for page_num in 0..page_count {
+                    let start = page_num * chars_per_page;
+                    let end = ((page_num + 1) * chars_per_page).min(full_markdown.len());
+                    
+                    if start >= full_markdown.len() {
+                        break;
+                    }
+                    
+                    let page_content = &full_markdown[start..end];
+                    let token_count = page_content.len() / 4;
+                    let data = page_content.as_bytes().to_vec();
+                    let size_bytes = data.len() as u64;
+                    
+                    outputs.push(ConversionOutput {
+                        page_number: page_num,
+                        data,
+                        metadata: OutputMetadata {
+                            size_bytes,
+                            chunk_count: 1,
+                            token_count: Some(token_count),
+                        },
+                    });
+                }
+                
+                Ok(outputs)
+            }
+        } else {
+            // Extract all text at once (better quality than lopdf)
+            let raw_text = extract_text(path)
+                .map_err(|e| crate::TransmutationError::engine_error("PDF Parser", format!("pdf-extract failed: {:?}", e)))?;
+            
+            // Post-process: join lines that belong to same paragraph (like Docling does)
+            let markdown = Self::join_paragraph_lines(&raw_text);
+            
+            // Calculate metrics before moving markdown
+            let token_count = markdown.len() / 4;
+            let data = markdown.into_bytes();
+            let size_bytes = data.len() as u64;
+            
+            Ok(vec![ConversionOutput {
+                page_number: 0,
+                data,
+                metadata: OutputMetadata {
+                    size_bytes,
+                    chunk_count: 1,
+                    token_count: Some(token_count),
+                },
+            }])
+        }
     }
     
     /// Convert PDF to Markdown

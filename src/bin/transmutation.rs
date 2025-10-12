@@ -5,7 +5,7 @@
 
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 use transmutation::{ConversionOptions, Converter, ImageQuality, OutputFormat, Result};
 
@@ -236,6 +236,16 @@ async fn run_command(cli: Cli) -> Result<()> {
             if !cli.quiet {
                 println!();
                 println!("{}", "✓ Conversion completed successfully!".green().bold());
+                
+                // Show where files were saved
+                if result.content.len() > 1 {
+                    let stem = output_path.file_stem().and_then(|s| s.to_str()).unwrap_or("output");
+                    let parent = output_path.parent().unwrap_or_else(|| Path::new("."));
+                    let output_dir = parent.join(stem);
+                    println!("  Saved to:     {} (directory with {} pages)", output_dir.display(), result.content.len());
+                } else {
+                    println!("  Saved to:     {}", output_path.display());
+                }
                 println!();
                 println!("{}", "Statistics:".yellow().bold());
                 println!("  Duration:     {:?}", duration);
