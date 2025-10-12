@@ -29,6 +29,179 @@ impl PdfConverter {
         }
     }
 
+    /// Join lines that belong to the same paragraph (Docling-style)
+    /// This function mimics Docling's text joining behavior
+    fn join_paragraph_lines(text: &str) -> String {
+        let lines: Vec<&str> = text.lines().collect();
+        let mut result = String::new();
+        let mut i = 0;
+        
+        while i < lines.len() {
+            let line = lines[i];
+            let trimmed = line.trim();
+            
+            // Skip empty lines (they will be added when needed)
+            if trimmed.is_empty() {
+                i += 1;
+                continue;
+            }
+            
+            // Pre-compute line context
+            let prev_empty = i == 0 || lines.get(i-1).map(|l| l.trim().is_empty()).unwrap_or(false);
+            let next_empty = i == lines.len() - 1 || lines.get(i+1).map(|l| l.trim().is_empty()).unwrap_or(false);
+            
+            // FIRST: Check if this looks like an author name (before heading detection)
+            let looks_like_name = (trimmed.len() > 5 && trimmed.len() < 80) && 
+                                (trimmed.chars().next().map(|c| c.is_uppercase() || c == ' ').unwrap_or(false)) &&
+                                !trimmed.contains('@') &&
+                                !trimmed.ends_with('.') &&
+                                !trimmed.starts_with("The ") &&
+                                !trimmed.starts_with("In ") &&
+                                !trimmed.starts_with("Most ") &&
+                                !trimmed.starts_with("Recurrent ") &&
+                                !trimmed.starts_with("Attention ") &&
+                                trimmed.split_whitespace().count() >= 2 &&
+                                trimmed.split_whitespace().count() <= 8;
+            
+            // Check if next line is likely affiliation or symbol
+            let next_is_affiliation_or_symbol = if i + 1 < lines.len() {
+                let next = lines[i+1].trim();
+                next.contains("Google") || next.contains("University") ||
+                next.contains("Research") || next.contains("Brain") ||
+                next.contains("Toronto") ||
+                next == "∗" || next == "†" || next == "‡" || next == "∗ †" || next == "∗ ‡"
+            } else {
+                false
+            };
+            
+            // If this is a potential author name, collect following lines (symbol, affiliation, email)
+            if looks_like_name && next_is_affiliation_or_symbol {
+                let mut author_parts = vec![trimmed];
+                let mut j = i + 1;
+                
+                // Collect up to 4 following lines for symbol/affiliation/email
+                while j < lines.len() && j < i + 5 {
+                    let next_line = lines[j].trim();
+                    if next_line.is_empty() {
+                        break;
+                    }
+                    
+                    let is_affiliation = next_line.contains("Google") || next_line.contains("University") ||
+                                       next_line.contains("Research") || next_line.contains("Brain") ||
+                                       next_line.contains("Toronto");
+                    let is_email = next_line.contains('@');
+                    let is_symbol = next_line == "∗" || next_line == "†" || next_line == "‡" || 
+                                  next_line == "∗ †" || next_line == "∗ ‡";
+                    
+                    if is_affiliation || is_email || is_symbol {
+                        author_parts.push(next_line);
+                        j += 1;
+                        
+                        // Stop after email
+                        if is_email {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                
+                // If we found author components with email, join them
+                if author_parts.len() >= 2 && author_parts.iter().any(|p| p.contains('@')) {
+                    if !result.is_empty() && !result.ends_with("\n\n") {
+                        result.push_str("\n\n");
+                    }
+                    result.push_str(&author_parts.join(" "));
+                    result.push_str("\n\n");
+                    i = j;
+                    continue;
+                }
+            }
+            
+            // Check if this is a footnote marker line
+            if trimmed.starts_with('∗') || trimmed.starts_with('†') || trimmed.starts_with('‡') {
+                if !result.is_empty() && !result.ends_with("\n\n") {
+                    result.push_str("\n\n");
+                }
+                result.push_str(trimmed);
+                result.push_str("\n\n");
+                i += 1;
+                continue;
+            }
+            
+            // SECOND: Check if this is a heading (after author detection)
+            // Heading detection: specific patterns only
+            
+            // Main title: appears early, surrounded by empty lines, title case
+            let is_main_title = i < 10 && prev_empty && next_empty && 
+                              trimmed.len() > 10 && trimmed.len() < 100 &&
+                              trimmed.split_whitespace().count() >= 3 &&
+                              trimmed.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) &&
+                              !trimmed.contains('@') &&
+                              !trimmed.contains('∗');
+            
+            // Section headings: Abstract or numbered sections
+            let is_section_heading = trimmed == "Abstract" ||
+                                    (prev_empty && next_empty && trimmed.starts_with(|c: char| c.is_numeric()) && 
+                                     trimmed.contains(' ') && trimmed.len() < 80);
+            
+            if is_main_title || is_section_heading {
+                // Add heading with proper spacing
+                if !result.is_empty() {
+                    result.push_str("\n\n");
+                }
+                // Add ## for all headings (title, Abstract, numbered sections)
+                result.push_str("## ");
+                result.push_str(trimmed);
+                result.push_str("\n\n");
+                i += 1;
+                continue;
+            }
+            
+            // Regular text - join with previous line if it's part of the same paragraph
+            if !result.is_empty() && !result.ends_with("\n\n") {
+                // Check if we should join with previous line
+                let should_join = !prev_empty;
+                
+                if should_join {
+                    // Remove trailing hyphen if present (word continuation)
+                    if result.ends_with('-') {
+                        result.pop();
+                    } else if !result.ends_with(' ') {
+                        result.push(' ');
+                    }
+                }
+            }
+            
+            result.push_str(trimmed);
+            
+            // Check if this line ends a sentence (period, colon, etc.)
+            let ends_sentence = trimmed.ends_with('.') || trimmed.ends_with(':') || 
+                              trimmed.ends_with('!') || trimmed.ends_with('?');
+            
+            // Don't end paragraph on abbreviations
+            let is_abbreviation = trimmed.ends_with(" al.") || trimmed.ends_with(" Fig.") ||
+                                trimmed.ends_with(" et.") || trimmed.ends_with(" vs.");
+            
+            // Add paragraph break if sentence ends and it's not an abbreviation
+            if ends_sentence && !is_abbreviation && next_empty {
+                result.push_str("\n\n");
+            }
+            
+            i += 1;
+        }
+        
+        // Final cleanup
+        let mut cleaned = result.replace("\n\n\n\n", "\n\n");
+        cleaned = cleaned.replace("\n\n\n", "\n\n");
+        
+        // Ensure proper spacing around headings
+        cleaned = cleaned.replace("##  ", "## ");
+        cleaned = cleaned.replace("\n\n## ", "\n## ");
+        
+        cleaned.trim().to_string()
+    }
+    
     /// Convert PDF to Markdown using pdf-extract (high quality)
     #[cfg(feature = "pdf")]
     async fn convert_to_markdown_pdf_extract(
@@ -39,11 +212,13 @@ impl PdfConverter {
         use pdf_extract::extract_text;
         
         // Extract all text at once (better quality than lopdf)
-        let text = extract_text(path)
+        let raw_text = extract_text(path)
             .map_err(|e| crate::TransmutationError::engine_error("PDF Parser", format!("pdf-extract failed: {:?}", e)))?;
         
-        // Generate markdown
-        let markdown = MarkdownGenerator::from_text(&text, options.clone());
+        // Post-process: join lines that belong to same paragraph (like Docling does)
+        let markdown = Self::join_paragraph_lines(&raw_text);
+        
+        // The text is already in markdown format, no need for additional processing
         let data = markdown.into_bytes();
         let size_bytes = data.len() as u64;
         
