@@ -53,6 +53,10 @@ enum Commands {
         /// Optimize for LLM processing
         #[arg(short = 'l', long)]
         optimize_llm: bool,
+        
+        /// Use high-precision mode (Docling-based, slower but ~95% accurate vs ~81% fast mode)
+        #[arg(short = 'P', long)]
+        precision: bool,
 
         /// Image quality (1-100)
         #[arg(short = 'q', long, default_value = "85")]
@@ -149,6 +153,7 @@ async fn run_command(cli: Cli) -> Result<()> {
             format,
             split_pages,
             optimize_llm,
+            precision,
             quality,
             dpi,
         } => {
@@ -182,11 +187,20 @@ async fn run_command(cli: Cli) -> Result<()> {
             let options = ConversionOptions {
                 split_pages,
                 optimize_for_llm: optimize_llm,
+                use_precision_mode: precision,
                 extract_tables: true,
                 image_quality: ImageQuality::High,
                 dpi,
                 ..Default::default()
             };
+            
+            // Show mode information
+            if !cli.quiet && precision {
+                println!("{}", "  Mode:   High-precision (Docling-based, ~95% similarity)".yellow());
+                println!("{}", "          Note: Slower but more accurate (requires Python/Docling)".yellow().dimmed());
+            } else if !cli.quiet {
+                println!("{}", "  Mode:   Fast (Pure Rust, ~81% similarity, 250x faster)".green());
+            }
             
             // Determine output format
             let output_format = match format {

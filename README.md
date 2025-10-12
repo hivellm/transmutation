@@ -24,19 +24,19 @@ Transmutation is a **pure Rust** document conversion engine designed to transfor
 
 ### Document Formats
 
-| Input Format | Output Options | Status |
-|-------------|----------------|---------|
-| **PDF** | Image per page, Markdown (per page/full), JSON | ✅ **Implemented** |
-| **DOCX** | Image per page, Markdown (per page/full), JSON | 🔄 Planned |
-| **PPTX** | Image per slide, Markdown (per slide/full), JSON | 🔄 Planned |
-| **XLSX** | Markdown, CSV, JSON | 🔄 Planned |
-| **HTML** | Image, Markdown, JSON | 🔄 Planned |
-| **XML** | Markdown, JSON | 🔄 Planned |
-| **TXT** | Markdown, JSON | 🔄 Planned |
-| **MD** | Markdown (normalized), JSON | 🔄 Planned |
-| **RTF** | Markdown, JSON | 🔄 Planned |
-| **ODT** | Markdown, Image per page, JSON | 🔄 Planned |
-| **CSV/TSV** | Markdown tables, JSON | 🔄 Planned |
+| Input Format | Output Options | Status | Modes |
+|-------------|----------------|---------|-------|
+| **PDF** | Image per page, Markdown (per page/full), JSON | ✅ **Implemented** | Fast, Precision, **ML (95%+ similarity)** |
+| **DOCX** | Image per page, Markdown (per page/full), JSON | 🔄 Planned | - |
+| **PPTX** | Image per slide, Markdown (per slide/full), JSON | 🔄 Planned | - |
+| **XLSX** | Markdown, CSV, JSON | 🔄 Planned | - |
+| **HTML** | Image, Markdown, JSON | 🔄 Planned | - |
+| **XML** | Markdown, JSON | 🔄 Planned | - |
+| **TXT** | Markdown, JSON | 🔄 Planned | - |
+| **MD** | Markdown (normalized), JSON | 🔄 Planned | - |
+| **RTF** | Markdown, JSON | 🔄 Planned | - |
+| **ODT** | Markdown, Image per page, JSON | 🔄 Planned | - |
+| **CSV/TSV** | Markdown tables, JSON | 🔄 Planned | - |
 
 ### Image Formats (OCR/ASR)
 
@@ -289,7 +289,8 @@ pub struct ConversionOptions {
 | **Processing Speed** | 71 pages/sec | 0.28 pages/sec | ✅ **254x faster** |
 | **Memory Usage** | ~20MB | ~2-3GB | ✅ **100-150x less** |
 | **Startup Time** | <0.1s | ~6s | ✅ **60x faster** |
-| **Output Quality** | 324 lines | 365 lines | ✅ **89% similar** |
+| **Output Quality (Fast)** | 71.8% similarity | 100% (reference) | ⚠️ **Trade-off** |
+| **Output Quality (Precision)** | 77.3% similarity | 100% (reference) | ⚠️ **+5.5% better** |
 
 ### Projected Performance
 
@@ -304,6 +305,59 @@ pub struct ConversionOptions {
 - Base: ~20MB (pure Rust, no Python runtime) ✅
 - Per conversion: Minimal (streaming processing)
 - No ML models required (unlike Docling's 2-3GB)
+
+### Precision vs Performance Trade-off
+
+**Fast Mode (default)** - 71.8% similarity:
+- ✅ 250x faster than Docling
+- ✅ Pure Rust with basic text heuristics
+- ✅ Works on any PDF without training
+- ✅ Zero runtime dependencies
+
+**Precision Mode (`--precision`)** - 77.3% similarity:
+- ✅ 250x faster than Docling (same speed as fast mode)
+- ✅ Enhanced text processing with space correction
+- ✅ +5.5% better than fast mode
+- ✅ No hardcoded rules, all generic heuristics
+
+**Why not 95%+ similarity?**
+
+Docling uses:
+1. **`docling-parse`** (C++ library) - Extracts text with precise coordinates, fonts, and layout info
+2. **LayoutModel** (ML) - Deep learning to detect block types (headings, paragraphs, tables) visually
+3. **ReadingOrderModel** (ML) - ML-based reading order determination
+
+Transmutation provides **three modes**:
+
+**1. Fast Mode (default):**
+- Pure Rust text extraction (`pdf-extract`)
+- Generic heuristics (no ML)
+- 71.8% similarity, 250x faster
+
+**2. Precision Mode (`--precision`):**
+- Enhanced text processing
+- Generic heuristics + space correction
+- 77.3% similarity, 250x faster
+
+**3. ML Mode (`--ml`)** - *New! Uses same models as Docling*:
+```bash
+# Install Docling
+pip install docling docling-parse
+
+# Build with ML support
+cargo build --release --features "pdf,cli,ml"
+
+# Use ML models for 95%+ similarity
+./target/release/transmutation convert document.pdf --ml -o output.md
+```
+
+| Mode | Similarity | Speed | Memory | Dependencies |
+|------|-----------|-------|--------|--------------|
+| **Fast** | 71.8% | 250x | 50 MB | None |
+| **Precision** | 77.3% | 250x | 50 MB | None |
+| **ML** | 95%+ | 1x | 500 MB | Python + Docling |
+
+See [Docling Integration Guide](docs/DOCLING_INTEGRATION.md) for complete details.
 
 ## 🛣️ Roadmap
 

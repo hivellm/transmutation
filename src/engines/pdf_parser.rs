@@ -314,46 +314,142 @@ impl PdfParser {
     fn extract_text_blocks(&self, page_num: usize) -> Result<Vec<TextBlock>> {
         #[cfg(feature = "pdf")]
         {
-            // Use pdf-extract for detailed text extraction
+            use lopdf::Object;
+            
             let page_ids = self.get_page_ids();
             if page_num >= page_ids.len() {
                 return Ok(Vec::new());
             }
-
-            // For now, use lopdf's basic extraction and create synthetic blocks
-            // TODO: Implement full pdf-extract integration for detailed positioning
-            let text = self.extract_text(page_num)?;
             
-            // Create synthetic text blocks based on line breaks
+            let page_id = page_ids[page_num];
             let mut blocks = Vec::new();
-            let mut y_pos = 700.0; // Start from top of page
             
-            for line in text.lines() {
-                if line.trim().is_empty() {
-                    continue;
+            // Get page content
+            let pages = self.document.get_pages();
+            let page_ref = match pages.get(&page_id) {
+                Some(r) => r,
+                None => return Ok(blocks),
+            };
+            
+            let page_obj = match self.document.get_object(*page_ref) {
+                Ok(obj) => obj,
+                Err(_) => return Ok(blocks),
+            };
+            
+            let page_dict = match page_obj.as_dict() {
+                Ok(dict) => dict,
+                Err(_) => return Ok(blocks),
+            };
+            
+            // Get page content stream(s)
+            let contents = match page_dict.get(b"Contents") {
+                Ok(c) => c,
+                Err(_) => return Ok(blocks),
+            };
+            
+            // Decode content stream
+            let content_data = match contents {
+                Object::Reference(r) => {
+                    match self.document.get_object(*r) {
+                        Ok(obj) => {
+                            match obj.as_stream() {
+                                Ok(stream) => {
+                                    match stream.decode_content() {
+                                        Ok(data) => data,
+                                        Err(_) => return Ok(blocks),
+                                    }
+                                }
+                                Err(_) => return Ok(blocks),
+                            }
+                        }
+                        Err(_) => return Ok(blocks),
+                    }
                 }
-                
-                // Estimate font size based on content patterns
-                let font_size = self.estimate_font_size(line);
-                
-                blocks.push(TextBlock {
-                    text: line.to_string(),
-                    x: 50.0, // Left margin
-                    y: y_pos,
-                    font_size,
-                    font_name: Some("Unknown".to_string()),
-                });
-                
-                y_pos -= font_size + 2.0; // Move down for next line
-            }
+                _ => return Ok(blocks),
+            };
             
-            Ok(blocks)
+            // Parse content stream operations
+            self.parse_content_operations(&content_data)
         }
         
         #[cfg(not(feature = "pdf"))]
         {
             Ok(Vec::new())
         }
+    }
+    
+    /// Parse PDF content operations to extract text blocks
+    fn parse_content_operations(&self, content: &lopdf::content::Content) -> Result<Vec<TextBlock>> {
+        use lopdf::content::Operation;
+        use lopdf::Object;
+        
+        let mut blocks = Vec::new();
+        let mut current_x = 0.0;
+        let mut current_y = 0.0;
+        let mut current_font_size = 12.0;
+        
+        for operation in &content.operations {
+            match operation.operator.as_ref() {
+                // Tm - Text matrix (sets position)
+                "Tm" if operation.operands.len() >= 6 => {
+                    if let (Ok(x), Ok(y)) = (
+                        operation.operands[4].as_float(),
+                        operation.operands[5].as_float()
+                    ) {
+                        current_x = x;
+                        current_y = y;
+                    }
+                }
+                
+                // Tf - Set font and size
+                "Tf" if operation.operands.len() >= 2 => {
+                    if let Ok(size) = operation.operands[1].as_float() {
+                        current_font_size = size;
+                    }
+                }
+                
+                // Tj - Show text
+                "Tj" if operation.operands.len() >= 1 => {
+                    if let Ok(text_bytes) = operation.operands[0].as_str() {
+                        let text = String::from_utf8_lossy(text_bytes).to_string();
+                        if !text.trim().is_empty() {
+                            blocks.push(TextBlock {
+                                text,
+                                x: current_x,
+                                y: current_y,
+                                font_size: current_font_size,
+                                font_name: None,
+                            });
+                        }
+                    }
+                }
+                
+                // TJ - Show text with positioning array
+                "TJ" if operation.operands.len() >= 1 => {
+                    if let Ok(array) = operation.operands[0].as_array() {
+                        let mut combined_text = String::new();
+                        for item in array {
+                            if let Ok(text_bytes) = item.as_str() {
+                                combined_text.push_str(&String::from_utf8_lossy(text_bytes));
+                            }
+                        }
+                        if !combined_text.trim().is_empty() {
+                            blocks.push(TextBlock {
+                                text: combined_text,
+                                x: current_x,
+                                y: current_y,
+                                font_size: current_font_size,
+                                font_name: None,
+                            });
+                        }
+                    }
+                }
+                
+                _ => {}
+            }
+        }
+        
+        Ok(blocks)
     }
 
     /// Estimate font size from text content heuristics

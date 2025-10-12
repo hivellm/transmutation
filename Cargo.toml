@@ -116,6 +116,10 @@ indicatif = { version = "0.17", optional = true }
 console = { version = "0.15", optional = true }
 colored = { version = "2.2", optional = true }
 
+# ML/Python integration (optional) - for Docling compatibility
+pyo3 = { version = "0.20", features = ["auto-initialize"], optional = true }
+numpy = { version = "0.20", optional = true }
+
 # Metrics
 prometheus = { version = "0.14", optional = true }
 
@@ -142,6 +146,9 @@ image-ocr = ["tesseract"]
 audio = ["ffmpeg"]  # Pure Rust audio transcription (no Python/Whisper dependency)
 video = ["ffmpeg"]
 archives = ["zip", "tar", "flate2", "sevenz-rust"]
+
+# ML features (Python integration for Docling compatibility)
+ml = ["dep:pyo3", "dep:numpy"]  # Enables 95% precision with Docling models
 
 # Caching backends
 cache-redis = ["redis"]

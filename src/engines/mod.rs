@@ -9,6 +9,9 @@ pub mod table_detector;
 #[cfg(feature = "pdf")]
 pub mod layout_analyzer;
 
+#[cfg(feature = "ml")]
+pub mod docling_ml;
+
 #[cfg(feature = "tesseract")]
 pub mod tesseract;
 

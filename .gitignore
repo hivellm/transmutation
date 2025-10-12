@@ -48,6 +48,8 @@ models/
 # External repositories (for reference only)
 docling/
 docling-project/
+docling-core/
+docling-parse/
 
 # Environment files
 .env

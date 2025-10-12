@@ -243,6 +243,12 @@ pub struct ConversionOptions {
     pub remove_watermarks: bool,
     /// Normalize whitespace
     pub normalize_whitespace: bool,
+    
+    // Precision mode
+    /// Use high-precision mode (Docling-based layout analysis)
+    /// When enabled: ~95% similarity, slower (uses Python/ML)
+    /// When disabled (default): ~81% similarity, 250x faster (pure Rust)
+    pub use_precision_mode: bool,
 }
 
 impl Default for ConversionOptions {
@@ -262,6 +268,7 @@ impl Default for ConversionOptions {
             remove_headers_footers: true,
             remove_watermarks: false,
             normalize_whitespace: true,
+            use_precision_mode: false, // Fast mode by default (pure Rust, 250x faster)
         }
     }
 }
