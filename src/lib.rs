@@ -36,9 +36,12 @@ pub mod error;
 pub mod integration;
 pub mod optimization;
 pub mod output;
+pub mod types;
 pub mod utils;
 
+pub use converters::{ConverterMetadata, DocumentConverter};
 pub use error::{Result, TransmutationError};
+pub use types::*;
 
 /// Current version of the Transmutation library
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
