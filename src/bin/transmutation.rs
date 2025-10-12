@@ -58,6 +58,7 @@ enum Commands {
         #[arg(short = 'P', long)]
         precision: bool,
 
+
         /// Image quality (1-100)
         #[arg(short = 'q', long, default_value = "85")]
         quality: u8,
@@ -196,10 +197,9 @@ async fn run_command(cli: Cli) -> Result<()> {
             
             // Show mode information
             if !cli.quiet && precision {
-                println!("{}", "  Mode:   High-precision (Docling-based, ~95% similarity)".yellow());
-                println!("{}", "          Note: Slower but more accurate (requires Python/Docling)".yellow().dimmed());
+                println!("{}", "  Mode:   Precision (Enhanced heuristics, 77.3% similarity)".yellow());
             } else if !cli.quiet {
-                println!("{}", "  Mode:   Fast (Pure Rust, ~81% similarity, 250x faster)".green());
+                println!("{}", "  Mode:   Fast (Pure Rust, 71.8% similarity, 250x faster)".green());
             }
             
             // Determine output format

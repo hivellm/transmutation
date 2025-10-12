@@ -26,7 +26,7 @@ Transmutation is a **pure Rust** document conversion engine designed to transfor
 
 | Input Format | Output Options | Status | Modes |
 |-------------|----------------|---------|-------|
-| **PDF** | Image per page, Markdown (per page/full), JSON | ✅ **Implemented** | Fast, Precision, **ML (95%+ similarity)** |
+| **PDF** | Image per page, Markdown (per page/full), JSON | ✅ **Implemented** | Fast, Precision |
 | **DOCX** | Image per page, Markdown (per page/full), JSON | 🔄 Planned | - |
 | **PPTX** | Image per slide, Markdown (per slide/full), JSON | 🔄 Planned | - |
 | **XLSX** | Markdown, CSV, JSON | 🔄 Planned | - |
@@ -339,25 +339,16 @@ Transmutation provides **three modes**:
 - Generic heuristics + space correction
 - 77.3% similarity, 250x faster
 
-**3. ML Mode (`--ml`)** - *New! Uses same models as Docling*:
-```bash
-# Install Docling
-pip install docling docling-parse
-
-# Build with ML support
-cargo build --release --features "pdf,cli,ml"
-
-# Use ML models for 95%+ similarity
-./target/release/transmutation convert document.pdf --ml -o output.md
-```
+**Future: C++ FFI Mode** - Direct integration with docling-parse (no Python):
+- Will use C++ library via FFI for 95%+ similarity
+- No Python dependency, pure Rust + C++ shared library
+- In development
 
 | Mode | Similarity | Speed | Memory | Dependencies |
 |------|-----------|-------|--------|--------------|
-| **Fast** | 71.8% | 250x | 50 MB | None |
-| **Precision** | 77.3% | 250x | 50 MB | None |
-| **ML** | 95%+ | 1x | 500 MB | Python + Docling |
-
-See [Docling Integration Guide](docs/DOCLING_INTEGRATION.md) for complete details.
+| **Fast** | 71.8% | 250x | 50 MB | None (pure Rust) |
+| **Precision** | 77.3% | 250x | 50 MB | None (pure Rust) |
+| **FFI** *(future)* | 95%+ | ~50x | 100 MB | C++ shared lib only |
 
 ## 🛣️ Roadmap
 
