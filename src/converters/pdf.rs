@@ -400,11 +400,10 @@ impl PdfConverter {
             total_height += page.height;
         }
         
-        // Use layout-aware markdown generation if blocks available
-        let markdown = if !all_blocks.is_empty() {
-            Self::docling_style_markdown_from_blocks(&all_blocks, total_width, total_height)
-        } else {
-            // Fallback to pdf-extract if no blocks
+        // TEMPORARY: Disable layout analysis, it's worse than pdf-extract
+        // TODO: Fix docling_style_markdown_from_blocks() - currently generates 3% similarity vs 77.3%
+        let markdown = {
+            // Fallback to pdf-extract (best quality for now)
             use pdf_extract::extract_text;
             let raw_text = extract_text(path)
                 .map_err(|e| crate::TransmutationError::engine_error("PDF Parser", format!("pdf-extract failed: {:?}", e)))?;

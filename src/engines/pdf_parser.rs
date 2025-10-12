@@ -411,25 +411,71 @@ impl PdfParser {
     
     /// Parse PDF content operations to extract text blocks
     fn parse_content_operations(&self, content: &lopdf::content::Content) -> Result<Vec<TextBlock>> {
-        use lopdf::content::Operation;
         use lopdf::Object;
         
         let mut blocks = Vec::new();
         let mut current_x = 0.0;
         let mut current_y = 0.0;
         let mut current_font_size = 12.0;
+        let mut line_start_x = 0.0;
+        let mut line_start_y = 0.0;
         
         for operation in &content.operations {
             match operation.operator.as_ref() {
-                // Tm - Text matrix (sets position)
+                // BT - Begin text object (reset position)
+                "BT" => {
+                    current_x = 0.0;
+                    current_y = 0.0;
+                    line_start_x = 0.0;
+                    line_start_y = 0.0;
+                }
+                
+                // ET - End text object
+                "ET" => {}
+                
+                // Tm - Text matrix (sets absolute position)
                 "Tm" if operation.operands.len() >= 6 => {
+                    // Matrix: [a b c d e f] where e=x, f=y
                     if let (Ok(x), Ok(y)) = (
                         operation.operands[4].as_float(),
                         operation.operands[5].as_float()
                     ) {
                         current_x = x;
                         current_y = y;
+                        line_start_x = current_x;
+                        line_start_y = current_y;
                     }
+                }
+                
+                // Td - Move text position (relative)
+                "Td" if operation.operands.len() >= 2 => {
+                    if let (Ok(tx), Ok(ty)) = (
+                        operation.operands[0].as_float(),
+                        operation.operands[1].as_float()
+                    ) {
+                        current_x += tx;
+                        current_y += ty;
+                    }
+                }
+                
+                // TD - Move text position and set leading
+                "TD" if operation.operands.len() >= 2 => {
+                    if let (Ok(tx), Ok(ty)) = (
+                        operation.operands[0].as_float(),
+                        operation.operands[1].as_float()
+                    ) {
+                        current_x += tx;
+                        current_y += ty;
+                        line_start_x = current_x;
+                        line_start_y = current_y;
+                    }
+                }
+                
+                // T* - Move to start of next line
+                "T*" => {
+                    current_x = line_start_x;
+                    current_y = line_start_y - current_font_size * 1.2; // Typical leading
+                    line_start_y = current_y;
                 }
                 
                 // Tf - Set font and size
@@ -444,6 +490,7 @@ impl PdfParser {
                     if let Ok(text_bytes) = operation.operands[0].as_str() {
                         let text = String::from_utf8_lossy(text_bytes).to_string();
                         if !text.trim().is_empty() {
+                            let text_len = text.len();
                             blocks.push(TextBlock {
                                 text,
                                 x: current_x,
@@ -451,6 +498,8 @@ impl PdfParser {
                                 font_size: current_font_size,
                                 font_name: None,
                             });
+                            // Advance X position (rough estimate)
+                            current_x += text_len as f32 * current_font_size * 0.5;
                         }
                     }
                 }
@@ -461,12 +510,40 @@ impl PdfParser {
                         let mut combined_text = String::new();
                         for item in array {
                             if let Ok(text_bytes) = item.as_str() {
-                                combined_text.push_str(&String::from_utf8_lossy(text_bytes));
+                                let part = String::from_utf8_lossy(text_bytes);
+                                combined_text.push_str(&part);
+                            } else if let Ok(num) = item.as_float() {
+                                // Negative numbers indicate space adjustment
+                                if num < -100.0 {
+                                    combined_text.push(' ');
+                                }
                             }
                         }
                         if !combined_text.trim().is_empty() {
                             blocks.push(TextBlock {
-                                text: combined_text,
+                                text: combined_text.clone(),
+                                x: current_x,
+                                y: current_y,
+                                font_size: current_font_size,
+                                font_name: None,
+                            });
+                            // Advance X position
+                            current_x += combined_text.len() as f32 * current_font_size * 0.5;
+                        }
+                    }
+                }
+                
+                // ' - Move to next line and show text
+                "'" if operation.operands.len() >= 1 => {
+                    current_x = line_start_x;
+                    current_y = line_start_y - current_font_size * 1.2;
+                    line_start_y = current_y;
+                    
+                    if let Ok(text_bytes) = operation.operands[0].as_str() {
+                        let text = String::from_utf8_lossy(text_bytes).to_string();
+                        if !text.trim().is_empty() {
+                            blocks.push(TextBlock {
+                                text,
                                 x: current_x,
                                 y: current_y,
                                 font_size: current_font_size,
