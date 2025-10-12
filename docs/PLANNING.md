@@ -52,10 +52,11 @@
 - **Whisper**: Speech-to-text transcription
 - **FFmpeg**: Video/audio processing
 
-### Key Dependencies
+### Key Dependencies (Pure Rust)
 ```toml
 tokio = "1.47"          # Async runtime
-pyo3 = "0.24"           # Python bridge
+lopdf = "0.35"          # PDF parsing
+docx-rs = "0.4"         # DOCX parsing
 image = "0.25"          # Image processing
 rayon = "1.10"          # Parallelization
 serde = "1.0"           # Serialization

@@ -1,3 +1,5 @@
+cargo-features = ["edition2024"]
+
 [package]
 name = "transmutation"
 version = "0.1.0"
@@ -11,7 +13,7 @@ documentation = "https://docs.rs/transmutation"
 keywords = ["document", "conversion", "pdf", "llm", "embedding"]
 categories = ["parser-implementations", "text-processing", "multimedia"]
 readme = "README.md"
-rust-version = "1.75"
+rust-version = "1.85"
 
 [lib]
 name = "transmutation"
@@ -19,7 +21,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "transmutation"
-path = "cli/src/main.rs"
+path = "src/bin/transmutation.rs"
 required-features = ["cli"]
 
 [dependencies]
@@ -49,67 +51,66 @@ blake3 = "1.5"
 # Logging and tracing
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-tracing-opentelemetry = { version = "0.28", optional = true }
+tracing-opentelemetry = { version = "0.30", optional = true }
 
 # File type detection
-file-format = "0.27"
+file-format = "0.26"
 
-# Python bridge (for Docling)
-pyo3 = { version = "0.24", features = ["auto-initialize"], optional = true }
-pyo3-asyncio = { version = "0.24", features = ["tokio-runtime"], optional = true }
+# NOTE: We are NOT integrating with Docling - we are building a pure Rust competitor
+# The docling repository is for reference only, not as a dependency
 
 # OCR (Tesseract)
-tesseract = { version = "0.16", optional = true }
+tesseract = { version = "0.15", optional = true }
 leptess = { version = "0.14", optional = true }
 
 # Image processing
 image = { version = "0.25", features = ["png", "jpeg", "gif", "bmp", "tiff", "webp"] }
-imageproc = "0.26"
+imageproc = "0.25"
 
 # Document parsing
 # PDF
-lopdf = { version = "0.34", optional = true }
+lopdf = { version = "0.35", optional = true }
 pdf-extract = { version = "0.7", optional = true }
 
 # DOCX
 docx-rs = { version = "0.4", optional = true }
 
 # XLSX
-calamine = { version = "0.27", optional = true }
-umya-spreadsheet = { version = "1.12", optional = true }
+# calamine = { version = "0.26", optional = true }  # Temporarily disabled due to zip version conflict
+umya-spreadsheet = { version = "2.3", optional = true }
 
 # HTML/XML
 scraper = { version = "0.21", optional = true }
 html5ever = { version = "0.29", optional = true }
 quick-xml = { version = "0.37", optional = true }
-roxmltree = { version = "0.22", optional = true }
+roxmltree = { version = "0.21", optional = true }
 
 # Markdown
 pulldown-cmark = "0.13"
 comrak = "0.29"
 
 # Audio/Video
-ffmpeg-next = { version = "7.2", optional = true }
+ffmpeg-next = { version = "8.0", optional = true }
 
 # Archives
-zip = { version = "2.2", optional = true }
+zip = { version = "6.0", optional = true }
 tar = { version = "0.4", optional = true }
 flate2 = { version = "1.0", optional = true }
-sevenz-rust = { version = "0.8", optional = true }
+sevenz-rust = { version = "0.6", optional = true }
 
 # Parallelism
 rayon = "1.10"
 num_cpus = "1.16"
 
 # Caching
-redis = { version = "0.27", features = ["tokio-comp", "connection-manager"], optional = true }
+redis = { version = "0.28", features = ["tokio-comp", "connection-manager"], optional = true }
 rusqlite = { version = "0.33", features = ["bundled"], optional = true }
 
 # HTTP client (for external services)
 reqwest = { version = "0.12", features = ["json", "stream"], optional = true }
 
 # CLI dependencies
-clap = { version = "4.5", features = ["derive", "cargo"], optional = true }
+clap = { version = "4.5", features = ["derive", "cargo", "env"], optional = true }
 indicatif = { version = "0.17", optional = true }
 console = { version = "0.15", optional = true }
 colored = { version = "2.2", optional = true }
@@ -126,20 +127,18 @@ mockall = "0.13"
 tokio-test = "0.4"
 
 [features]
-default = ["docling", "pdf", "office", "web", "image-ocr"]
+default = ["pdf", "office", "web", "image-ocr"]
 
-# Core engines
-docling = ["pyo3", "pyo3-asyncio"]
+# Core engines (pure Rust implementations)
 tesseract = ["dep:tesseract", "dep:leptess"]
-whisper = ["pyo3"]  # Whisper via Python
 ffmpeg = ["ffmpeg-next"]
 
-# Format support
+# Format support (pure Rust implementations)
 pdf = ["lopdf", "pdf-extract"]
-office = ["docx-rs", "calamine", "umya-spreadsheet"]
+office = ["docx-rs", "umya-spreadsheet"]  # calamine temporarily disabled
 web = ["scraper", "html5ever", "quick-xml", "roxmltree"]
 image-ocr = ["tesseract"]
-audio = ["whisper", "ffmpeg"]
+audio = ["ffmpeg"]  # Pure Rust audio transcription (no Python/Whisper dependency)
 video = ["ffmpeg"]
 archives = ["zip", "tar", "flate2", "sevenz-rust"]
 
@@ -157,9 +156,7 @@ cli = ["clap", "indicatif", "console", "colored"]
 
 # All features
 full = [
-    "docling",
     "tesseract",
-    "whisper",
     "ffmpeg",
     "pdf",
     "office",
@@ -187,14 +184,6 @@ strip = true
 [profile.bench]
 opt-level = 3
 lto = true
-
-[workspace]
-members = [
-    ".",
-    "cli",
-    "bindings/python",
-    "bindings/node",
-]
 
 [package.metadata.docs.rs]
 all-features = true

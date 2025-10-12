@@ -42,6 +42,10 @@ models/
 *.pt
 *.bin
 
+# External repositories (for reference only)
+docling/
+docling-project/
+
 # Environment files
 .env
 .env.local
@@ -50,4 +54,3 @@ models/
 tmp/
 temp/
 *.tmp
-

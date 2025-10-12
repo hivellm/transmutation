@@ -26,13 +26,14 @@ This roadmap outlines the development plan for Transmutation, a high-performance
 - [ ] Implement file type detection (using `file_format` crate)
 - [ ] Create metadata extraction utilities
 
-### Week 5-8: Docling Integration (PDF)
-- [ ] Set up PyO3 bridge to Python
-- [ ] Integrate `docling` package
+### Week 5-8: Pure Rust PDF Parser
+- [ ] Integrate `lopdf` crate for PDF parsing
+- [ ] Implement text extraction from PDF
 - [ ] Implement PDF → Markdown converter
-- [ ] Implement PDF → Image per page converter
+- [ ] Implement PDF → Image per page converter (using `image` crate)
 - [ ] Add page splitting functionality
 - [ ] Test with various PDF types (text, scanned, mixed)
+- [ ] Add table detection and extraction
 
 ### Week 9-10: Markdown Output Optimization
 - [ ] Implement Markdown generator
@@ -51,10 +52,11 @@ This roadmap outlines the development plan for Transmutation, a high-performance
 - [ ] Performance profiling
 
 **Deliverables**:
-- Working PDF → Markdown conversion
+- Working PDF → Markdown conversion (pure Rust)
 - Core converter architecture
 - Basic CLI tool
 - Comprehensive test suite
+- **Performance benchmark vs Docling**
 
 ---
 
