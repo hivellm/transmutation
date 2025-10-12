@@ -146,8 +146,8 @@ impl PdfConverter {
                                      trimmed.contains(' ') && trimmed.len() < 80);
             
             if is_main_title || is_section_heading {
-                // Add heading with proper spacing
-                if !result.is_empty() {
+                // Add heading with proper spacing (blank line before heading)
+                if !result.is_empty() && !result.ends_with("\n\n") {
                     result.push_str("\n\n");
                 }
                 // Add ## for all headings (title, Abstract, numbered sections)
@@ -197,7 +197,11 @@ impl PdfConverter {
         
         // Ensure proper spacing around headings
         cleaned = cleaned.replace("##  ", "## ");
-        cleaned = cleaned.replace("\n\n## ", "\n## ");
+        
+        // Ensure there's always a blank line before headings (except first line)
+        if !cleaned.starts_with("## ") {
+            cleaned = cleaned.replace("\n## ", "\n\n## ");
+        }
         
         cleaned.trim().to_string()
     }
