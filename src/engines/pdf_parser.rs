@@ -3,14 +3,15 @@
 //! This module provides text extraction from PDF files using the `lopdf` crate.
 //! It handles various PDF encodings, multi-column layouts, and positional information.
 
+use crate::engines::table_detector::{DetectedTable, TableDetector};
 use crate::{Result, TransmutationError};
 use lopdf::Document;
-use std::collections::BTreeMap;
 use std::path::Path;
 
 /// PDF parser for text extraction
 pub struct PdfParser {
     document: Document,
+    table_detector: TableDetector,
 }
 
 /// Extracted page information
@@ -50,7 +51,10 @@ impl PdfParser {
             TransmutationError::engine_error_with_source("PDF Parser", "Failed to load PDF", e)
         })?;
 
-        Ok(Self { document })
+        Ok(Self {
+            document,
+            table_detector: TableDetector::new(),
+        })
     }
 
     /// Load a PDF from bytes
@@ -63,7 +67,10 @@ impl PdfParser {
             )
         })?;
 
-        Ok(Self { document })
+        Ok(Self {
+            document,
+            table_detector: TableDetector::new(),
+        })
     }
 
     /// Get the number of pages in the PDF
@@ -71,9 +78,9 @@ impl PdfParser {
         self.document.get_pages().len()
     }
 
-    /// Get page IDs
-    fn get_page_ids(&self) -> Vec<(u32, u16)> {
-        self.document.get_pages().keys().copied().collect()
+    /// Get page IDs (returns page numbers as u32)
+    fn get_page_ids(&self) -> Vec<u32> {
+        self.document.get_pages().into_keys().collect()
     }
 
     /// Extract text from a specific page (0-indexed)
@@ -92,7 +99,7 @@ impl PdfParser {
         
         // Extract text from page
         let text = self.document
-            .extract_text(&[page_id.0])
+            .extract_text(&[page_id])
             .map_err(|e| {
                 TransmutationError::engine_error_with_source(
                     "PDF Parser",
@@ -106,7 +113,7 @@ impl PdfParser {
 
     /// Extract all text from the PDF
     pub fn extract_all_text(&self) -> Result<String> {
-        let page_ids: Vec<u32> = self.get_page_ids().iter().map(|(id, _)| *id).collect();
+        let page_ids = self.get_page_ids();
         
         let text = self.document
             .extract_text(&page_ids)
@@ -134,14 +141,14 @@ impl PdfParser {
         let page_id = page_ids[page_num];
         let pages = self.document.get_pages();
         
-        if let Some(&page_obj_id) = pages.get(&page_id) {
-            if let Ok(page_dict) = self.document.get_object(page_obj_id) {
+        if let Some(&(page_obj_num, page_obj_generation)) = pages.get(&page_id) {
+            if let Ok(page_dict) = self.document.get_object((page_obj_num, page_obj_generation)) {
                 if let Ok(page) = page_dict.as_dict() {
                     if let Ok(media_box) = page.get(b"MediaBox") {
                         if let Ok(media_box_array) = media_box.as_array() {
                             if media_box_array.len() >= 4 {
-                                let width = media_box_array[2].as_f64().unwrap_or(612.0) as f32;
-                                let height = media_box_array[3].as_f64().unwrap_or(792.0) as f32;
+                                let width = media_box_array[2].as_float().unwrap_or(612.0);
+                                let height = media_box_array[3].as_float().unwrap_or(792.0);
                                 return Ok((width, height));
                             }
                         }
@@ -188,50 +195,50 @@ impl PdfParser {
             if let Ok(info) = info_dict.as_dict() {
                 // Extract title
                 if let Ok(title) = info.get(b"Title") {
-                    if let Ok(title_str) = title.as_str() {
-                        metadata.title = Some(title_str.to_string());
+                    if let Ok(title_bytes) = title.as_str() {
+                        metadata.title = Some(String::from_utf8_lossy(title_bytes).to_string());
                     }
                 }
 
                 // Extract author
                 if let Ok(author) = info.get(b"Author") {
-                    if let Ok(author_str) = author.as_str() {
-                        metadata.author = Some(author_str.to_string());
+                    if let Ok(author_bytes) = author.as_str() {
+                        metadata.author = Some(String::from_utf8_lossy(author_bytes).to_string());
                     }
                 }
 
                 // Extract creation date
                 if let Ok(created) = info.get(b"CreationDate") {
-                    if let Ok(created_str) = created.as_str() {
-                        metadata.created = Some(created_str.to_string());
+                    if let Ok(created_bytes) = created.as_str() {
+                        metadata.created = Some(String::from_utf8_lossy(created_bytes).to_string());
                     }
                 }
 
                 // Extract modification date
                 if let Ok(modified) = info.get(b"ModDate") {
-                    if let Ok(modified_str) = modified.as_str() {
-                        metadata.modified = Some(modified_str.to_string());
+                    if let Ok(modified_bytes) = modified.as_str() {
+                        metadata.modified = Some(String::from_utf8_lossy(modified_bytes).to_string());
                     }
                 }
 
                 // Extract subject
                 if let Ok(subject) = info.get(b"Subject") {
-                    if let Ok(subject_str) = subject.as_str() {
-                        metadata.subject = Some(subject_str.to_string());
+                    if let Ok(subject_bytes) = subject.as_str() {
+                        metadata.subject = Some(String::from_utf8_lossy(subject_bytes).to_string());
                     }
                 }
 
                 // Extract keywords
                 if let Ok(keywords) = info.get(b"Keywords") {
-                    if let Ok(keywords_str) = keywords.as_str() {
-                        metadata.keywords = Some(keywords_str.to_string());
+                    if let Ok(keywords_bytes) = keywords.as_str() {
+                        metadata.keywords = Some(String::from_utf8_lossy(keywords_bytes).to_string());
                     }
                 }
 
                 // Extract producer
                 if let Ok(producer) = info.get(b"Producer") {
-                    if let Ok(producer_str) = producer.as_str() {
-                        metadata.producer = Some(producer_str.to_string());
+                    if let Ok(producer_bytes) = producer.as_str() {
+                        metadata.producer = Some(String::from_utf8_lossy(producer_bytes).to_string());
                     }
                 }
             }
@@ -248,7 +255,28 @@ impl PdfParser {
 
     /// Get PDF version
     pub fn version(&self) -> String {
-        format!("{}.{}", self.document.version.major, self.document.version.minor)
+        self.document.version.clone()
+    }
+
+    /// Extract tables from a specific page
+    pub fn extract_tables(&self, page_num: usize) -> Result<Vec<DetectedTable>> {
+        let text = self.extract_text(page_num)?;
+        Ok(self.table_detector.detect_tables(&text))
+    }
+
+    /// Extract tables from all pages
+    pub fn extract_all_tables(&self) -> Result<Vec<(usize, Vec<DetectedTable>)>> {
+        let page_count = self.page_count();
+        let mut all_tables = Vec::new();
+
+        for page_num in 0..page_count {
+            let tables = self.extract_tables(page_num)?;
+            if !tables.is_empty() {
+                all_tables.push((page_num, tables));
+            }
+        }
+
+        Ok(all_tables)
     }
 }
 

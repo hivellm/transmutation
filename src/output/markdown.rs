@@ -191,32 +191,32 @@ mod tests {
 
     #[test]
     fn test_heading_generation() {
-        let mut gen = MarkdownGenerator::default();
-        gen.add_heading(1, "Title");
-        assert_eq!(gen.buffer, "# Title\n\n");
+        let mut md = MarkdownGenerator::default();
+        md.add_heading(1, "Title");
+        assert_eq!(md.buffer, "# Title\n\n");
     }
 
     #[test]
     fn test_table_generation() {
-        let mut gen = MarkdownGenerator::default();
+        let mut md = MarkdownGenerator::default();
         let table = vec![
             vec!["Name".to_string(), "Age".to_string()],
             vec!["Alice".to_string(), "30".to_string()],
             vec!["Bob".to_string(), "25".to_string()],
         ];
-        gen.add_table(&table);
+        md.add_table(&table);
         
-        assert!(gen.buffer.contains("| Name |"));
-        assert!(gen.buffer.contains("| --- |"));
-        assert!(gen.buffer.contains("| Alice |"));
+        assert!(md.buffer.contains("| Name |"));
+        assert!(md.buffer.contains("| --- |"));
+        assert!(md.buffer.contains("| Alice |"));
     }
 
     #[test]
     fn test_code_block() {
-        let mut gen = MarkdownGenerator::default();
-        gen.add_code_block("fn main() {}", Some("rust"));
-        assert!(gen.buffer.contains("```rust"));
-        assert!(gen.buffer.contains("fn main() {}"));
+        let mut md = MarkdownGenerator::default();
+        md.add_code_block("fn main() {}", Some("rust"));
+        assert!(md.buffer.contains("```rust"));
+        assert!(md.buffer.contains("fn main() {}"));
     }
 
     #[test]

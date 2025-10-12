@@ -5,7 +5,7 @@
 use super::traits::{ConverterMetadata, DocumentConverter};
 use crate::engines::pdf_parser::{PdfParser, PdfPage};
 use crate::optimization::text::TextOptimizer;
-use crate::output::markdown::MarkdownGenerator;
+use crate::output::{Chunker, MarkdownGenerator};
 use crate::types::{
     ConversionOptions, ConversionOutput, ConversionResult, ConversionStatistics,
     DocumentMetadata, FileFormat, OutputFormat, OutputMetadata,
@@ -52,18 +52,39 @@ impl PdfConverter {
         // Generate Markdown
         let markdown_outputs = MarkdownGenerator::from_pages(&page_texts, options.clone());
 
-        // Convert to ConversionOutput
+        // Convert to ConversionOutput with optional chunking
         let outputs = markdown_outputs
             .into_iter()
             .enumerate()
-            .map(|(i, md)| ConversionOutput {
-                page_number: if options.split_pages { i } else { 0 },
-                data: md.as_bytes().to_vec(),
-                metadata: OutputMetadata {
-                    size_bytes: md.len() as u64,
-                    chunk_count: 1, // TODO: Implement actual chunking
-                    token_count: None, // TODO: Implement token counting
-                },
+            .map(|(i, md)| {
+                // Apply chunking if requested
+                let (final_content, chunk_count, token_count) = if options.max_chunk_size > 0 {
+                    let chunker = Chunker::from_options(&options);
+                    let chunks = chunker.chunk(&md);
+                    let total_tokens: usize = chunks.iter().map(|c| c.token_count).sum();
+                    let chunk_count = chunks.len();
+                    
+                    // Combine chunks with separators
+                    let combined = chunks
+                        .into_iter()
+                        .map(|c| c.content)
+                        .collect::<Vec<_>>()
+                        .join("\n\n---\n\n");
+                    
+                    (combined, chunk_count, Some(total_tokens))
+                } else {
+                    (md.clone(), 1, Some(md.len() / 4)) // Rough token estimate
+                };
+                
+                ConversionOutput {
+                    page_number: if options.split_pages { i } else { 0 },
+                    data: final_content.as_bytes().to_vec(),
+                    metadata: OutputMetadata {
+                        size_bytes: final_content.len() as u64,
+                        chunk_count,
+                        token_count,
+                    },
+                }
             })
             .collect();
 
@@ -196,6 +217,16 @@ impl DocumentConverter for PdfConverter {
         let metadata = self.build_metadata(&parser);
         let page_count = parser.page_count();
         
+        // Extract tables if enabled
+        let tables_extracted = if options.extract_tables {
+            parser
+                .extract_all_tables()
+                .map(|tables| tables.iter().map(|(_, t)| t.len()).sum())
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
         // Build statistics
         let duration = start_time.elapsed();
         let statistics = ConversionStatistics {
@@ -203,7 +234,7 @@ impl DocumentConverter for PdfConverter {
             output_size_bytes: output_size,
             duration,
             pages_processed: page_count,
-            tables_extracted: 0, // TODO: Implement table extraction
+            tables_extracted,
             images_extracted: 0, // TODO: Implement image extraction
             cache_hit: false,
         };

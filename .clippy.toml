@@ -1,0 +1,17 @@
+# Clippy configuration for Transmutation
+
+# Cognitive complexity threshold
+cognitive-complexity-threshold = 30
+
+# Type complexity threshold  
+type-complexity-threshold = 250
+
+# Too many arguments
+too-many-arguments-threshold = 8
+
+# Too many lines
+too-many-lines-threshold = 200
+
+# Single char binding length
+single-char-binding-names-threshold = 4
+

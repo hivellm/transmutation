@@ -3,6 +3,9 @@
 #[cfg(feature = "pdf")]
 pub mod pdf_parser;
 
+#[cfg(feature = "pdf")]
+pub mod table_detector;
+
 #[cfg(feature = "tesseract")]
 pub mod tesseract;
 

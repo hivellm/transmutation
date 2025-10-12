@@ -128,7 +128,7 @@ mockall = "0.13"
 tokio-test = "0.4"
 
 [features]
-default = ["pdf", "office", "web", "image-ocr"]
+default = ["pdf", "office", "web"]
 
 # Core engines (pure Rust implementations)
 tesseract = ["dep:tesseract", "dep:leptess"]
