@@ -270,13 +270,19 @@ impl TableDetector {
 
         for line in lines {
             let mut cells = Vec::new();
+            let line_chars: Vec<char> = line.chars().collect();
+            
             for i in 0..column_positions.len() {
-                let start = column_positions[i];
-                let end = column_positions.get(i + 1).copied().unwrap_or(line.len());
+                let start = column_positions[i].min(line_chars.len());
+                let end = column_positions
+                    .get(i + 1)
+                    .copied()
+                    .unwrap_or(line_chars.len())
+                    .min(line_chars.len());
 
-                if start < line.len() {
-                    let cell = line[start..end.min(line.len())].trim().to_string();
-                    cells.push(cell);
+                if start < line_chars.len() {
+                    let cell: String = line_chars[start..end].iter().collect();
+                    cells.push(cell.trim().to_string());
                 }
             }
 
@@ -357,10 +363,9 @@ impl TableDetector {
             .map(|line| {
                 line.split('\t')
                     .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty())
                     .collect()
             })
-            .filter(|row: &Vec<String>| !row.is_empty())
+            .filter(|row: &Vec<String>| !row.is_empty() && row.iter().any(|s| !s.is_empty()))
             .collect();
 
         if rows.len() < self.min_rows {

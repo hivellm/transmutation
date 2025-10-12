@@ -6,7 +6,8 @@
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::*;
 use std::path::PathBuf;
-use transmutation::{Converter, Result};
+use std::time::Instant;
+use transmutation::{ConversionOptions, Converter, ImageQuality, OutputFormat, Result};
 
 #[derive(Parser)]
 #[command(
@@ -151,8 +152,10 @@ async fn run_command(cli: Cli) -> Result<()> {
             quality,
             dpi,
         } => {
-            println!("{}", "Converting document...".cyan().bold());
-            println!("  Input:  {}", input.display());
+            if !cli.quiet {
+                println!("{}", "Converting document...".cyan().bold());
+                println!("  Input:  {}", input.display());
+            }
             
             let output_path = output.unwrap_or_else(|| {
                 let mut path = input.clone();
@@ -167,13 +170,92 @@ async fn run_command(cli: Cli) -> Result<()> {
                 path
             });
             
-            println!("  Output: {}", output_path.display());
-            println!("  Format: {:?}", format);
+            if !cli.quiet {
+                println!("  Output: {}", output_path.display());
+                println!("  Format: {:?}", format);
+            }
             
-            // TODO: Implement actual conversion
-            let _converter = Converter::new()?;
+            // Create converter
+            let converter = Converter::new()?;
             
-            println!("{}", "✓ Conversion completed successfully!".green().bold());
+            // Configure options
+            let options = ConversionOptions {
+                split_pages,
+                optimize_for_llm: optimize_llm,
+                extract_tables: true,
+                image_quality: ImageQuality::High,
+                dpi,
+                ..Default::default()
+            };
+            
+            // Determine output format
+            let output_format = match format {
+                OutputFormatArg::Markdown => OutputFormat::Markdown {
+                    split_pages,
+                    optimize_for_llm,
+                },
+                OutputFormatArg::Json => OutputFormat::Json {
+                    structured: true,
+                    include_metadata: true,
+                },
+                OutputFormatArg::Png => OutputFormat::Image {
+                    format: transmutation::ImageFormat::Png,
+                    quality,
+                    dpi,
+                },
+                OutputFormatArg::Jpeg => OutputFormat::Image {
+                    format: transmutation::ImageFormat::Jpeg,
+                    quality,
+                    dpi,
+                },
+                OutputFormatArg::Webp => OutputFormat::Image {
+                    format: transmutation::ImageFormat::Webp,
+                    quality,
+                    dpi,
+                },
+                OutputFormatArg::Csv => OutputFormat::Csv {
+                    delimiter: ',',
+                    include_headers: true,
+                },
+            };
+            
+            // Perform conversion
+            let start = Instant::now();
+            let result = converter
+                .convert(&input)
+                .to(output_format)
+                .with_options(options)
+                .execute()
+                .await?;
+            let duration = start.elapsed();
+            
+            // Save output
+            result.save(&output_path).await?;
+            
+            // Display results
+            if !cli.quiet {
+                println!();
+                println!("{}", "✓ Conversion completed successfully!".green().bold());
+                println!();
+                println!("{}", "Statistics:".yellow().bold());
+                println!("  Duration:     {:?}", duration);
+                println!("  Pages:        {}", result.statistics.pages_processed);
+                println!("  Tables:       {}", result.statistics.tables_extracted);
+                println!("  Input size:   {:.2} MB", result.statistics.input_size_bytes as f64 / 1_000_000.0);
+                println!("  Output size:  {:.2} MB", result.statistics.output_size_bytes as f64 / 1_000_000.0);
+                println!("  Speed:        {:.2} pages/sec", 
+                    result.statistics.pages_processed as f64 / duration.as_secs_f64());
+                
+                if let Some(title) = &result.metadata.title {
+                    println!();
+                    println!("{}", "Metadata:".yellow().bold());
+                    println!("  Title: {}", title);
+                    if let Some(author) = &result.metadata.author {
+                        println!("  Author: {}", author);
+                    }
+                }
+            }
+            
             Ok(())
         }
 
