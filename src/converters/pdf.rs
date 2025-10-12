@@ -29,6 +29,28 @@ impl PdfConverter {
         }
     }
 
+    /// Break long text into proper paragraphs (for lopdf output)
+    /// Lopdf returns text in long lines, we need to add breaks
+    /// This works generically for any PDF
+    fn break_long_text_into_paragraphs(text: &str) -> String {
+        let mut result = text.to_string();
+        
+        // Add line breaks after sentences (period/question/exclamation + space + capital letter)
+        result = regex::Regex::new(r"([.!?]) ([A-Z])").unwrap()
+            .replace_all(&result, "$1\n\n$2").to_string();
+        
+        // Add line breaks before markdown headings
+        result = result.replace(" ## ", "\n\n## ");
+        result = result.replace(" # ", "\n\n# ");
+        
+        // Clean up excessive newlines
+        while result.contains("\n\n\n") {
+            result = result.replace("\n\n\n", "\n\n");
+        }
+        
+        result.trim().to_string()
+    }
+    
     /// Join lines that belong to the same paragraph (Docling-style)
     /// This function mimics Docling's text joining behavior
     fn join_paragraph_lines(text: &str) -> String {
@@ -50,76 +72,58 @@ impl PdfConverter {
             let prev_empty = i == 0 || lines.get(i-1).map(|l| l.trim().is_empty()).unwrap_or(false);
             let next_empty = i == lines.len() - 1 || lines.get(i+1).map(|l| l.trim().is_empty()).unwrap_or(false);
             
-            // FIRST: Check if this looks like an author name (before heading detection)
-            let looks_like_name = (trimmed.len() > 5 && trimmed.len() < 80) && 
-                                (trimmed.chars().next().map(|c| c.is_uppercase() || c == ' ').unwrap_or(false)) &&
-                                !trimmed.contains('@') &&
-                                !trimmed.ends_with('.') &&
-                                !trimmed.starts_with("The ") &&
-                                !trimmed.starts_with("In ") &&
-                                !trimmed.starts_with("Most ") &&
-                                !trimmed.starts_with("Recurrent ") &&
-                                !trimmed.starts_with("Attention ") &&
-                                trimmed.split_whitespace().count() >= 2 &&
-                                trimmed.split_whitespace().count() <= 8;
+            // Check for email lines (generic author detection)
+            let has_email = trimmed.contains('@') && (trimmed.contains(".com") || trimmed.contains(".edu") || trimmed.contains(".org"));
             
-            // Check if next line is likely affiliation or symbol
-            let next_is_affiliation_or_symbol = if i + 1 < lines.len() {
+            // Check if this looks like a short metadata line (name, affiliation, etc)
+            let is_short_metadata = trimmed.len() < 100 && !prev_empty && 
+                                  (trimmed.split_whitespace().count() <= 6 || has_email);
+            
+            // If next line is also short metadata or empty, this might be a metadata block
+            let next_is_metadata = if i + 1 < lines.len() {
                 let next = lines[i+1].trim();
-                next.contains("Google") || next.contains("University") ||
-                next.contains("Research") || next.contains("Brain") ||
-                next.contains("Toronto") ||
-                next == "∗" || next == "†" || next == "‡" || next == "∗ †" || next == "∗ ‡"
+                next.len() < 100 || next.is_empty() || next.contains('@')
             } else {
                 false
             };
             
-            // If this is a potential author name, collect following lines (symbol, affiliation, email)
-            if looks_like_name && next_is_affiliation_or_symbol {
-                let mut author_parts = vec![trimmed];
+            // Detect metadata/author blocks (short lines, emails, affiliations)
+            if is_short_metadata && next_is_metadata && trimmed.split_whitespace().count() >= 2 {
+                // Collect related lines (author + affiliation + email pattern)
+                let mut meta_parts = vec![trimmed];
                 let mut j = i + 1;
                 
-                // Collect up to 4 following lines for symbol/affiliation/email
                 while j < lines.len() && j < i + 5 {
                     let next_line = lines[j].trim();
                     if next_line.is_empty() {
                         break;
                     }
                     
-                    let is_affiliation = next_line.contains("Google") || next_line.contains("University") ||
-                                       next_line.contains("Research") || next_line.contains("Brain") ||
-                                       next_line.contains("Toronto");
-                    let is_email = next_line.contains('@');
-                    let is_symbol = next_line == "∗" || next_line == "†" || next_line == "‡" || 
-                                  next_line == "∗ †" || next_line == "∗ ‡";
-                    
-                    if is_affiliation || is_email || is_symbol {
-                        author_parts.push(next_line);
+                    if next_line.len() < 100 {
+                        meta_parts.push(next_line);
                         j += 1;
-                        
-                        // Stop after email
-                        if is_email {
-                            break;
+                        if next_line.contains('@') {
+                            break; // Stop after email
                         }
                     } else {
                         break;
                     }
                 }
                 
-                // If we found author components with email, join them
-                if author_parts.len() >= 2 && author_parts.iter().any(|p| p.contains('@')) {
+                // If we found a metadata block with email, join it
+                if meta_parts.len() >= 2 && meta_parts.iter().any(|p| p.contains('@')) {
                     if !result.is_empty() && !result.ends_with("\n\n") {
                         result.push_str("\n\n");
                     }
-                    result.push_str(&author_parts.join(" "));
+                    result.push_str(&meta_parts.join(" "));
                     result.push_str("\n\n");
                     i = j;
                     continue;
                 }
             }
             
-            // Check if this is a footnote marker line
-            if trimmed.starts_with('∗') || trimmed.starts_with('†') || trimmed.starts_with('‡') {
+            // Check if this is a standalone symbol/footnote line
+            if trimmed.len() < 10 && (trimmed.starts_with('∗') || trimmed.starts_with('†') || trimmed.starts_with('‡')) {
                 if !result.is_empty() && !result.ends_with("\n\n") {
                     result.push_str("\n\n");
                 }
@@ -129,28 +133,26 @@ impl PdfConverter {
                 continue;
             }
             
-            // SECOND: Check if this is a heading (after author detection)
-            // Heading detection: specific patterns only
+            // GENERIC heading detection (works for any PDF)
             
-            // Main title: appears early, surrounded by empty lines, title case
-            let is_main_title = i < 10 && prev_empty && next_empty && 
-                              trimmed.len() > 10 && trimmed.len() < 100 &&
-                              trimmed.split_whitespace().count() >= 3 &&
-                              trimmed.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) &&
-                              !trimmed.contains('@') &&
-                              !trimmed.contains('∗');
+            // Numbered sections: "1 Introduction", "2.1 Background", etc.
+            let is_numbered_section = trimmed.len() > 2 && 
+                                     trimmed.chars().next().map(|c| c.is_numeric()).unwrap_or(false) &&
+                                     (trimmed.contains(' ') || trimmed.contains('.')) &&
+                                     trimmed.len() < 100;
             
-            // Section headings: Abstract or numbered sections
-            let is_section_heading = trimmed == "Abstract" ||
-                                    (prev_empty && next_empty && trimmed.starts_with(|c: char| c.is_numeric()) && 
-                                     trimmed.contains(' ') && trimmed.len() < 80);
+            // Short standalone lines that might be titles (early in document, surrounded by empty)
+            let is_potential_title = i < 15 && prev_empty && next_empty && 
+                                   trimmed.len() > 5 && trimmed.len() < 100 &&
+                                   trimmed.split_whitespace().count() >= 2 &&
+                                   !trimmed.contains('@');
             
-            if is_main_title || is_section_heading {
-                // Add heading with proper spacing (blank line before heading)
+            if is_numbered_section || (is_potential_title && trimmed.chars().filter(|c| c.is_uppercase()).count() > 2) {
+                // Add heading with proper spacing
                 if !result.is_empty() && !result.ends_with("\n\n") {
                     result.push_str("\n\n");
                 }
-                // Add ## for all headings (title, Abstract, numbered sections)
+                // Add ## for headings
                 result.push_str("## ");
                 result.push_str(trimmed);
                 result.push_str("\n\n");
@@ -221,13 +223,19 @@ impl PdfConverter {
             let parser = PdfParser::load(path)?;
             let pages = parser.extract_all_pages()?;
             
-            // Process each physical PDF page with intelligent text joining
+            // Process each physical PDF page
             let outputs: Vec<ConversionOutput> = pages
                 .iter()
                 .enumerate()
                 .map(|(i, page)| {
-                    // Apply intelligent paragraph joining to this page's text
-                    let page_markdown = Self::join_paragraph_lines(&page.text);
+                    // lopdf returns text with few line breaks, need to add them
+                    let page_markdown = if page.text.lines().count() > 20 {
+                        // If text has many lines, use join algorithm (like pdf-extract)
+                        Self::join_paragraph_lines(&page.text)
+                    } else {
+                        // If text is in few/long lines, break it up into paragraphs
+                        Self::break_long_text_into_paragraphs(&page.text)
+                    };
                     
                     let token_count = page_markdown.len() / 4;
                     let data = page_markdown.into_bytes();
