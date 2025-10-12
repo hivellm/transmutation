@@ -1,8 +1,13 @@
-//! Engine abstractions for external tools
+//! Engine abstractions for document processing
 
-// TODO: Implement engines
-// pub mod docling;
-// pub mod tesseract;
-// pub mod whisper;
-// pub mod ffmpeg;
+#[cfg(feature = "pdf")]
+pub mod pdf_parser;
 
+#[cfg(feature = "tesseract")]
+pub mod tesseract;
+
+#[cfg(feature = "ffmpeg")]
+pub mod ffmpeg;
+
+// Future engines
+// pub mod audio_asr;

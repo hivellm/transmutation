@@ -88,11 +88,95 @@ impl Converter {
     pub fn config(&self) -> &ConverterConfig {
         &self.config
     }
+
+    /// Start a conversion with builder pattern
+    pub fn convert<P: AsRef<std::path::Path>>(&self, input: P) -> ConversionBuilder {
+        ConversionBuilder::new(input.as_ref().to_path_buf())
+    }
 }
 
 impl Default for Converter {
     fn default() -> Self {
         Self::new().expect("Failed to create default converter")
+    }
+}
+
+/// Builder for conversions with fluent API
+pub struct ConversionBuilder {
+    input: std::path::PathBuf,
+    output_format: Option<OutputFormat>,
+    options: ConversionOptions,
+}
+
+impl ConversionBuilder {
+    /// Create a new conversion builder
+    pub fn new(input: std::path::PathBuf) -> Self {
+        Self {
+            input,
+            output_format: None,
+            options: ConversionOptions::default(),
+        }
+    }
+
+    /// Set the output format
+    pub fn to(mut self, format: OutputFormat) -> Self {
+        self.output_format = Some(format);
+        self
+    }
+
+    /// Set conversion options
+    pub fn with_options(mut self, options: ConversionOptions) -> Self {
+        self.options = options;
+        self
+    }
+
+    /// Execute the conversion
+    pub async fn execute(self) -> Result<ConversionResult> {
+        use crate::utils::detect_format;
+
+        // Detect input format
+        let input_format = detect_format(&self.input).await?;
+
+        // Get output format (default to Markdown)
+        let output_format = self.output_format.unwrap_or(OutputFormat::Markdown {
+            split_pages: false,
+            optimize_for_llm: true,
+        });
+
+        // Select appropriate converter
+        #[cfg(feature = "pdf")]
+        if input_format == FileFormat::Pdf {
+            use crate::converters::pdf::PdfConverter;
+            let converter = PdfConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        #[cfg(feature = "office")]
+        if input_format == FileFormat::Docx {
+            use crate::converters::docx::DocxConverter;
+            let converter = DocxConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        #[cfg(feature = "office")]
+        if input_format == FileFormat::Xlsx {
+            use crate::converters::xlsx::XlsxConverter;
+            let converter = XlsxConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        #[cfg(feature = "web")]
+        if input_format == FileFormat::Html {
+            use crate::converters::html::HtmlConverter;
+            let converter = HtmlConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        // Format not supported or feature not enabled
+        Err(TransmutationError::UnsupportedFormat(format!(
+            "Format {:?} is not supported or feature not enabled",
+            input_format
+        )))
     }
 }
 

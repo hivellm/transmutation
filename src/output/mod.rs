@@ -1,8 +1,10 @@
 //! Output format generators
 
-// TODO: Implement output formats
-// pub mod markdown;
+pub mod markdown;
+
+// TODO: Implement other output formats
 // pub mod image;
 // pub mod json;
 // pub mod csv;
 
+pub use markdown::MarkdownGenerator;
