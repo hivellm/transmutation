@@ -80,44 +80,68 @@ impl TableStructureModel {
     /// Run inference on table region
     #[cfg(feature = "docling-ffi")]
     fn run_inference(&mut self, input: &Array4<f32>) -> Result<TableStructure> {
-        // Convert ndarray to ONNX tensor (ort v2 requires owned data)
-        // Clone the array to get owned data
-        let input_owned = input.clone();
-        let input_tensor = Tensor::from_array(input_owned)?;
+        // Convert ndarray to ONNX tensor (ort v2 API)
+        // Extract shape and data as Vec for compatibility with OwnedTensorArrayData
+        let shape = input.shape().to_vec();
+        let data = input.iter().copied().collect::<Vec<f32>>();
+        let input_tensor = Tensor::from_array((shape, data))?;
         
         // Run inference (ort v2 requires mutable session)
-        // Pass as slice reference for SessionInputs compatibility
-        let outputs = self.session.run(&[input_tensor.into()])?;
+        // Extract outputs in a separate scope to end mutable borrow
+        let (row_data, row_shape, col_data, col_shape, cell_data, cell_shape) = {
+            let outputs = self.session.run(ort::inputs![input_tensor])?;
+            let (rs, rd) = outputs[0].try_extract_tensor::<f32>()?;
+            let (cs, cd) = outputs[1].try_extract_tensor::<f32>()?;
+            let (cells, celld) = outputs[2].try_extract_tensor::<f32>()?;
+            (rd.to_vec(), rs.to_vec(), cd.to_vec(), cs.to_vec(), celld.to_vec(), cells.to_vec())
+        };
         
-        // Post-process to extract table structure
-        let structure = self.post_process_output(&outputs)?;
-        
-        Ok(structure)
+        // Now process with immutable borrow
+        self.post_process_from_data(&row_shape, &row_data, &col_shape, &col_data, &cell_shape, &cell_data)
     }
     
     #[cfg(feature = "docling-ffi")]
-    fn post_process_output(&self, outputs: &ort::session::SessionOutputs) -> Result<TableStructure> {
-        // Extract row, column, and cell predictions from TableFormer
-        // Output format: [row_logits, col_logits, cell_logits]
-        if outputs.len() < 3 {
-            return Err(crate::TransmutationError::EngineError {
-                engine: "table-structure-model".to_string(),
-                message: format!("Expected 3 outputs (row, col, cell), got {}", outputs.len()),
-                source: None,
-            });
-        }
+    fn post_process_from_data(
+        &self, 
+        row_shape: &[i64], row_data: &[f32],
+        col_shape: &[i64], col_data: &[f32],
+        cell_shape: &[i64], cell_data: &[f32]
+    ) -> Result<TableStructure> {
+        // Reconstruct ndarrays from shape and data
+        use ndarray::{ArrayD, IxDyn};
+        let row_logits_array = ArrayD::from_shape_vec(
+            IxDyn(row_shape.iter().map(|&d| d as usize).collect::<Vec<_>>().as_slice()),
+            row_data.to_vec()
+        ).map_err(|e| crate::TransmutationError::EngineError {
+            engine: "table-structure-model".to_string(),
+            message: format!("Failed to reshape row tensor: {}", e),
+            source: None,
+        })?;
         
-        // Extract predictions
-        let row_logits = outputs[0].try_extract_tensor::<f32>()?;
-        let col_logits = outputs[1].try_extract_tensor::<f32>()?;
-        let cell_logits = outputs[2].try_extract_tensor::<f32>()?;
+        let col_logits_array = ArrayD::from_shape_vec(
+            IxDyn(col_shape.iter().map(|&d| d as usize).collect::<Vec<_>>().as_slice()),
+            col_data.to_vec()
+        ).map_err(|e| crate::TransmutationError::EngineError {
+            engine: "table-structure-model".to_string(),
+            message: format!("Failed to reshape col tensor: {}", e),
+            source: None,
+        })?;
+        
+        let cell_logits_array = ArrayD::from_shape_vec(
+            IxDyn(cell_shape.iter().map(|&d| d as usize).collect::<Vec<_>>().as_slice()),
+            cell_data.to_vec()
+        ).map_err(|e| crate::TransmutationError::EngineError {
+            engine: "table-structure-model".to_string(),
+            message: format!("Failed to reshape cell tensor: {}", e),
+            source: None,
+        })?;
         
         // Parse row and column structure
-        let rows = self.parse_structure_logits(&row_logits)?;
-        let cols = self.parse_structure_logits(&col_logits)?;
+        let rows = self.parse_structure_logits(&row_logits_array.view())?;
+        let cols = self.parse_structure_logits(&col_logits_array.view())?;
         
         // Build cell grid
-        let cells = self.build_cell_grid(&rows, &cols, &cell_logits)?;
+        let cells = self.build_cell_grid(&rows, &cols, &cell_logits_array.view())?;
         
         Ok(TableStructure {
             cells,

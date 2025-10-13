@@ -85,37 +85,29 @@ impl LayoutModel {
     /// Run inference on preprocessed image
     #[cfg(feature = "docling-ffi")]
     fn run_inference(&mut self, input: &Array4<f32>) -> Result<Vec<DetectedRegion>> {
-        // Convert ndarray to ONNX tensor (ort v2 requires owned data)
-        // Clone the array to get owned data
-        let input_owned = input.clone();
-        let input_tensor = Tensor::from_array(input_owned)?;
+        // Convert ndarray to ONNX tensor (ort v2 API)
+        // Extract shape and data as Vec for compatibility with OwnedTensorArrayData
+        let shape = input.shape().to_vec();
+        let data = input.iter().copied().collect::<Vec<f32>>();
+        let input_tensor = Tensor::from_array((shape, data))?;
         
         // Run inference (ort v2 requires mutable session)
-        // Pass as slice reference for SessionInputs compatibility
-        let outputs = self.session.run(&[input_tensor.into()])?;
+        // Extract outputs in a separate scope to end mutable borrow
+        let (output_data, output_shape) = {
+            let outputs = self.session.run(ort::inputs![input_tensor])?;
+            let output_value = &outputs[0];
+            let (shape, data) = output_value.try_extract_tensor::<f32>()?;
+            (data.to_vec(), shape.to_vec())
+        };
         
-        // Extract predictions
-        let regions = self.post_process_output(&outputs)?;
-        
-        Ok(regions)
+        // Now process with immutable borrow
+        self.post_process_output_from_data(&output_shape, &output_data)
     }
     
     #[cfg(feature = "docling-ffi")]
-    fn post_process_output(&self, outputs: &ort::session::SessionOutputs) -> Result<Vec<DetectedRegion>> {
+    fn post_process_output_from_data(&self, shape: &[i64], data: &[f32]) -> Result<Vec<DetectedRegion>> {
         // Extract segmentation masks from ONNX output
         // Output format: [batch, num_classes, height, width]
-        if outputs.len() == 0 {
-            return Ok(Vec::new());
-        }
-        
-        // Get the output tensor (ort v2 API)
-        let output_value = &outputs[0];
-        
-        // Extract tensor data as ndarray
-        // The output is a segmentation mask with shape [1, num_classes, H, W]
-        let masks = output_value.try_extract_tensor::<f32>()?;
-        let shape = masks.0;
-        
         if shape.len() != 4 {
             return Err(crate::TransmutationError::EngineError {
                 engine: "layout-model".to_string(),
@@ -124,16 +116,27 @@ impl LayoutModel {
             });
         }
         
-        let num_classes = shape[1];
-        let height = shape[2];
-        let width = shape[3];
+        let num_classes = shape[1] as usize;
+        let height = shape[2] as usize;
+        let width = shape[3] as usize;
+        
+        // Reconstruct ndarray from shape and data for easier manipulation
+        use ndarray::Array4;
+        let masks_array = Array4::from_shape_vec(
+            (1, num_classes, height, width),
+            data.to_vec()
+        ).map_err(|e| crate::TransmutationError::EngineError {
+            engine: "layout-model".to_string(),
+            message: format!("Failed to reshape tensor: {}", e),
+            source: None,
+        })?;
         
         // Process each class mask
         let mut all_regions = Vec::new();
         
         for class_id in 0..num_classes {
             // Extract mask for this class
-            let class_mask = masks.slice(ndarray::s![0, class_id, .., ..]);
+            let class_mask = masks_array.slice(ndarray::s![0, class_id, .., ..]);
             
             // Convert mask to regions using connected components
             let regions = self.mask_to_regions(&class_mask, class_id, width, height)?;

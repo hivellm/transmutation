@@ -285,7 +285,7 @@ mod tests {
     #[test]
     fn test_character_normalization() {
         let sanitizer = TextSanitizer::new();
-        let text = "Price: $100⁄month — "special" offer";
+        let text = "Price: $100⁄month — \u{201C}special\u{201D} offer";
         let result = sanitizer.sanitize(text);
         assert_eq!(result, "Price: $100/month - \"special\" offer");
     }
