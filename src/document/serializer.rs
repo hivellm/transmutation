@@ -1,7 +1,6 @@
 /// Markdown serializer for DoclingDocument
 /// Reimplementation of docling-core's markdown serializer in Rust
 use super::types::*;
-use super::types_extended::Formatting as ExtFormatting;
 use crate::error::Result;
 use regex::Regex;
 use once_cell::sync::Lazy;
@@ -225,40 +224,8 @@ impl MarkdownSerializer {
         result
     }
     
-    /// Apply advanced formatting with subscript, superscript, strikethrough
-    fn apply_extended_formatting(&self, text: &str, formatting: Option<&ExtFormatting>) -> String {
-        let mut result = self.escape_markdown_chars(text);
-
-        if let Some(fmt) = formatting {
-            // Apply in order to avoid conflicts
-            if fmt.strikethrough {
-                result = format!("~~{}~~", result);
-            }
-            
-            if fmt.subscript {
-                result = format!("<sub>{}</sub>", result);
-            }
-            
-            if fmt.superscript {
-                result = format!("<sup>{}</sup>", result);
-            }
-            
-            // Bold + Italic combined
-            if fmt.bold && fmt.italic {
-                result = format!("***{}***", result);
-            } else if fmt.bold {
-                result = format!("**{}**", result);
-            } else if fmt.italic {
-                result = format!("*{}*", result);
-            }
-            
-            if fmt.underline {
-                result = format!("<u>{}</u>", result);
-            }
-        }
-
-        result
-    }
+    // Note: Extended formatting (strikethrough, subscript, superscript) will be added later
+    // when the Formatting struct is expanded to include these fields
     
     /// Escape markdown special characters
     fn escape_markdown_chars(&self, text: &str) -> String {

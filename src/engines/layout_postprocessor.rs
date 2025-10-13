@@ -1,7 +1,8 @@
 /// Layout postprocessing - merge, deduplicate, and order detected regions
 /// 
 /// Based on docling/utils/layout_postprocessor.py
-use crate::document::types_extended::{BoundingBox, Cluster, DocItemLabel};
+use crate::document::types::DocItemLabel;
+use crate::document::types_extended::{BoundingBox, Cluster};
 use crate::error::{Result, TransmutationError};
 use std::collections::{HashMap, HashSet};
 use rstar::{RTree, AABB};
@@ -215,10 +216,11 @@ impl LayoutPostprocessor {
     /// Merge a group of clusters into one
     fn merge_cluster_group(&self, group: &[&Cluster]) -> Result<Cluster> {
         if group.is_empty() {
-            return Err(TransmutationError::EngineError(
-                "layout-postprocessor".to_string(),
-                "Cannot merge empty group".to_string(),
-            ));
+            return Err(TransmutationError::EngineError {
+                engine: "layout-postprocessor".to_string(),
+                message: "Cannot merge empty group".to_string(),
+                source: None,
+            });
         }
         
         if group.len() == 1 {

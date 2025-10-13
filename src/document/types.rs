@@ -122,6 +122,7 @@ pub enum DocItemLabel {
     Formula,
     Table,
     Picture,
+    Figure,  // Alias for Picture (docling compatibility)
     CheckboxSelected,
     CheckboxUnselected,
 }

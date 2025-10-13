@@ -161,7 +161,7 @@ video = ["ffmpeg"]
 archives = ["zip", "tar", "flate2", "sevenz-rust"]
 
 # Advanced layout analysis (C++ FFI to docling-parse + ML models)
-docling-ffi = ["ort", "ndarray", "rstar", "pdfium-render"]  # Enable C++ docling-parse + ONNX ML models
+docling-ffi = ["dep:ort", "dep:ndarray", "dep:rstar", "dep:pdfium-render"]  # Enable C++ docling-parse + ONNX ML models
 
 # Caching backends
 cache-redis = ["redis"]

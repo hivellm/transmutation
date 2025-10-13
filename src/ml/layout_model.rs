@@ -61,10 +61,11 @@ impl LayoutModel {
             let session = SessionBuilder::new()?
                 .with_intra_threads(4)?
                 .commit_from_file(&model_path)
-                .map_err(|e| TransmutationError::EngineError(
-                    "layout-model".to_string(),
-                    format!("Failed to load ONNX model: {}", e)
-                ))?;
+                .map_err(|e| TransmutationError::EngineError {
+                    engine: "layout-model".to_string(),
+                    message: format!("Failed to load ONNX model: {}", e),
+                    source: None,
+                })?;
             
             Ok(Self { session, model_path })
         }
@@ -111,10 +112,11 @@ impl LayoutModel {
         let shape = masks.shape();
         
         if shape.len() != 4 {
-            return Err(crate::TransmutationError::EngineError(
-                "layout-model".to_string(),
-                format!("Expected 4D output tensor, got {}D", shape.len())
-            ));
+            return Err(crate::TransmutationError::EngineError {
+                engine: "layout-model".to_string(),
+                message: format!("Expected 4D output tensor, got {}D", shape.len()),
+                source: None,
+            });
         }
         
         let num_classes = shape[1];

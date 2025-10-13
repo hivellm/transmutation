@@ -2,7 +2,7 @@
 /// 
 /// Based on docling's layout_model.py preprocessing
 use crate::error::{Result, TransmutationError};
-use image::{DynamicImage, ImageBuffer, Rgb};
+use image::{DynamicImage, ImageBuffer, Rgb, GenericImageView};
 use ndarray::{Array4, s};
 
 /// ImageNet normalization parameters (used by most vision models)
