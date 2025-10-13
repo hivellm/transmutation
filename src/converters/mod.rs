@@ -24,6 +24,8 @@ pub mod xml;
 // Text formats
 pub mod txt;
 pub mod csv;
+pub mod rtf;
+pub mod odt;
 
 #[cfg(feature = "image-ocr")]
 pub mod image;

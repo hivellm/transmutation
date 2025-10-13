@@ -210,6 +210,18 @@ impl ConversionBuilder {
             return converter.convert(&self.input, output_format, self.options).await;
         }
 
+        if input_format == FileFormat::Rtf {
+            use crate::converters::rtf::RtfConverter;
+            let converter = RtfConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        if input_format == FileFormat::Odt {
+            use crate::converters::odt::OdtConverter;
+            let converter = OdtConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
         // Format not supported or feature not enabled
         Err(TransmutationError::UnsupportedFormat(format!(
             "Format {:?} is not supported or feature not enabled",

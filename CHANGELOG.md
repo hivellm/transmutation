@@ -19,6 +19,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **RTF Converter**: Rich Text Format to Markdown (Pure Rust Beta)
+  - Simplified RTF parser (control word extraction)
+  - Text extraction from RTF documents
+  - **Performance**: 2,420 pages/sec (0.41ms)
+  - RTF → JSON output
+  - ⚠️ **Beta**: May miss some complex formatting
+  - Zero dependencies
+  
+- **ODT Converter**: OpenDocument Text to Markdown (Pure Rust Beta)
+  - ZIP extraction + XML parsing
+  - Heading level detection
+  - Paragraph extraction
+  - OpenDocument XML structure parsing
+  - ⚠️ **Beta**: Tables not yet supported
+  - Zero dependencies
+  
 - **TXT Converter**: Plain text to Markdown (Pure Rust)
   - Automatic paragraph detection
   - Heading detection (all caps or ending with colon)

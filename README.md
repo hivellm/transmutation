@@ -46,9 +46,9 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 | **XML** | Markdown, JSON | ✅ **Production** | Pure Rust (2353 pg/s) |
 | **TXT** | Markdown, JSON | ✅ **Production** | Pure Rust (2805 pg/s) |
 | **CSV/TSV** | Markdown tables, JSON | ✅ **Production** | Pure Rust (2647 pg/s) |
+| **RTF** | Markdown, JSON | ⚠️ **Beta** | Pure Rust (simplified parser) |
+| **ODT** | Markdown, JSON | ⚠️ **Beta** | Pure Rust (ZIP + XML) |
 | **MD** | Markdown (normalized), JSON | 🔄 Planned | - |
-| **RTF** | Markdown, JSON | 🔄 Planned | - |
-| **ODT** | Markdown, Image per page, JSON | 🔄 Planned | - |
 
 ### Image Formats (OCR/ASR)
 
