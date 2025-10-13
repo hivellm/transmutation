@@ -27,12 +27,12 @@ const CHAR_NORMALIZATION_MAP: &[(&str, &str)] = &[
     ("∕", "/"),
     
     // Quotes
-    ("'", "'"),
-    ("'", "'"),
-    (""", "\""),
-    (""", "\""),
-    ("„", "\""),
-    ("‟", "\""),
+    ("'", "'"),  // U+2018 Left single quotation mark
+    ("'", "'"),  // U+2019 Right single quotation mark
+    ("\u{201C}", "\""),  // U+201C Left double quotation mark
+    ("\u{201D}", "\""),  // U+201D Right double quotation mark
+    ("\u{201E}", "\""),  // U+201E Double low-9 quotation mark
+    ("\u{201F}", "\""),  // U+201F Double high-reversed-9 quotation mark
     
     // Dashes and hyphens
     ("–", "-"),  // en dash

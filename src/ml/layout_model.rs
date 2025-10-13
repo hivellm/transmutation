@@ -9,7 +9,10 @@ use std::path::Path;
 use image::GenericImageView;
 
 #[cfg(feature = "docling-ffi")]
-use ort::{Session, SessionBuilder, Value};
+use ort::{
+    session::{Session, builder::SessionBuilder},
+    value::Value,
+};
 
 /// Document layout regions detected by the model
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

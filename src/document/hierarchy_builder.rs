@@ -156,16 +156,24 @@ impl HierarchyBuilder {
                     
                     // Check if previous item was caption (caption before table)
                     if !result.is_empty() {
-                        if let DocItem::Paragraph(ref text_item) = result[result.len() - 1] {
+                        // Clone text before mutating result
+                        let caption_text = if let Some(DocItem::Paragraph(text_item)) = result.last() {
                             if Self::is_likely_caption(&text_item.text) {
-                                // Remove caption from result and merge into table
-                                result.pop();
-                                let mut new_table = table.clone();
-                                new_table.caption = Some(text_item.text.clone());
-                                result.push(DocItem::Table(new_table));
-                                i += 1;
-                                continue;
+                                Some(text_item.text.clone())
+                            } else {
+                                None
                             }
+                        } else {
+                            None
+                        };
+                        
+                        if let Some(caption) = caption_text {
+                            result.pop();
+                            let mut new_table = table.clone();
+                            new_table.caption = Some(caption);
+                            result.push(DocItem::Table(new_table));
+                            i += 1;
+                            continue;
                         }
                     }
                     
@@ -187,15 +195,24 @@ impl HierarchyBuilder {
                     }
                     
                     if !result.is_empty() {
-                        if let DocItem::Paragraph(ref text_item) = result[result.len() - 1] {
+                        // Clone text before mutating result
+                        let caption_text = if let Some(DocItem::Paragraph(text_item)) = result.last() {
                             if Self::is_likely_caption(&text_item.text) {
-                                result.pop();
-                                let mut new_picture = picture.clone();
-                                new_picture.caption = Some(text_item.text.clone());
-                                result.push(DocItem::Picture(new_picture));
-                                i += 1;
-                                continue;
+                                Some(text_item.text.clone())
+                            } else {
+                                None
                             }
+                        } else {
+                            None
+                        };
+                        
+                        if let Some(caption) = caption_text {
+                            result.pop();
+                            let mut new_picture = picture.clone();
+                            new_picture.caption = Some(caption);
+                            result.push(DocItem::Picture(new_picture));
+                            i += 1;
+                            continue;
                         }
                     }
                     

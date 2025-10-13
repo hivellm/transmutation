@@ -8,7 +8,10 @@ use ndarray::Array4;
 use std::path::Path;
 
 #[cfg(feature = "docling-ffi")]
-use ort::{Session, SessionBuilder, Value};
+use ort::{
+    session::{Session, builder::SessionBuilder},
+    value::Value,
+};
 
 /// Table cell in predicted structure
 #[derive(Debug, Clone)]
