@@ -43,8 +43,8 @@ pub trait DocumentModel {
     /// Model output type
     type Output;
     
-    /// Run inference on input
-    fn predict(&self, input: &Self::Input) -> Result<Self::Output>;
+    /// Run inference on input (ort v2 requires mutable session)
+    fn predict(&mut self, input: &Self::Input) -> Result<Self::Output>;
     
     /// Get model name for logging
     fn name(&self) -> &str;

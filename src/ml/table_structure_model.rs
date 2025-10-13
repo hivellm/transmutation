@@ -10,7 +10,7 @@ use std::path::Path;
 #[cfg(feature = "docling-ffi")]
 use ort::{
     session::{Session, builder::SessionBuilder},
-    value::Value,
+    value::{Value, Tensor},
 };
 
 /// Table cell in predicted structure
@@ -79,12 +79,12 @@ impl TableStructureModel {
     
     /// Run inference on table region
     #[cfg(feature = "docling-ffi")]
-    fn run_inference(&self, input: &Array4<f32>) -> Result<TableStructure> {
-        // Convert ndarray to ONNX tensor
-        let input_tensor = Value::from_array(input.clone())?;
+    fn run_inference(&mut self, input: &Array4<f32>) -> Result<TableStructure> {
+        // Convert ndarray to ONNX tensor (ort v2 API)
+        let input_tensor = Tensor::from_array(input.view())?;
         
-        // Run inference
-        let outputs = self.session.run(vec![input_tensor])?;
+        // Run inference (ort v2 requires mutable session)
+        let outputs = self.session.run([input_tensor])?;
         
         // Post-process to extract table structure
         let structure = self.post_process_output(&outputs)?;
@@ -93,7 +93,7 @@ impl TableStructureModel {
     }
     
     #[cfg(feature = "docling-ffi")]
-    fn post_process_output(&self, outputs: &[Value]) -> Result<TableStructure> {
+    fn post_process_output(&self, outputs: &ort::session::SessionOutputs) -> Result<TableStructure> {
         // Extract row, column, and cell predictions from TableFormer
         // Output format: [row_logits, col_logits, cell_logits]
         if outputs.len() < 3 {
@@ -230,7 +230,7 @@ impl DocumentModel for TableStructureModel {
     type Input = TableInput;
     type Output = TableStructure;
     
-    fn predict(&self, input: &Self::Input) -> Result<Self::Output> {
+    fn predict(&mut self, input: &Self::Input) -> Result<Self::Output> {
         // Extract table region from image
         let (x0, y0, x1, y1) = input.table_bbox;
         let table_img = input.image.crop_imm(

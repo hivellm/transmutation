@@ -11,7 +11,7 @@ use image::GenericImageView;
 #[cfg(feature = "docling-ffi")]
 use ort::{
     session::{Session, builder::SessionBuilder},
-    value::Value,
+    value::{Value, Tensor},
 };
 
 /// Document layout regions detected by the model
@@ -84,35 +84,34 @@ impl LayoutModel {
     
     /// Run inference on preprocessed image
     #[cfg(feature = "docling-ffi")]
-    fn run_inference(&self, input: &Array4<f32>) -> Result<Vec<DetectedRegion>> {
-        // Convert ndarray to ONNX tensor
-        let input_tensor = Value::from_array(input.clone())?;
+    fn run_inference(&mut self, input: &Array4<f32>) -> Result<Vec<DetectedRegion>> {
+        // Convert ndarray to ONNX tensor (ort v2 API)
+        let input_tensor = Tensor::from_array(input.view())?;
         
-        // Run inference
-        let outputs = self.session.run(vec![input_tensor])?;
+        // Run inference (ort v2 requires mutable session)
+        let outputs = self.session.run([input_tensor])?;
         
-        // Extract predictions (placeholder - actual post-processing needed)
-        // TODO: Implement mask-to-bbox conversion
+        // Extract predictions
         let regions = self.post_process_output(&outputs)?;
         
         Ok(regions)
     }
     
     #[cfg(feature = "docling-ffi")]
-    fn post_process_output(&self, outputs: &[Value]) -> Result<Vec<DetectedRegion>> {
+    fn post_process_output(&self, outputs: &ort::session::SessionOutputs) -> Result<Vec<DetectedRegion>> {
         // Extract segmentation masks from ONNX output
         // Output format: [batch, num_classes, height, width]
-        if outputs.is_empty() {
+        if outputs.len() == 0 {
             return Ok(Vec::new());
         }
         
-        // Get the output tensor
-        let output_tensor = &outputs[0];
+        // Get the output tensor (ort v2 API)
+        let output_value = &outputs[0];
         
         // Extract tensor data as ndarray
         // The output is a segmentation mask with shape [1, num_classes, H, W]
-        let masks = output_tensor.try_extract_tensor::<f32>()?;
-        let shape = masks.shape();
+        let masks = output_value.try_extract_tensor::<f32>()?;
+        let shape = masks.0;
         
         if shape.len() != 4 {
             return Err(crate::TransmutationError::EngineError {
@@ -350,7 +349,7 @@ impl DocumentModel for LayoutModel {
     type Input = image::DynamicImage;
     type Output = LayoutPrediction;
     
-    fn predict(&self, input: &Self::Input) -> Result<Self::Output> {
+    fn predict(&mut self, input: &Self::Input) -> Result<Self::Output> {
         // Preprocess image
         let tensor = preprocessing::preprocess_for_layout(input)?;
         
