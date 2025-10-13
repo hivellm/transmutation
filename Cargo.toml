@@ -192,13 +192,15 @@ full = [
     "cli",
 ]
 
-[[bench]]
-name = "conversion_benchmarks"
-harness = false
-
-[[bench]]
-name = "pipeline_benchmark"
-harness = false
+# Benchmarks removed - files don't exist yet
+# TODO: Re-add when benchmark files are created
+# [[bench]]
+# name = "conversion_benchmarks"
+# harness = false
+#
+# [[bench]]
+# name = "pipeline_benchmark"
+# harness = false
 
 [profile.release]
 opt-level = 3

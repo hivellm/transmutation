@@ -8,8 +8,49 @@ use crate::document::types_extended::{Cluster, BoundingBox, CoordOrigin, TextCel
 use crate::document::types::DocItemLabel;
 use serde_json::Value;
 
-/// Detect layout regions from PDF cells using geometric rules
+#[cfg(feature = "docling-ffi")]
+use crate::ml::layout_model::LayoutModel;
+
+/// Detect layout regions from PDF cells using ML model or geometric rules
+/// 
+/// Tries ML model first (if available), falls back to rule-based
 pub fn detect_layout_from_cells(json_str: &str) -> Result<Vec<Cluster>> {
+    // Try ML model first (100% Rust ONNX inference)
+    #[cfg(feature = "docling-ffi")]
+    {
+        if let Ok(clusters) = detect_layout_with_ml(json_str) {
+            if !clusters.is_empty() {
+                eprintln!("      ✅ Using ML model (LayoutLMv3 ONNX)");
+                return Ok(clusters);
+            }
+        }
+        eprintln!("      ℹ️  ML model not available, using rule-based");
+    }
+    
+    // Fallback to rule-based
+    detect_layout_with_rules(json_str)
+}
+
+/// Try to detect layout using ML model (ONNX)
+#[cfg(feature = "docling-ffi")]
+fn detect_layout_with_ml(json_str: &str) -> Result<Vec<Cluster>> {
+    use std::path::Path;
+    
+    let model_path = Path::new("models/layout_model.onnx");
+    
+    if !model_path.exists() {
+        return Ok(Vec::new());
+    }
+    
+    let model = LayoutModel::new(model_path)?;
+    
+    // TODO: Extract page image from JSON and run inference
+    // For now, return empty to use rule-based fallback
+    Ok(Vec::new())
+}
+
+/// Detect layout using geometric rules (fallback)
+fn detect_layout_with_rules(json_str: &str) -> Result<Vec<Cluster>> {
     let json: Value = serde_json::from_str(json_str)?;
     
     let mut clusters = Vec::new();
