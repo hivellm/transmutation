@@ -4,9 +4,13 @@ pub mod types;
 pub mod types_extended;
 pub mod parser;
 pub mod serializer;
+pub mod text_utils;
+pub mod page_assembler;
 
 pub use types::*;
 pub use types_extended::*;
 pub use parser::DoclingJsonParser;
 pub use serializer::MarkdownSerializer;
+pub use text_utils::{TextSanitizer, sanitize_text};
+pub use page_assembler::{PageAssembler, PageAssemblerOptions};
 

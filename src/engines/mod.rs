@@ -15,6 +15,12 @@ pub mod docling_parse_ffi;
 #[cfg(all(feature = "pdf", feature = "docling-ffi"))]
 pub mod docling_json_parser;
 
+#[cfg(feature = "docling-ffi")]
+pub mod layout_postprocessor;
+
+#[cfg(feature = "docling-ffi")]
+pub use layout_postprocessor::LayoutPostprocessor;
+
 #[cfg(feature = "tesseract")]
 pub mod tesseract;
 
