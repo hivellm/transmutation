@@ -418,14 +418,21 @@ async fn run_command(cli: Cli) -> Result<()> {
 fn get_enabled_features() -> String {
     let mut features = Vec::new();
     
-    if cfg!(feature = "pdf") { features.push("pdf"); }
+    // Core features (always enabled, no flags)
+    features.push("pdf");
+    features.push("html");
+    features.push("xml");
+    features.push("zip");
+    features.push("text");
+    
+    // Optional features
     if cfg!(feature = "office") { features.push("office"); }
-    if cfg!(feature = "web") { features.push("web"); }
+    if cfg!(feature = "pdf-to-image") { features.push("pdf-to-image"); }
     if cfg!(feature = "image-ocr") { features.push("image-ocr"); }
     if cfg!(feature = "tesseract") { features.push("tesseract"); }
     if cfg!(feature = "ffmpeg") { features.push("ffmpeg"); }
-    if cfg!(feature = "archives") { features.push("archives"); }
-    if cfg!(feature = "cache") { features.push("cache"); }
+    if cfg!(feature = "archives-extended") { features.push("archives-extended"); }
+    if cfg!(feature = "docling-ffi") { features.push("docling-ffi"); }
     
     if features.is_empty() {
         "none".to_string()

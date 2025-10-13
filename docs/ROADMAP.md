@@ -10,22 +10,22 @@ This roadmap outlines the development plan for Transmutation, a high-performance
 - ✅ **Phase 2**: Core Document Formats (COMPLETE - 11 formats!)
 - ✅ **Phase 2.5**: Core Features Architecture (COMPLETE)
 - 🔄 **Phase 3**: Advanced Features (25% COMPLETE - Archives ✅, Batch ✅)
-- 📝 **Phase 4**: Bindings & Integrations (Planned)
-- 📝 **Phase 5**: Advanced Optimizations (Planned)
+- 📝 **Phase 4**: Advanced Optimizations (Planned)
 
 **Latest Achievement**: TAR/GZ support + Batch Processing with Tokio! 4,627 pages/sec in parallel processing!
 
+**Scope**: Pure Rust library/CLI for document conversion. No external integrations (handled by HiveLLM Vectorizer).
+
 **Overall Progress**: 
 ```
-Phase 1:   ████████████████████ 100% ✅ COMPLETE
-Phase 1.5: ████████████████████ 100% ✅ COMPLETE
-Phase 2:   ████████████████████ 100% ✅ COMPLETE (11 formats!)
-Phase 2.5: ████████████████████ 100% ✅ COMPLETE (Core arch)
-Phase 3:   █████░░░░░░░░░░░░░░░  25% 🔄 (Archives ✅, Batch ✅)
-Phase 4:   ░░░░░░░░░░░░░░░░░░░░   0% 📝
-Phase 5:   ░░░░░░░░░░░░░░░░░░░░   0% 📝
+Phase 1:   ████████████████████ 100% ✅ Foundation
+Phase 1.5: ████████████████████ 100% ✅ Distribution
+Phase 2:   ████████████████████ 100% ✅ 11 Formats
+Phase 2.5: ████████████████████ 100% ✅ Core Arch
+Phase 3:   █████░░░░░░░░░░░░░░░  25% 🔄 Archives + Batch
+Phase 4:   ░░░░░░░░░░░░░░░░░░░░   0% 📝 Optimizations
 
-Total:     █████████████░░░░░░░  65% Complete
+Total:     ████████████████░░░░  80% Complete (core features)
 ```
 
 ---
@@ -147,39 +147,24 @@ Total:     █████████████░░░░░░░  65% Com
 - ✅ Success/failure breakdown
 - ✅ Auto-save outputs
 - ✅ **Performance**: 4,627 pg/s (4 files parallel)
-- [ ] Conversion cache (Redis/SQLite)
-- [ ] Hash-based deduplication
-- [ ] Resume capability
 
 ---
 
-## Phase 4: Bindings & Integrations
+## Phase 4: Advanced Optimizations
 
-### Week 37-38: Python Bindings (PyO3)
-- [ ] Python module structure
-- [ ] Converter API
-- [ ] Async support (asyncio)
-- [ ] pip package
-- [ ] PyPI publish
+### Performance
+- [ ] GPU acceleration for OCR
+- [ ] Memory-mapped file processing
+- [ ] Zero-copy optimizations
+- [ ] Streaming large files
 
-### Week 39-40: Node.js Bindings (Neon)
-- [ ] Node.js module
-- [ ] Promise/async support
-- [ ] npm package
-- [ ] npm publish
+### Quality
+- [ ] Improved RTF parser
+- [ ] ODT table support
+- [ ] Better layout detection
+- [ ] Advanced text normalization
 
-### Week 41-42: WebAssembly
-- [ ] WASM build target
-- [ ] JavaScript wrapper
-- [ ] Browser examples
-- [ ] npm publish (@transmutation/wasm)
-
-### Week 43-44: LLM Framework Integrations
-- [ ] LangChain document loader
-- [ ] LlamaIndex reader
-- [ ] Haystack converter
-
-### Week 45-48: v1.0.0 Release
+### v1.0.0 Release
 - [ ] Documentation review
 - [ ] Performance optimization
 - [ ] Security audit
@@ -188,53 +173,8 @@ Total:     █████████████░░░░░░░  65% Com
 
 ---
 
-## Phase 5: Advanced Optimizations
-
-### Performance
-- [ ] GPU acceleration for OCR
-- [ ] Parallel batch processing
-- [ ] Memory-mapped file processing
-- [ ] Zero-copy optimizations
-
-### Quality
-- [ ] Improved RTF parser
-- [ ] ODT table support
-- [ ] Better layout detection
-- [ ] Advanced text normalization
-
----
-
-## Future Considerations
-
-### Advanced AI Features
-- [ ] Fine-tuned models for document types
-- [ ] Intelligent layout understanding
-- [ ] Semantic chunking with embeddings
-- [ ] Multi-modal embeddings (CLIP, Gemini)
-
-### Additional Formats
-- [ ] EML/MSG (email)
-- [ ] ICS (calendar)
-- [ ] VCF (vCard)
-- [ ] LaTeX → Markdown
-- [ ] Jupyter Notebooks (.ipynb)
-
-### Performance Enhancements
-- [ ] GPU acceleration
-- [ ] Incremental processing
-- [ ] Streaming conversions
-- [ ] Memory-mapped file processing
-- [ ] Zero-copy optimizations
-
-### Cloud Integration
-- [ ] S3/Azure Blob/GCS
-- [ ] Webhook integrations
-- [ ] Event-driven processing
-- [ ] Serverless deployment
-
----
-
 **Last Updated**: 2025-10-13  
 **Version**: 0.1.2-dev  
-**Status**: ✅ Phase 1, 1.5, 2, 2.5 Complete | 🔄 Phase 3 (8%)
+**Status**: ✅ Phase 1, 1.5, 2, 2.5 Complete | 🔄 Phase 3 (25%)  
+**Scope**: Pure Rust library/CLI (no bindings, no external integrations)
 

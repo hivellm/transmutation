@@ -119,24 +119,14 @@ num_cpus = "1.16"
 # System directories
 dirs = "5.0"
 
-# Caching
-redis = { version = "0.28", features = ["tokio-comp", "connection-manager"], optional = true }
-rusqlite = { version = "0.33", features = ["bundled"], optional = true }
-
-# HTTP client (for external services)
-reqwest = { version = "0.12", features = ["json", "stream"], optional = true }
-
 # CLI dependencies
 clap = { version = "4.5", features = ["derive", "cargo", "env"], optional = true }
 indicatif = { version = "0.17", optional = true }
 console = { version = "0.15", optional = true }
 colored = { version = "2.2", optional = true }
 
-# C++ FFI for docling-parse (optional)
-# libloading = { version = "0.8", optional = true }  # For dynamic loading of .so/.dll
-
-# Metrics
-prometheus = { version = "0.14", optional = true }
+# Note: External integrations removed (cache, HTTP, metrics)
+# Transmutation is a library/CLI - external features are handled by HiveLLM Vectorizer
 
 [dev-dependencies]
 criterion = { version = "0.6", features = ["async_tokio", "html_reports"] }
@@ -169,19 +159,10 @@ archives-extended = ["tar", "flate2", "sevenz-rust"]  # Extended archive support
 # Advanced layout analysis (C++ FFI to docling-parse + ML models)
 docling-ffi = ["dep:ort", "dep:ndarray", "dep:rstar", "dep:pdfium-render"]  # Enable C++ docling-parse + ONNX ML models
 
-# Caching backends
-cache-redis = ["redis"]
-cache-sqlite = ["rusqlite"]
-cache = ["cache-redis", "cache-sqlite"]
-
-# Integrations
-vectorizer = ["reqwest"]
-observability = ["tracing-opentelemetry", "prometheus"]
-
 # CLI
 cli = ["clap", "indicatif", "console", "colored"]
 
-# All features
+# All features (no external integrations - Transmutation is a library/CLI)
 full = [
     "tesseract",
     "ffmpeg",
@@ -191,9 +172,6 @@ full = [
     "audio",
     "video",
     "archives-extended",
-    "cache",
-    "vectorizer",
-    "observability",
     "cli",
 ]
 
