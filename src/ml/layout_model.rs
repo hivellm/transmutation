@@ -86,7 +86,9 @@ impl LayoutModel {
     #[cfg(feature = "docling-ffi")]
     fn run_inference(&mut self, input: &Array4<f32>) -> Result<Vec<DetectedRegion>> {
         // Convert ndarray to ONNX tensor (ort v2 requires owned data)
-        let input_tensor = Tensor::from_array(input.to_owned())?;
+        // Clone the array to get owned data
+        let input_owned = input.clone();
+        let input_tensor = Tensor::from_array(input_owned)?;
         
         // Run inference (ort v2 requires mutable session)
         // Pass as slice reference for SessionInputs compatibility
