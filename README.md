@@ -9,8 +9,9 @@
 
 ![Version](https://img.shields.io/badge/version-0.1.1-blue)
 ![Status](https://img.shields.io/badge/status-production%20ready-green)
-![Phase](https://img.shields.io/badge/phase-2%20(50%25)-yellow)
+![Phase](https://img.shields.io/badge/phase-2%20(90%25)-brightgreen)
 ![Downloads](https://img.shields.io/github/downloads/hivellm/transmutation/total)
+![Office](https://img.shields.io/badge/Office-PDF%20%7C%20DOCX%20%7C%20XLSX%20%7C%20PPTX-blue)
 
 **High-performance document conversion engine for AI/LLM embeddings**
 
@@ -445,11 +446,11 @@ See [ROADMAP.md](ROADMAP.md) for detailed development plan.
 - ✅ Build-time dependency detection
 - ✅ Comprehensive documentation
 
-### Phase 2: Core Formats (Q2 2025) 🔄 IN PROGRESS
+### Phase 2: Core Formats (Q2 2025) 🔄 90% COMPLETE
 - ✅ **DOCX conversion** (Markdown + Images)
-- 🔄 **XLSX conversion** (in progress)
-- 📝 PPTX conversion (planned)
-- 📝 HTML/XML conversion (planned)
+- ✅ **XLSX conversion** (Markdown tables via LibreOffice)
+- ✅ **PPTX conversion** (Markdown/Images per slide via LibreOffice)
+- 📝 HTML/XML conversion (next priority)
 - 📝 Image OCR (Tesseract) (planned)
 - 📝 Quality optimization (planned)
 
