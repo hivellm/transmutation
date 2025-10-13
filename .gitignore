@@ -29,11 +29,13 @@ libs/*.lib
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 venv/
 .venv/
 *.egg-info/
 dist/
 *.egg
+.pytest_cache/
 
 # ML Models (large files)
 models/*.onnx
