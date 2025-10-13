@@ -42,6 +42,10 @@ enum Commands {
         #[arg(short, long, value_name = "OUTPUT")]
         output: Option<PathBuf>,
 
+        /// Output directory for split pages/images (used with --split-pages or image formats)
+        #[arg(short = 'd', long, value_name = "DIR")]
+        output_dir: Option<PathBuf>,
+
         /// Output format
         #[arg(short = 'f', long, value_enum, default_value = "markdown")]
         format: OutputFormatArg,
@@ -155,6 +159,7 @@ async fn run_command(cli: Cli) -> Result<()> {
         Commands::Convert {
             input,
             output,
+            output_dir,
             format,
             split_pages,
             optimize_llm,
@@ -257,7 +262,18 @@ async fn run_command(cli: Cli) -> Result<()> {
                 let stem = output_path.file_stem()
                     .and_then(|s| s.to_str())
                     .unwrap_or("output");
-                let parent = output_path.parent().unwrap_or_else(|| Path::new("."));
+                
+                // Use output_dir if specified, otherwise use parent of output file
+                let parent = if let Some(ref dir) = output_dir {
+                    // Create output directory if it doesn't exist
+                    tokio::fs::create_dir_all(dir).await?;
+                    dir.clone()
+                } else {
+                    output_path.parent()
+                        .map(|p| p.to_path_buf())
+                        .unwrap_or_else(|| PathBuf::from("."))
+                };
+                
                 let ext = output_path.extension()
                     .and_then(|e| e.to_str())
                     .unwrap_or("md");
@@ -265,8 +281,8 @@ async fn run_command(cli: Cli) -> Result<()> {
                 if !cli.quiet {
                     println!();
                     println!("{}", "✓ Conversion completed successfully!".green().bold());
-                    println!("  Saving {} pages to: {}_*.{}", 
-                        result.content.len(), stem, ext);
+                    println!("  Saving {} pages to: {}/", 
+                        result.content.len(), parent.display());
                 }
                 
                 for chunk in &result.content {
