@@ -50,6 +50,7 @@ models/*.pth
 
 # Data files for testing (except examples)
 data/*.pdf
+data/**/*.pdf
 !data/example*.pdf
 
 # Debug files
