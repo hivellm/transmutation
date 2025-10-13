@@ -170,6 +170,13 @@ impl ConversionBuilder {
             return converter.convert(&self.input, output_format, self.options).await;
         }
 
+        #[cfg(feature = "office")]
+        if input_format == FileFormat::Pptx {
+            use crate::converters::pptx::PptxConverter;
+            let converter = PptxConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
         #[cfg(feature = "web")]
         if input_format == FileFormat::Html {
             use crate::converters::html::HtmlConverter;
