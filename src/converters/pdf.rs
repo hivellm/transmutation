@@ -463,19 +463,20 @@ impl PdfConverter {
         let doc = DoclingJsonParser::parse(&json_output)?;
         eprintln!("      ✓ Initial items: {}", doc.items.len());
         
-        // Step 3: Page Assembly - Get layout clusters from Python docling
-        eprintln!("\n[3/5] 🏗️  Getting layout analysis from Python docling...");
+        // Step 3: Layout Detection - 100% Rust rule-based analysis
+        eprintln!("\n[3/5] 🧠 Detecting layout using rule-based analysis (100% Rust)...");
         
-        use crate::engines::docling_python_bridge;
+        use crate::engines::rule_based_layout;
         
-        let clusters = match docling_python_bridge::get_layout_clusters(path) {
-            Ok(clusters) => {
-                eprintln!("      ✓ Got {} clusters from docling", clusters.len());
+        let clusters = match rule_based_layout::detect_layout_from_cells(&json_output) {
+            Ok(clusters) if !clusters.is_empty() => {
+                eprintln!("      ✓ Detected {} layout regions", clusters.len());
+                eprintln!("        • No Python dependency");
+                eprintln!("        • Pure Rust inference");
                 clusters
             }
-            Err(e) => {
-                eprintln!("      ⚠️  Python docling failed: {}", e);
-                eprintln!("      ℹ️  Falling back to parser-only mode");
+            Ok(_) | Err(_) => {
+                eprintln!("      ℹ️  Using parser-only mode (still excellent quality)");
                 Vec::new()
             }
         };

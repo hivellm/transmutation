@@ -16,7 +16,7 @@ pub mod docling_parse_ffi;
 pub mod docling_json_parser;
 
 #[cfg(all(feature = "pdf", feature = "docling-ffi"))]
-pub mod docling_python_bridge;
+pub mod rule_based_layout;
 
 #[cfg(feature = "docling-ffi")]
 pub mod layout_postprocessor;
