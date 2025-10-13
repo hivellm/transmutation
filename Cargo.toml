@@ -14,6 +14,17 @@ keywords = ["document", "conversion", "pdf", "llm", "embedding"]
 categories = ["parser-implementations", "text-processing", "multimedia"]
 readme = "README.md"
 rust-version = "1.85"
+exclude = [
+    "data/*",
+    "docling_parse",
+    "docling-parse/",
+    "build_*",
+    "libs/",
+    "*.pdf",
+    "*.mp3",
+    "*.mp4",
+    ".github/",
+]
 
 # WiX Installer metadata for Windows MSI generation
 [package.metadata.wix]
