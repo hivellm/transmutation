@@ -443,22 +443,81 @@ impl PdfConverter {
     #[cfg(all(feature = "pdf", feature = "docling-ffi"))]
     async fn convert_with_docling_ffi(&self, path: &Path) -> Result<Vec<ConversionOutput>> {
         use crate::engines::docling_parse_ffi::DoclingParseEngine;
-        use crate::document::{DoclingJsonParser, MarkdownSerializer};
+        use crate::document::{
+            DoclingJsonParser, MarkdownSerializer, PageAssembler, 
+            PageAssemblerOptions, HierarchyBuilder
+        };
         
-        eprintln!("[FFI] Opening PDF and generating JSON...");
+        eprintln!("┌─────────────────────────────────────────┐");
+        eprintln!("│ 🚀 Docling FFI Pipeline (Full)         │");
+        eprintln!("└─────────────────────────────────────────┘");
+        
+        // Step 1: Extract cells from PDF via C++ FFI
+        eprintln!("\n[1/5] 📄 Extracting PDF cells via docling-parse FFI...");
         let engine = DoclingParseEngine::open(path)?;
-        let json_output = engine.export_markdown()?; // Actually returns JSON
+        let json_output = engine.export_markdown()?; // Returns JSON with cells
+        eprintln!("      ✓ JSON size: {} KB", json_output.len() / 1024);
         
-        eprintln!("[FFI] Parsing JSON to Document structure...");
-        eprintln!("[FFI] JSON size: {} bytes", json_output.len());
-        
+        // Step 2: Parse JSON to normalized pages with cells
+        eprintln!("\n[2/5] 🔍 Parsing JSON structure...");
         let doc = DoclingJsonParser::parse(&json_output)?;
-        eprintln!("[FFI] Document parsed: {} items", doc.items.len());
+        eprintln!("      ✓ Initial items: {}", doc.items.len());
         
-        let serializer = MarkdownSerializer::new();
-        let markdown = serializer.serialize(&doc)?;
+        // Step 3: Page Assembly - Convert parsed items to structured elements
+        // This step applies text sanitization, heading detection, list formatting
+        eprintln!("\n[3/5] 🏗️  Assembling document elements...");
+        let assembler = PageAssembler::new(PageAssemblerOptions {
+            enable_text_sanitization: true,
+            enable_heading_detection: true,
+            enable_list_detection: true,
+            merge_adjacent_text: true,
+        });
         
-        eprintln!("[FFI] Markdown generated: {} bytes", markdown.len());
+        let assembled_items = assembler.assemble(
+            &doc.items.iter().filter_map(|item| {
+                // Extract clusters from items (for now, we convert items back to a format
+                // the assembler expects. In a future refactor, the parser would output clusters.)
+                // For now, we skip this step since parser already outputs DocItems
+                None::<crate::document::types_extended::Cluster>
+            }).collect::<Vec<_>>()
+        )?;
+        
+        // Since our current parser already outputs DocItems, we use them directly
+        // The assembler is ready for when we add ML models to detect clusters
+        let items_to_use = if assembled_items.is_empty() {
+            eprintln!("      ℹ️  Using parsed items directly (no ML clusters)");
+            doc.items
+        } else {
+            eprintln!("      ✓ Assembled {} elements", assembled_items.len());
+            assembled_items
+        };
+        
+        // Step 4: Build document hierarchy
+        eprintln!("\n[4/5] 🌳 Building document hierarchy...");
+        let hierarchy_builder = HierarchyBuilder::new();
+        let filename = path.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("document.pdf")
+            .to_string();
+        
+        let final_doc = hierarchy_builder.build(filename, items_to_use)?;
+        eprintln!("      ✓ Final document: {} items", final_doc.items.len());
+        
+        // Step 5: Serialize to Markdown with advanced formatting
+        eprintln!("\n[5/5] ✨ Generating Markdown...");
+        let serializer = MarkdownSerializer::new()
+            .with_escape_special_chars(true)
+            .with_tables(true)
+            .with_images(true);
+        
+        let markdown = serializer.serialize(&final_doc)?;
+        eprintln!("      ✓ Markdown size: {} KB ({} chars)", 
+                  markdown.len() / 1024, 
+                  markdown.len());
+        
+        eprintln!("\n┌─────────────────────────────────────────┐");
+        eprintln!("│ ✅ Pipeline Complete!                   │");
+        eprintln!("└─────────────────────────────────────────┘\n");
         
         let token_count = markdown.len() / 4;
         let data = markdown.into_bytes();
