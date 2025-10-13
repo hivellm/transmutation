@@ -21,11 +21,5 @@ pub mod layout_postprocessor;
 #[cfg(feature = "docling-ffi")]
 pub use layout_postprocessor::LayoutPostprocessor;
 
-#[cfg(feature = "tesseract")]
-pub mod tesseract;
-
-#[cfg(feature = "ffmpeg")]
-pub mod ffmpeg;
-
-// Future engines
-// pub mod audio_asr;
+// Note: Tesseract OCR is implemented in converters/image.rs
+// Note: FFmpeg processing is out of scope for Transmutation

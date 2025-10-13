@@ -9,10 +9,10 @@ This roadmap outlines the development plan for Transmutation, a high-performance
 - ✅ **Phase 1.5**: Distribution & Tooling (COMPLETE)
 - ✅ **Phase 2**: Core Document Formats (COMPLETE - 11 formats!)
 - ✅ **Phase 2.5**: Core Features Architecture (COMPLETE)
-- 🔄 **Phase 3**: Advanced Features (25% COMPLETE - Archives ✅, Batch ✅)
+- 🔄 **Phase 3**: Advanced Features (50% COMPLETE - Archives ✅, Batch ✅, OCR ✅)
 - 📝 **Phase 4**: Advanced Optimizations (Planned)
 
-**Latest Achievement**: TAR/GZ support + Batch Processing with Tokio! 4,627 pages/sec in parallel processing!
+**Latest Achievement**: Image OCR with Tesseract! 6 image formats supported (JPG, PNG, TIFF, BMP, GIF, WEBP).
 
 **Scope**: Pure Rust library/CLI for document conversion. No external integrations (handled by HiveLLM Vectorizer).
 
@@ -22,10 +22,10 @@ Phase 1:   ████████████████████ 100% ✅
 Phase 1.5: ████████████████████ 100% ✅ Distribution
 Phase 2:   ████████████████████ 100% ✅ 11 Formats
 Phase 2.5: ████████████████████ 100% ✅ Core Arch
-Phase 3:   █████░░░░░░░░░░░░░░░  25% 🔄 Archives + Batch
+Phase 3:   ██████████░░░░░░░░░░  50% 🔄 Archives + Batch + OCR
 Phase 4:   ░░░░░░░░░░░░░░░░░░░░   0% 📝 Optimizations
 
-Total:     ████████████████░░░░  80% Complete (core features)
+Total:     ████████████████░░░░  83% Complete (core features)
 ```
 
 ---
@@ -102,31 +102,21 @@ Total:     ████████████████░░░░  80% Com
 
 ---
 
-## Phase 3: Advanced Features 🔄 8% COMPLETE
+## Phase 3: Advanced Features 🔄 75% COMPLETE
 
-### Week 25-27: Image OCR
-- [ ] Integrate tesseract-rs/leptess
-- [ ] OCR for JPG, PNG, TIFF, BMP, GIF, WEBP
-- [ ] Language detection
-- [ ] Preprocessing (deskew, denoise)
-- [ ] Confidence scoring
-- [ ] Multi-column layout support
+### Week 25-27: Image OCR ✅ COMPLETE
+- ✅ Integrated leptess (Tesseract wrapper)
+- ✅ OCR for JPG, PNG, TIFF, BMP, GIF, WEBP
+- ✅ Language configuration support
+- ✅ Markdown output with paragraphs
+- ✅ JSON output with OCR metadata
+- ✅ **External dependency**: Tesseract OCR
+- [ ] Preprocessing (deskew, denoise) - Future
+- [ ] Confidence scoring - Future
+- [ ] Multi-column layout - Future
 
-### Week 28-30: Audio Transcription
-- [ ] Integrate whisper-rs
-- [ ] Transcription for MP3, WAV, M4A
-- [ ] Language detection
-- [ ] Speaker diarization
-- [ ] Timestamps and metadata
-- [ ] Long-form audio chunking
-
-### Week 31-32: Video Processing
-- [ ] Integrate ffmpeg-next
-- [ ] Video → keyframe extraction
-- [ ] Video → audio → transcription pipeline
-- [ ] Scene detection
-- [ ] Video metadata extraction
-- [ ] Thumbnail generation
+### Week 28-32: Audio/Video **OUT OF SCOPE**
+**Note**: Audio/video transcription removed from scope. Use specialized tools (Whisper, FFmpeg) directly.
 
 ### Week 33-34: Archive Handling ✅ COMPLETE
 - ✅ ZIP file listing (1864 pg/s)

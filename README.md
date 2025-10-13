@@ -50,25 +50,20 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 | **ODT** | Markdown, JSON | ⚠️ **Beta** | Pure Rust (ZIP + XML) |
 | **MD** | Markdown (normalized), JSON | 🔄 Planned | - |
 
-### Image Formats (OCR/ASR)
+### Image Formats (OCR)
 
 | Input Format | Output Options | OCR Engine | Status |
 |-------------|----------------|------------|---------|
-| **JPG/JPEG** | Markdown (OCR), JSON | Tesseract/Whisper | 🔄 Planned |
-| **PNG** | Markdown (OCR), JSON | Tesseract/Whisper | 🔄 Planned |
-| **TIFF/TIF** | Markdown (OCR), JSON | Tesseract/Whisper | 🔄 Planned |
-| **BMP** | Markdown (OCR), JSON | Tesseract/Whisper | 🔄 Planned |
-| **GIF** | Markdown (OCR), JSON | Tesseract/Whisper | 🔄 Planned |
-| **WEBP** | Markdown (OCR), JSON | Tesseract/Whisper | 🔄 Planned |
+| **JPG/JPEG** | Markdown (OCR), JSON | Tesseract | ✅ **Production** |
+| **PNG** | Markdown (OCR), JSON | Tesseract | ✅ **Production** |
+| **TIFF/TIF** | Markdown (OCR), JSON | Tesseract | ✅ **Production** |
+| **BMP** | Markdown (OCR), JSON | Tesseract | ✅ **Production** |
+| **GIF** | Markdown (OCR), JSON | Tesseract | ✅ **Production** |
+| **WEBP** | Markdown (OCR), JSON | Tesseract | ✅ **Production** |
 
 ### Audio/Video Formats
 
-| Input Format | Output Options | Engine | Status |
-|-------------|----------------|---------|---------|
-| **MP3** | Markdown (transcription), JSON | Whisper | 🔄 Planned |
-| **MP4** | Markdown (transcription), Images (keyframes), JSON | Whisper/FFmpeg | 🔄 Planned |
-| **WAV** | Markdown (transcription), JSON | Whisper | 🔄 Planned |
-| **M4A** | Markdown (transcription), JSON | Whisper | 🔄 Planned |
+**Note**: Audio/video transcription is out of scope for Transmutation. Use specialized tools like Whisper directly.
 
 ### Archive Formats
 

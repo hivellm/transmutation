@@ -235,6 +235,14 @@ impl ConversionBuilder {
             return converter.convert(&self.input, output_format, self.options).await;
         }
 
+        // Image formats (with OCR if feature enabled)
+        #[cfg(feature = "image-ocr")]
+        if input_format.is_image() {
+            use crate::converters::image::ImageConverter;
+            let converter = ImageConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
         // Format not supported or feature not enabled
         Err(TransmutationError::UnsupportedFormat(format!(
             "Format {:?} is not supported or feature not enabled",
