@@ -1,21 +1,18 @@
 //! Engine abstractions for document processing
 
-#[cfg(feature = "pdf")]
+// Core engines (always enabled for PDF support)
 pub mod pdf_parser;
-
-#[cfg(feature = "pdf")]
 pub mod table_detector;
-
-#[cfg(feature = "pdf")]
 pub mod layout_analyzer;
 
-#[cfg(all(feature = "pdf", feature = "docling-ffi"))]
+// Advanced FFI engines (optional)
+#[cfg(feature = "docling-ffi")]
 pub mod docling_parse_ffi;
 
-#[cfg(all(feature = "pdf", feature = "docling-ffi"))]
+#[cfg(feature = "docling-ffi")]
 pub mod docling_json_parser;
 
-#[cfg(all(feature = "pdf", feature = "docling-ffi"))]
+#[cfg(feature = "docling-ffi")]
 pub mod rule_based_layout;
 
 #[cfg(feature = "docling-ffi")]

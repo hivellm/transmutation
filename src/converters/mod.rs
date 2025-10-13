@@ -2,10 +2,13 @@
 
 pub mod traits;
 
-// Converters (to be implemented)
-#[cfg(feature = "pdf")]
+// Core converters (always enabled)
 pub mod pdf;
+pub mod html;
+pub mod xml;
+pub mod archive;
 
+// Office formats (optional)
 #[cfg(feature = "office")]
 pub mod docx;
 
@@ -15,23 +18,15 @@ pub mod xlsx;
 #[cfg(feature = "office")]
 pub mod pptx;
 
-#[cfg(feature = "web")]
-pub mod html;
-
-#[cfg(feature = "web")]
-pub mod xml;
-
-// Text formats
+// Text formats (always enabled)
 pub mod txt;
 pub mod csv;
 pub mod rtf;
 pub mod odt;
 
+// Advanced features (optional)
 #[cfg(feature = "image-ocr")]
 pub mod image;
-
-#[cfg(feature = "archives")]
-pub mod archive;
 
 pub use traits::{ConverterMetadata, DocumentConverter};
 

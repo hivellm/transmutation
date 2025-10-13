@@ -3,8 +3,6 @@
 //! This module converts extracted text to clean, LLM-optimized Markdown format.
 
 use crate::types::ConversionOptions;
-
-#[cfg(feature = "pdf")]
 use crate::engines::layout_analyzer::{AnalyzedBlock, BlockType};
 
 /// Markdown generator
@@ -80,7 +78,6 @@ impl MarkdownGenerator {
     }
 
     /// Generate Markdown from analyzed blocks (semantic layout)
-    #[cfg(feature = "pdf")]
     pub fn from_analyzed_blocks(blocks: &[AnalyzedBlock], options: ConversionOptions) -> String {
         let mut generator = Self::new(options);
         

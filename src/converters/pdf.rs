@@ -1034,10 +1034,10 @@ impl PdfConverter {
         };
 
         // Convert to ConversionOutput with optional chunking
-        let outputs = markdown_outputs
+        let outputs: Vec<ConversionOutput> = markdown_outputs
             .into_iter()
             .enumerate()
-            .map(|(i, md)| {
+            .map(|(i, md): (usize, String)| {
                 // Apply chunking if requested
                 let (final_content, chunk_count, token_count) = if options.max_chunk_size > 0 {
                     let chunker = Chunker::from_options(&options);
@@ -1054,7 +1054,8 @@ impl PdfConverter {
                     
                     (combined, chunk_count, Some(total_tokens))
                 } else {
-                    (md.clone(), 1, Some(md.len() / 4)) // Rough token estimate
+                    let len = md.len();
+                    (md, 1, Some(len / 4)) // Rough token estimate
                 };
                 
                 ConversionOutput {

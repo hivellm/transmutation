@@ -149,13 +149,33 @@ impl ConversionBuilder {
         });
 
         // Select appropriate converter
-        #[cfg(feature = "pdf")]
+        
+        // Core formats (always enabled)
         if input_format == FileFormat::Pdf {
             use crate::converters::pdf::PdfConverter;
             let converter = PdfConverter::new();
             return converter.convert(&self.input, output_format, self.options).await;
         }
 
+        if input_format == FileFormat::Html {
+            use crate::converters::html::HtmlConverter;
+            let converter = HtmlConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        if input_format == FileFormat::Xml {
+            use crate::converters::xml::XmlConverter;
+            let converter = XmlConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        if input_format == FileFormat::Zip || input_format == FileFormat::Tar || input_format == FileFormat::SevenZ {
+            use crate::converters::archive::ArchiveConverter;
+            let converter = ArchiveConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        // Office formats (optional feature)
         #[cfg(feature = "office")]
         if input_format == FileFormat::Docx {
             use crate::converters::docx::DocxConverter;
@@ -174,20 +194,6 @@ impl ConversionBuilder {
         if input_format == FileFormat::Pptx {
             use crate::converters::pptx::PptxConverter;
             let converter = PptxConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
-        }
-
-        #[cfg(feature = "web")]
-        if input_format == FileFormat::Html {
-            use crate::converters::html::HtmlConverter;
-            let converter = HtmlConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
-        }
-
-        #[cfg(feature = "web")]
-        if input_format == FileFormat::Xml {
-            use crate::converters::xml::XmlConverter;
-            let converter = XmlConverter::new();
             return converter.convert(&self.input, output_format, self.options).await;
         }
 
