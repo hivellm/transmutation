@@ -17,6 +17,37 @@ pub async fn detect_format<P: AsRef<Path>>(path: P) -> Result<FileFormat> {
     detect_by_extension(path)
 }
 
+/// Detect if a ZIP file is actually an Office document (DOCX/PPTX/XLSX)
+async fn detect_office_format_from_zip(path: &Path) -> Result<FileFormat> {
+    use zip::ZipArchive;
+    use std::fs::File;
+    use std::io::BufReader;
+    
+    // Open ZIP and check for Office-specific files
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+    
+    if let Ok(mut archive) = ZipArchive::new(reader) {
+        // Check for Word document marker
+        if archive.by_name("word/document.xml").is_ok() {
+            return Ok(FileFormat::Docx);
+        }
+        
+        // Check for PowerPoint marker
+        if archive.by_name("ppt/presentation.xml").is_ok() {
+            return Ok(FileFormat::Pptx);
+        }
+        
+        // Check for Excel marker
+        if archive.by_name("xl/workbook.xml").is_ok() {
+            return Ok(FileFormat::Xlsx);
+        }
+    }
+    
+    // If none found, it's a regular ZIP
+    Ok(FileFormat::Zip)
+}
+
 /// Detect format by reading magic bytes
 async fn detect_by_magic_bytes(path: &Path) -> Result<FileFormat> {
     use file_format::FileFormat as FFFormat;
@@ -33,6 +64,10 @@ async fn detect_by_magic_bytes(path: &Path) -> Result<FileFormat> {
             FileFormat::Pptx
         }
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => FileFormat::Xlsx,
+        // DOCX/PPTX/XLSX are ZIP files - need to inspect content
+        "application/zip" => {
+            return detect_office_format_from_zip(path).await;
+        }
         "text/html" => FileFormat::Html,
         "text/xml" | "application/xml" => FileFormat::Xml,
         "text/plain" => FileFormat::Txt,

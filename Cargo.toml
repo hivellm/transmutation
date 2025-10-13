@@ -152,7 +152,7 @@ ffmpeg = ["ffmpeg-next"]
 # Format support (pure Rust implementations)
 pdf = ["lopdf", "pdf-extract"]
 pdf-to-image = ["dep:pdfium-render", "pdf"]  # PDF rendering to images per page
-office = ["docx-rs", "umya-spreadsheet"]  # calamine temporarily disabled
+office = ["docx-rs", "umya-spreadsheet", "zip"]  # zip needed for Office format detection
 web = ["scraper", "html5ever", "quick-xml", "roxmltree"]
 image-ocr = ["tesseract"]
 audio = ["ffmpeg"]  # Pure Rust audio transcription (no Python/Whisper dependency)

@@ -21,47 +21,34 @@ impl DocxConverter {
         Self
     }
     
-    /// Convert DOCX to Markdown
+    /// Convert DOCX to Markdown using simple text extraction
+    /// Uses docx-rs for parsing Word documents
     #[cfg(feature = "office")]
     async fn convert_to_markdown(
         &self,
         path: &Path,
         _options: &ConversionOptions,
     ) -> Result<Vec<ConversionOutput>> {
-        use docx_rs::*;
-        
-        eprintln!("📄 Reading DOCX file...");
+        eprintln!("📄 Reading DOCX file with docx-rs...");
         
         // Read DOCX file
         let file_data = tokio::fs::read(path).await?;
         
-        // Parse DOCX
-        let docx = read_docx(&file_data)
+        // Parse DOCX using docx-rs
+        let docx = docx_rs::read_docx(&file_data)
             .map_err(|e| crate::TransmutationError::engine_error("docx-rs", format!("Failed to parse DOCX: {:?}", e)))?;
         
         eprintln!("✓ DOCX parsed successfully");
         
-        // Extract text from document
+        // Extract text from document body
         let mut markdown = String::new();
         
-        // Process document body
+        // Simple text extraction from paragraphs
         for child in &docx.document.children {
-            match child {
-                DocumentChild::Paragraph(para) => {
-                    let para_text = self.paragraph_to_markdown(para);
-                    if !para_text.is_empty() {
-                        markdown.push_str(&para_text);
-                        markdown.push_str("\n\n");
-                    }
-                }
-                DocumentChild::Table(table) => {
-                    let table_md = self.table_to_markdown(table);
-                    markdown.push_str(&table_md);
-                    markdown.push_str("\n\n");
-                }
-                _ => {
-                    // Handle other types if needed
-                }
+            let text = self.extract_text_from_child(child);
+            if !text.is_empty() {
+                markdown.push_str(&text);
+                markdown.push_str("\n\n");
             }
         }
         
@@ -89,55 +76,35 @@ impl DocxConverter {
         }])
     }
     
-    /// Convert paragraph to Markdown
+    /// Extract text from document child (simplified approach)
     #[cfg(feature = "office")]
-    fn paragraph_to_markdown(&self, para: &Paragraph) -> String {
-        let mut text = String::new();
-        let mut is_bold = false;
-        let mut is_italic = false;
+    fn extract_text_from_child(&self, child: &docx_rs::DocumentChild) -> String {
+        use docx_rs::DocumentChild;
         
-        // Extract runs from paragraph
+        match child {
+            DocumentChild::Paragraph(para) => {
+                self.extract_paragraph_text(para)
+            }
+            DocumentChild::Table(table) => {
+                self.extract_table_text(table)
+            }
+            _ => String::new(),
+        }
+    }
+    
+    /// Extract text from paragraph
+    #[cfg(feature = "office")]
+    fn extract_paragraph_text(&self, para: &docx_rs::Paragraph) -> String {
+        use docx_rs::ParagraphChild;
+        
+        let mut text = String::new();
+        
         for child in &para.children {
             if let ParagraphChild::Run(run) = child {
-                // Check formatting
-                let mut run_text = String::new();
-                
                 for run_child in &run.children {
-                    if let RunChild::Text(t) = run_child {
-                        run_text.push_str(&t.text);
+                    if let docx_rs::RunChild::Text(t) = run_child {
+                        text.push_str(&t.text);
                     }
-                }
-                
-                // Apply formatting
-                if let Some(rpr) = &run.run_property {
-                    is_bold = rpr.bold.is_some();
-                    is_italic = rpr.italic.is_some();
-                }
-                
-                if is_bold && is_italic {
-                    text.push_str(&format!("***{}***", run_text));
-                } else if is_bold {
-                    text.push_str(&format!("**{}**", run_text));
-                } else if is_italic {
-                    text.push_str(&format!("*{}*", run_text));
-                } else {
-                    text.push_str(&run_text);
-                }
-            }
-        }
-        
-        // Check if it's a heading
-        if let Some(ppr) = &para.property {
-            if let Some(style) = &ppr.style {
-                if style.val.starts_with("Heading") {
-                    // Extract heading level
-                    let level = style.val.chars()
-                        .last()
-                        .and_then(|c| c.to_digit(10))
-                        .unwrap_or(1) as usize;
-                    
-                    let prefix = "#".repeat(level.min(6));
-                    return format!("{} {}", prefix, text.trim());
                 }
             }
         }
@@ -145,64 +112,12 @@ impl DocxConverter {
         text.trim().to_string()
     }
     
-    /// Convert table to Markdown
+    /// Extract text from table (simplified - just get text, skip table structure for now)
     #[cfg(feature = "office")]
-    fn table_to_markdown(&self, table: &Table) -> String {
-        let mut md = String::new();
-        let mut rows: Vec<Vec<String>> = Vec::new();
-        
-        // Extract table data
-        for row in &table.rows {
-            let mut row_data = Vec::new();
-            
-            for cell in &row.cells {
-                let mut cell_text = String::new();
-                
-                for child in &cell.children {
-                    if let TableCellContent::Paragraph(para) = child {
-                        let para_text = self.paragraph_to_markdown(para);
-                        if !para_text.is_empty() {
-                            if !cell_text.is_empty() {
-                                cell_text.push(' ');
-                            }
-                            cell_text.push_str(&para_text);
-                        }
-                    }
-                }
-                
-                row_data.push(cell_text);
-            }
-            
-            rows.push(row_data);
-        }
-        
-        // Generate Markdown table
-        if rows.is_empty() {
-            return String::new();
-        }
-        
-        // Header row
-        if let Some(header) = rows.first() {
-            md.push_str("| ");
-            md.push_str(&header.join(" | "));
-            md.push_str(" |\n");
-            
-            // Separator
-            md.push_str("|");
-            for _ in 0..header.len() {
-                md.push_str(" --- |");
-            }
-            md.push('\n');
-        }
-        
-        // Data rows
-        for row in rows.iter().skip(1) {
-            md.push_str("| ");
-            md.push_str(&row.join(" | "));
-            md.push_str(" |\n");
-        }
-        
-        md
+    fn extract_table_text(&self, _table: &docx_rs::Table) -> String {
+        // TODO: Implement proper table extraction
+        // For now, just indicate a table was present
+        String::from("[Table content]")
     }
 }
 
