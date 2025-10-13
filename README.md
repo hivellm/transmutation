@@ -7,6 +7,11 @@
 [![Rust Version](https://img.shields.io/badge/rust-1.85%2B%20nightly-orange.svg)](https://www.rust-lang.org)
 [![codecov](https://codecov.io/gh/hivellm/transmutation/branch/main/graph/badge.svg)](https://codecov.io/gh/hivellm/transmutation)
 
+![Version](https://img.shields.io/badge/version-0.1.1-blue)
+![Status](https://img.shields.io/badge/status-production%20ready-green)
+![Phase](https://img.shields.io/badge/phase-2%20(50%25)-yellow)
+![Downloads](https://img.shields.io/github/downloads/hivellm/transmutation/total)
+
 **High-performance document conversion engine for AI/LLM embeddings**
 
 Transmutation is a **pure Rust** document conversion engine designed to transform various file formats into optimized text and image outputs suitable for LLM processing and vector embeddings. Built as a core component of the HiveLLM Vectorizer ecosystem, Transmutation is a **high-performance alternative to Docling**, offering superior speed, lower memory usage, and zero runtime dependencies.
@@ -45,10 +50,10 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 
 | Input Format | Output Options | Status | Modes |
 |-------------|----------------|---------|-------|
-| **PDF** | Image per page, Markdown (per page/full), JSON | ✅ **Implemented** | Fast, Precision |
-| **DOCX** | Image per page, Markdown (per page/full), JSON | 🔄 Planned | - |
+| **PDF** | Image per page, Markdown (per page/full), JSON | ✅ **Production** | Fast, Precision, FFI |
+| **DOCX** | Image per page, Markdown (per page/full), JSON | ✅ **Production** | Pure Rust |
+| **XLSX** | Markdown tables, CSV, JSON | 🔄 In Progress | - |
 | **PPTX** | Image per slide, Markdown (per slide/full), JSON | 🔄 Planned | - |
-| **XLSX** | Markdown, CSV, JSON | 🔄 Planned | - |
 | **HTML** | Image, Markdown, JSON | 🔄 Planned | - |
 | **XML** | Markdown, JSON | 🔄 Planned | - |
 | **TXT** | Markdown, JSON | 🔄 Planned | - |
@@ -431,13 +436,22 @@ See [ROADMAP.md](ROADMAP.md) for detailed development plan.
 - ✅ Core converter interfaces
 - ✅ PDF conversion (pure Rust - pdf-extract)
 - ✅ Advanced Markdown output with intelligent paragraph joining
-- ✅ **250x faster than Docling** benchmark achieved
+- ✅ **98x faster than Docling** benchmark achieved (97 papers tested)
 
-### Phase 2: Core Formats (Q2 2025)
-- 📝 DOCX, PPTX, XLSX conversion
-- 📝 HTML/XML conversion
-- 📝 Image OCR (Tesseract)
-- 📝 Quality optimization
+### Phase 1.5: Distribution & Tooling (Oct 2025) ✅ COMPLETE
+- ✅ Windows MSI installer with dependency management
+- ✅ Custom icons and professional branding
+- ✅ Multi-platform installation scripts (5 variants)
+- ✅ Build-time dependency detection
+- ✅ Comprehensive documentation
+
+### Phase 2: Core Formats (Q2 2025) 🔄 IN PROGRESS
+- ✅ **DOCX conversion** (Markdown + Images)
+- 🔄 **XLSX conversion** (in progress)
+- 📝 PPTX conversion (planned)
+- 📝 HTML/XML conversion (planned)
+- 📝 Image OCR (Tesseract) (planned)
+- 📝 Quality optimization (planned)
 
 ### Phase 3: Advanced Features (Q3 2025)
 - 📝 Audio/Video transcription (pure Rust ASR)
