@@ -463,33 +463,38 @@ impl PdfConverter {
         let doc = DoclingJsonParser::parse(&json_output)?;
         eprintln!("      ✓ Initial items: {}", doc.items.len());
         
-        // Step 3: Page Assembly - Convert parsed items to structured elements
-        // This step applies text sanitization, heading detection, list formatting
-        eprintln!("\n[3/5] 🏗️  Assembling document elements...");
-        let assembler = PageAssembler::new(PageAssemblerOptions {
-            enable_text_sanitization: true,
-            enable_heading_detection: true,
-            enable_list_detection: true,
-            merge_adjacent_text: true,
-        });
+        // Step 3: Page Assembly - Get layout clusters from Python docling
+        eprintln!("\n[3/5] 🏗️  Getting layout analysis from Python docling...");
         
-        let assembled_items = assembler.assemble(
-            &doc.items.iter().filter_map(|item| {
-                // Extract clusters from items (for now, we convert items back to a format
-                // the assembler expects. In a future refactor, the parser would output clusters.)
-                // For now, we skip this step since parser already outputs DocItems
-                None::<crate::document::types_extended::Cluster>
-            }).collect::<Vec<_>>()
-        )?;
+        use crate::engines::docling_python_bridge;
         
-        // Since our current parser already outputs DocItems, we use them directly
-        // The assembler is ready for when we add ML models to detect clusters
-        let items_to_use = if assembled_items.is_empty() {
-            eprintln!("      ℹ️  Using parsed items directly (no ML clusters)");
+        let clusters = match docling_python_bridge::get_layout_clusters(path) {
+            Ok(clusters) => {
+                eprintln!("      ✓ Got {} clusters from docling", clusters.len());
+                clusters
+            }
+            Err(e) => {
+                eprintln!("      ⚠️  Python docling failed: {}", e);
+                eprintln!("      ℹ️  Falling back to parser-only mode");
+                Vec::new()
+            }
+        };
+        
+        let items_to_use = if clusters.is_empty() {
+            eprintln!("      ℹ️  Using parsed items directly (no layout clusters)");
             doc.items
         } else {
-            eprintln!("      ✓ Assembled {} elements", assembled_items.len());
-            assembled_items
+            eprintln!("\n[3.5/5] 🔧 Assembling clusters into document elements...");
+            let assembler = PageAssembler::new(PageAssemblerOptions {
+                enable_text_sanitization: true,
+                enable_heading_detection: true,
+                enable_list_detection: true,
+                merge_adjacent_text: true,
+            });
+            
+            let assembled = assembler.assemble(&clusters)?;
+            eprintln!("      ✓ Assembled {} elements from clusters", assembled.len());
+            assembled
         };
         
         // Step 4: Build document hierarchy

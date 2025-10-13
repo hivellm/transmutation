@@ -35,10 +35,38 @@ def export_layout_model():
     
     try:
         from docling_ibm_models.layoutmodel.layout_predictor import LayoutPredictor
+        from pathlib import Path
+        import os
         
-        # Initialize model
+        # Initialize model with artifact path
         print("  📦 Loading model...")
-        predictor = LayoutPredictor()
+        
+        # Try to use cached model or download
+        cache_dir = Path.home() / ".cache" / "docling"
+        artifact_path = cache_dir / "models" / "layout"
+        
+        # If not cached, use default (will download)
+        if not artifact_path.exists():
+            # Get default model path from docling
+            try:
+                from huggingface_hub import snapshot_download
+                artifact_path = snapshot_download(
+                    repo_id="ds4sd/docling-models",
+                    allow_patterns=["layout/*"],
+                    cache_dir=str(cache_dir)
+                )
+            except:
+                print("  ℹ️  Using default model (will download if needed)")
+                artifact_path = None
+        
+        if artifact_path:
+            predictor = LayoutPredictor(artifact_path=str(artifact_path))
+        else:
+            # Try without path - may use defaults
+            print("  ⚠️  Could not determine model path, trying default...")
+            print("  💡 Note: This may not work. Consider downloading models manually.")
+            return False
+            
         model = predictor.model
         model.eval()
         
