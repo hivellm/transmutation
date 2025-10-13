@@ -1,0 +1,248 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<!--
+  Transmutation Windows Installer with Dependency Installation
+  
+  This installer can optionally install external dependencies:
+  - Poppler (pdftoppm)
+  - LibreOffice
+  - Tesseract OCR
+  - FFmpeg
+-->
+
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+
+  <Product
+    Id='*'
+    Name='Transmutation'
+    UpgradeCode='12345678-1234-1234-1234-123456789012'
+    Manufacturer='HiveLLM Team'
+    Language='1033'
+    Codepage='1252'
+    Version='$(var.Version)'>
+
+    <Package Id='*'
+      Keywords='Installer'
+      Description='High-performance document conversion engine for AI/LLM embeddings'
+      Manufacturer='HiveLLM Team'
+      InstallerVersion='450'
+      Languages='1033'
+      Compressed='yes'
+      InstallScope='perMachine'
+      SummaryCodepage='1252'
+      Platform='x64'
+      InstallPrivileges='elevated' />
+
+    <MajorUpgrade
+      Schedule='afterInstallInitialize'
+      DowngradeErrorMessage='A newer version of [ProductName] is already installed.' />
+
+    <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' />
+
+    <!-- Properties for dependency detection -->
+    <Property Id='CHOCO_INSTALLED'>
+      <DirectorySearch Id='ChocolateySearch' Path='C:\ProgramData\chocolatey\bin'>
+        <FileSearch Name='choco.exe' />
+      </DirectorySearch>
+    </Property>
+
+    <Property Id='WINGET_INSTALLED'>
+      <DirectorySearch Id='WingetSearch' Path='C:\Program Files\WindowsApps'>
+        <FileSearch Name='winget.exe' />
+      </DirectorySearch>
+    </Property>
+
+    <Property Id='POPPLER_INSTALLED'>
+      <RegistrySearch Id='PopplerReg' Root='HKLM' Key='SOFTWARE\Poppler' Type='raw' />
+    </Property>
+
+    <Property Id='LIBREOFFICE_INSTALLED'>
+      <DirectorySearch Id='LibreOfficeSearch' Path='C:\Program Files\LibreOffice'>
+        <FileSearch Name='soffice.exe' />
+      </DirectorySearch>
+    </Property>
+
+    <Property Id='TESSERACT_INSTALLED'>
+      <DirectorySearch Id='TesseractSearch' Path='C:\Program Files\Tesseract-OCR'>
+        <FileSearch Name='tesseract.exe' />
+      </DirectorySearch>
+    </Property>
+
+    <Property Id='FFMPEG_INSTALLED'>
+      <RegistrySearch Id='FFmpegReg' Root='HKLM' Key='SOFTWARE\FFmpeg' Type='raw' />
+    </Property>
+
+    <!-- Properties to control what gets installed -->
+    <Property Id='INSTALL_DEPENDENCIES' Value='1' />
+    <Property Id='INSTALL_POPPLER' Value='1' />
+    <Property Id='INSTALL_LIBREOFFICE' Value='1' />
+    <Property Id='INSTALL_TESSERACT' Value='1' />
+    <Property Id='INSTALL_FFMPEG' Value='1' />
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='ProgramFiles64Folder'>
+        <Directory Id='APPLICATIONFOLDER' Name='Transmutation'>
+          
+          <!-- Main executable -->
+          <Component Id='MainExecutable' Guid='*' Win64='yes'>
+            <File
+              Id='TransmutationEXE'
+              Name='transmutation.exe'
+              Source='$(var.CargoTargetBinDir)\transmutation.exe'
+              KeyPath='yes' />
+            
+            <Environment
+              Id='PATH'
+              Name='PATH'
+              Value='[APPLICATIONFOLDER]'
+              Permanent='no'
+              Part='last'
+              Action='set'
+              System='yes' />
+          </Component>
+
+          <!-- License and docs -->
+          <Component Id='License' Guid='*' Win64='yes'>
+            <File Id='LicenseFile' Name='LICENSE.txt' Source='$(var.SourceDir)\..\LICENSE' KeyPath='yes' />
+          </Component>
+
+          <Component Id='Readme' Guid='*' Win64='yes'>
+            <File Id='ReadmeFile' Name='README.md' Source='$(var.SourceDir)\..\README.md' KeyPath='yes' />
+          </Component>
+
+          <!-- Dependency installation script -->
+          <Component Id='DepScript' Guid='*' Win64='yes'>
+            <File
+              Id='InstallDepsScript'
+              Name='install-deps.ps1'
+              Source='$(var.SourceDir)\..\install\install-deps-windows.ps1'
+              KeyPath='yes' />
+          </Component>
+
+        </Directory>
+      </Directory>
+
+      <!-- Start Menu -->
+      <Directory Id='ProgramMenuFolder'>
+        <Directory Id='ApplicationProgramsFolder' Name='Transmutation'>
+          <Component Id='ApplicationShortcut' Guid='*' Win64='yes'>
+            <Shortcut
+              Id='AppShortcut'
+              Name='Transmutation'
+              Target='[APPLICATIONFOLDER]transmutation.exe'
+              WorkingDirectory='APPLICATIONFOLDER' />
+            <Shortcut
+              Id='InstallDepsShortcut'
+              Name='Install Dependencies'
+              Target='[System64Folder]WindowsPowerShell\v1.0\powershell.exe'
+              Arguments='-ExecutionPolicy Bypass -File "[APPLICATIONFOLDER]install-deps.ps1"'
+              WorkingDirectory='APPLICATIONFOLDER' />
+            <RemoveFolder Id='ApplicationProgramsFolder' On='uninstall' />
+            <RegistryValue
+              Root='HKCU'
+              Key='Software\HiveLLM\Transmutation'
+              Name='installed'
+              Type='integer'
+              Value='1'
+              KeyPath='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <!-- Custom Actions for dependency installation -->
+    
+    <!-- Check if Chocolatey is available -->
+    <CustomAction
+      Id='CheckChocolatey'
+      Property='CHOCO_AVAILABLE'
+      Value='1'
+      Execute='immediate' />
+
+    <!-- Install dependencies via Chocolatey -->
+    <CustomAction
+      Id='InstallDepsChoco'
+      Directory='TARGETDIR'
+      ExeCommand='cmd.exe /c "choco install poppler libreoffice tesseract ffmpeg -y"'
+      Execute='deferred'
+      Impersonate='no'
+      Return='ignore' />
+
+    <!-- Install dependencies via PowerShell script -->
+    <CustomAction
+      Id='InstallDepsPowerShell'
+      Directory='APPLICATIONFOLDER'
+      ExeCommand='powershell.exe -ExecutionPolicy Bypass -File "install-deps.ps1"'
+      Execute='deferred'
+      Impersonate='no'
+      Return='ignore' />
+
+    <!-- Show message about dependencies -->
+    <CustomAction
+      Id='ShowDepsMessage'
+      Property='WixShellExecTarget'
+      Value='[APPLICATIONFOLDER]README.md'
+      Execute='immediate' />
+
+    <!-- Installation sequence -->
+    <InstallExecuteSequence>
+      <!-- Check for Chocolatey after files are installed -->
+      <Custom Action='CheckChocolatey' After='InstallFiles'>
+        CHOCO_INSTALLED AND INSTALL_DEPENDENCIES = "1"
+      </Custom>
+      
+      <!-- Install via Chocolatey if available -->
+      <Custom Action='InstallDepsChoco' After='CheckChocolatey'>
+        CHOCO_INSTALLED AND INSTALL_DEPENDENCIES = "1"
+      </Custom>
+      
+      <!-- Otherwise use PowerShell script -->
+      <Custom Action='InstallDepsPowerShell' After='InstallDepsChoco'>
+        NOT CHOCO_INSTALLED AND INSTALL_DEPENDENCIES = "1"
+      </Custom>
+    </InstallExecuteSequence>
+
+    <!-- Features -->
+    <Feature
+      Id='MainApplication'
+      Title='Transmutation CLI'
+      Level='1'
+      ConfigurableDirectory='APPLICATIONFOLDER'
+      AllowAdvertise='no'
+      Display='expand'>
+      
+      <ComponentRef Id='MainExecutable' />
+      <ComponentRef Id='License' />
+      <ComponentRef Id='Readme' />
+      <ComponentRef Id='DepScript' />
+      <ComponentRef Id='ApplicationShortcut' />
+      
+      <!-- Optional Features -->
+      <Feature
+        Id='Dependencies'
+        Title='External Dependencies'
+        Description='Install external tools (Poppler, LibreOffice, Tesseract, FFmpeg) for advanced features'
+        Level='2'>
+        
+        <Condition Level='1'>
+          INSTALL_DEPENDENCIES = "1"
+        </Condition>
+      </Feature>
+    </Feature>
+
+    <!-- UI -->
+    <UI>
+      <UIRef Id='WixUI_FeatureTree' />
+      <UIRef Id='WixUI_ErrorProgressText' />
+      
+      <!-- Custom dialog for dependency selection -->
+      <Publish Dialog='CustomizeDlg' Control='Next' Event='NewDialog' Value='VerifyReadyDlg' Order='1'>
+        1
+      </Publish>
+    </UI>
+
+    <WixVariable Id='WixUILicenseRtf' Value='$(var.SourceDir)\wix\License.rtf' />
+
+  </Product>
+
+</Wix>
+

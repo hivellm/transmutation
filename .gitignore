@@ -1,0 +1,67 @@
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build_*/
+cpp/build*/
+libs/*.so
+libs/*.dll
+libs/*.dylib
+libs/*.lib
+*.o
+*.a
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+venv/
+.venv/
+*.egg-info/
+dist/
+*.egg
+.pytest_cache/
+
+# ML Models (large files)
+# ML Models (large files, >100MB)
+models/
+*.onnx
+*.pt
+*.pth
+*.safetensors
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.json.bak
+
+# Data files for testing (except examples)
+data/*.pdf
+data/**/*.pdf
+data/*.json
+data/**/*.json
+!data/example*.pdf
+
+# Debug files
+debug_*.py
+debug_*.rs
+
+# Cache
+.cache/
+data/

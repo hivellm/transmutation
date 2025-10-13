@@ -1,0 +1,17 @@
+{
+  "model_id": "microsoft/layoutlmv3-base",
+  "file": "model.onnx",
+  "source": "huggingface",
+  "type": "document-layout",
+  "description": "LayoutLMv3 base model for document layout analysis",
+  "size_mb": 478,
+  "input_size": [224, 224],
+  "labels": [
+    "text",
+    "title",
+    "list",
+    "table",
+    "figure"
+  ]
+}
+

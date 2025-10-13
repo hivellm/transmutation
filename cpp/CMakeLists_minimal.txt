@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.12)
+project(docling_ffi_minimal LANGUAGES CXX C)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Minimal FFI wrapper that uses pre-built Linux library
+# For Windows, we'll use a stub that returns "not implemented" errors
+
+add_library(docling_ffi SHARED 
+    docling_ffi_stub.cpp
+)
+
+target_include_directories(docling_ffi PUBLIC
+    
+)
+
+install(TARGETS docling_ffi 
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib
+)
+
+install(FILES docling_ffi.h DESTINATION include)

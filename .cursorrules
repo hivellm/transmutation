@@ -1,0 +1,790 @@
+# AI Development Rules for Transmutation
+
+**Project**: Transmutation - High-performance document conversion engine for AI/LLM embeddings  
+**Language**: Rust 1.85+ (edition 2024)  
+**License**: MIT  
+**Repository**: https://github.com/hivellm/transmutation
+
+---
+
+## Project Overview
+
+Transmutation is a **pure Rust** document conversion engine designed to transform various file formats into optimized text and image outputs suitable for LLM processing and vector embeddings. This is a **high-performance alternative to Docling**, offering superior speed, lower memory usage, and zero runtime dependencies.
+
+**Core Goals**:
+- 100% Pure Rust implementation (no Python dependencies)
+- Convert documents to LLM-friendly formats (Markdown, Images, JSON)
+- Optimize output for embedding generation (text and multimodal)
+- Maintain maximum quality with minimum size
+- Faster and more efficient than Docling
+- Seamless integration with HiveLLM Vectorizer
+
+---
+
+## Code Style
+
+### Formatting
+- Follow **Rust 2021/2024 edition** conventions
+- Use `cargo fmt` with project-specific `rustfmt.toml`
+- Maximum line length: **100 characters**
+- Indentation: **4 spaces** (no tabs)
+- Use trailing commas in multi-line lists/structs
+- Group imports: std → external → crate → module
+
+### Naming Conventions
+- **Crates/Modules**: `snake_case` (e.g., `pdf_parser`, `image_ocr`)
+- **Files**: `snake_case` (e.g., `pdf.rs`, `file_detect.rs`)
+- **Structs/Enums/Traits**: `PascalCase` (e.g., `Converter`, `OutputFormat`, `DocumentConverter`)
+- **Functions/Variables**: `snake_case` (e.g., `convert_to_markdown()`, `file_path`)
+- **Constants**: `UPPER_SNAKE_CASE` (e.g., `MAX_CHUNK_SIZE`, `DEFAULT_DPI`)
+- **Type Parameters**: Single letter or `PascalCase` (e.g., `T`, `Item`, `Error`)
+
+### Code Organization
+- One module per file format converter (e.g., `pdf.rs`, `docx.rs`)
+- Traits in `converters/traits.rs`
+- Shared utilities in `utils/`
+- Output format handlers in `output/`
+- Error types in `error.rs`
+- Public API in `lib.rs`
+
+---
+
+## Documentation
+
+### Doc Comments
+- **All public APIs MUST have doc comments** (`///` or `//!`)
+- Use doc sections: `# Arguments`, `# Returns`, `# Errors`, `# Examples`, `# Panics`
+- Provide runnable examples in doc tests
+- Include links to related types/functions with `[Type]`
+
+**Example**:
+```rust
+/// Converts a document to the specified output format.
+///
+/// This function handles the complete conversion workflow including
+/// file detection, format validation, conversion, and optimization.
+///
+/// # Arguments
+///
+/// * `input_path` - Path to the input document
+/// * `output_format` - Desired output format (Markdown, JSON, etc.)
+/// * `options` - Conversion options for customization
+///
+/// # Returns
+///
+/// A `ConversionResult` containing the converted data and metadata
+///
+/// # Errors
+///
+/// * `FileNotFound` - If the input file does not exist
+/// * `UnsupportedFormat` - If the file format is not supported
+/// * `ConversionError` - If conversion fails
+///
+/// # Examples
+///
+/// ```rust
+/// # use transmutation::{convert_document, OutputFormat, ConversionOptions};
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let result = convert_document(
+///     "document.pdf",
+///     OutputFormat::Markdown,
+///     ConversionOptions::default()
+/// ).await?;
+/// # Ok(())
+/// # }
+/// ```
+pub async fn convert_document(
+    input_path: &str,
+    output_format: OutputFormat,
+    options: ConversionOptions,
+) -> Result<ConversionResult> {
+    // Implementation
+}
+```
+
+### Module Documentation
+- Add module-level docs (`//!`) at the top of each file
+- Explain the purpose and main functionality
+- Provide usage examples
+
+### Project Documentation
+- Update `docs/ROADMAP.md` after completing tasks
+- Update `docs/CHANGELOG.md` for all user-facing changes
+- Update `README.md` for major features
+- Never create unnecessary `.md` files - consolidate in existing docs
+
+---
+
+## Testing Standards
+
+### Test Organization
+```
+tests/
+├── unit/              # Inline unit tests (#[cfg(test)] mod tests)
+├── integration/       # Integration tests
+└── fixtures/          # Test data (sample PDFs, DOCX, images, etc.)
+```
+
+### Coverage Requirements
+- **Overall**: > 90%
+- **Critical paths** (converters, parsers): 100%
+- **Unit tests**: > 95%
+- **Integration tests**: > 85%
+
+### Test Naming
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[tokio::test]
+    async fn test_pdf_to_markdown_success() {
+        // Arrange
+        let input = "tests/fixtures/sample.pdf";
+        let converter = PdfConverter::new();
+        
+        // Act
+        let result = converter.to_markdown(input).await;
+        
+        // Assert
+        assert!(result.is_ok());
+        assert!(!result.unwrap().is_empty());
+    }
+    
+    #[test]
+    fn test_unsupported_file_format() {
+        let result = detect_file_format("test.unknown");
+        assert!(matches!(result, Err(Error::UnsupportedFormat(_))));
+    }
+}
+```
+
+### Run Tests Before Committing
+```bash
+# Run all tests
+cargo test
+
+# Run with output
+cargo test -- --nocapture
+
+# Run specific test
+cargo test test_pdf_conversion
+
+# Check coverage (Linux)
+cargo tarpaulin --out Html --output-dir coverage
+
+# Alternative (all platforms)
+cargo llvm-cov --html
+```
+
+### Integration Tests
+- Test with real document samples in `tests/fixtures/`
+- Test error handling and edge cases
+- Test performance benchmarks in `benches/`
+
+---
+
+## Error Handling
+
+### Use `thiserror` for Library Errors
+```rust
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ConversionError {
+    #[error("File not found: {0}")]
+    FileNotFound(String),
+    
+    #[error("Unsupported format: {0}")]
+    UnsupportedFormat(String),
+    
+    #[error("Conversion failed: {0}")]
+    ConversionFailed(String),
+    
+    #[error("IO error")]
+    Io(#[from] std::io::Error),
+    
+    #[error("PDF parsing error")]
+    PdfError(#[from] lopdf::Error),
+}
+
+pub type Result<T> = std::result::Result<T, ConversionError>;
+```
+
+### Error Handling Best Practices
+- **Never use `unwrap()` or `expect()` in library code** (tests are OK)
+- Use `?` operator for error propagation
+- Provide context with `anyhow::Context` when appropriate
+- Log errors with `tracing::error!`
+- Return `Result<T>` for recoverable errors
+- Document all possible errors in doc comments
+
+---
+
+## Performance
+
+### Optimization Principles
+- **Pure Rust only** - no Python/C++ dependencies for core functionality
+- Use `rayon` for CPU-bound parallel processing
+- Use `tokio` for I/O-bound async operations
+- Minimize allocations - prefer `&str` over `String` for parameters
+- Use `&[T]` instead of `&Vec<T>` for function parameters
+- Profile with `cargo bench` before optimizing
+- Lazy initialization with `once_cell::Lazy` for expensive statics
+
+### Memory Management
+- Target: <500MB per conversion
+- Streaming processing for large files
+- Use `SmallVec` for small collections
+- Use `Cow` for copy-on-write optimizations
+- Profile memory with `heaptrack` or `valgrind --tool=massif`
+
+### Performance Targets
+- PDF → Markdown: 20+ pages/second
+- DOCX → Markdown: 25+ pages/second
+- Image OCR: 2+ images/second
+- Startup time: <100ms
+
+---
+
+## Security
+
+### Input Validation
+- **Validate all file inputs** before processing
+- Check file sizes and limits
+- Sanitize file paths (prevent path traversal)
+- Use `validator` crate for struct validation
+
+### SQL Injection Prevention
+- Use parameterized queries with `sqlx::query!` macro
+- Never use string concatenation for SQL
+
+### Secrets Management
+- **Never hardcode secrets or API keys**
+- Use environment variables with `dotenvy`
+- Document required env vars in `.env.example`
+- Add `.env` to `.gitignore`
+
+### Dependencies
+- Run `cargo audit` regularly
+- Keep dependencies updated
+- Review security advisories
+
+---
+
+## Rust Best Practices
+
+### Idioms
+1. **Use `Result` instead of panicking** for recoverable errors
+2. **Prefer `&str` over `String`** for function parameters
+3. **Use `#[derive]` macros** (Debug, Clone, PartialEq, Eq, Serialize, Deserialize)
+4. **Implement `Display` and `Error`** for custom errors (use `thiserror`)
+5. **Use `Option` and `Result`** - avoid sentinel values
+6. **Prefer iterators** over loops
+7. **Use `Vec<T>` for owned data**, `&[T]` for borrowed
+8. **Use `async/await`** for I/O operations
+9. **Use `?` operator** for error propagation
+10. **Use `clippy`** and fix all warnings
+
+### Anti-Patterns to Avoid
+- ❌ Cloning everything unnecessarily
+- ❌ Using `unwrap()` in production code
+- ❌ Not using `?` operator
+- ❌ String vs &str confusion
+- ❌ Not implementing Error trait
+- ❌ Not handling all match arms
+
+### Common Patterns
+- **Repository pattern** with traits
+- **Builder pattern** for complex configurations
+- **Newtype pattern** for type safety
+- **From/Into traits** for conversions
+- **Iterator chains** for data transformation
+
+---
+
+## Git Workflow
+
+### Branch Strategy
+```
+main
+├── develop
+    ├── feature/[feature-name]
+    ├── fix/[issue-number]-[description]
+    ├── docs/[description]
+    └── perf/[description]
+```
+
+### Branch Naming
+- `feature/pdf-converter` - New features
+- `fix/123-memory-leak` - Bug fixes
+- `docs/api-reference` - Documentation
+- `perf/optimize-pdf-parsing` - Performance improvements
+- `test/integration-tests` - Test additions
+
+### Commit Message Format
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+[type]([optional scope]): [subject]
+
+[optional body]
+
+[optional footer]
+```
+
+**Types**:
+- `feat` - New feature (e.g., `feat(pdf): add PDF to markdown converter`)
+- `fix` - Bug fix (e.g., `fix(docx): handle corrupt files`)
+- `docs` - Documentation (e.g., `docs: update API reference`)
+- `style` - Code style (e.g., `style: format with rustfmt`)
+- `refactor` - Code refactoring (e.g., `refactor(converters): extract common logic`)
+- `perf` - Performance improvement (e.g., `perf(pdf): optimize page parsing`)
+- `test` - Testing (e.g., `test(pdf): add integration tests`)
+- `chore` - Maintenance (e.g., `chore: update dependencies`)
+
+**Examples**:
+```
+feat(pdf): implement PDF to Markdown conversion
+
+- Add PDF parser using lopdf
+- Extract text and images from pages
+- Generate structured Markdown output
+- Add unit tests
+
+Closes #12
+```
+
+### Pre-Commit Checklist
+- [ ] All tests pass (`cargo test`)
+- [ ] No clippy warnings (`cargo clippy -- -D warnings`)
+- [ ] Code formatted (`cargo fmt`)
+- [ ] Documentation updated
+- [ ] `docs/CHANGELOG.md` updated (if user-facing)
+- [ ] No debug code or `println!` statements
+- [ ] No secrets or credentials
+- [ ] Coverage > 90%
+
+### Commit Workflow
+```bash
+# Run tests
+cargo test
+
+# Run clippy
+cargo clippy -- -D warnings
+
+# Format code
+cargo fmt
+
+# Stage changes
+git add .
+
+# Commit with message
+git commit -m "feat(pdf): implement PDF converter"
+
+# Push to remote
+git push origin feature/pdf-converter
+```
+
+---
+
+## Task Queue Integration
+
+### Task States
+1. `PENDING` - Task created, not started
+2. `IN_PROGRESS` - Currently working
+3. `REVIEW` - Awaiting peer review
+4. `REVISION` - Needs changes
+5. `COMPLETED` - Finished and approved
+6. `BLOCKED` - Cannot proceed
+
+### Update Protocol
+Update Task Queue at these points:
+1. Task start: `PENDING` → `IN_PROGRESS`
+2. Code complete: `IN_PROGRESS` → `REVIEW`
+3. Review feedback: `REVIEW` → `REVISION`
+4. Re-submission: `REVISION` → `REVIEW`
+5. Approval: `REVIEW` → `COMPLETED`
+
+Include task ID in commit messages: `feat(pdf): implement converter [TASK-123]`
+
+---
+
+## Vectorizer Integration
+
+### Search-First Protocol
+Before implementing features:
+1. **Search Vectorizer** for existing documentation
+2. Query: `vectorizer search --collection transmutation-docs --query "[question]"`
+3. Review results and existing implementations
+4. Only implement if no solution exists
+
+### Upload Protocol
+Upload documentation after:
+1. **After Implementation**: Code docs and examples
+2. **After Review**: Review reports
+3. **After Approval**: User guides
+
+### Collections
+- `transmutation-docs` - All project documentation
+- `transmutation-code` - Indexed source code
+- `chat-history` - Chat history (auto-save at >90% context)
+
+---
+
+## Review Process
+
+### Peer Review Requirements
+- **2+ specialist agents** must review each feature
+- Focus: code quality, tests, performance, security
+- Timeline: 24-48 hours
+
+### Review Checklist
+- [ ] Code follows Rust best practices
+- [ ] All public APIs have doc comments
+- [ ] Tests pass with >90% coverage
+- [ ] No clippy warnings
+- [ ] Error handling is comprehensive
+- [ ] Performance meets targets
+- [ ] Security considerations addressed
+- [ ] Documentation updated
+
+### Requesting Review
+```bash
+# Push feature branch
+git push origin feature/pdf-converter
+
+# Update Task Queue to REVIEW status
+# Notify reviewers with:
+# - Link to feature specification (docs/specs/)
+# - Link to tests
+# - Summary of changes
+```
+
+---
+
+## Project-Specific Rules
+
+### Converter Development
+1. **Implement trait** in `converters/traits.rs`
+2. **Create module** in `converters/[format].rs`
+3. **Add tests** with sample files in `tests/fixtures/`
+4. **Update registry** in `converters/mod.rs`
+5. **Document** in `docs/ROADMAP.md`
+
+### Output Format Handling
+1. **Create handler** in `output/[format].rs`
+2. **Implement serialization** with `serde`
+3. **Optimize output** for LLM processing
+4. **Add tests** for format correctness
+
+### Pure Rust Requirement
+- **No Python dependencies** in core functionality
+- **No C/C++ dependencies** unless optional (features)
+- OCR (Tesseract) and FFmpeg are **optional features**
+- Core converters must be **100% Rust**
+
+### Performance Testing
+```bash
+# Run benchmarks
+cargo bench
+
+# Profile with flamegraph (Linux)
+cargo flamegraph --bin transmutation
+
+# Memory profiling
+heaptrack ./target/release/transmutation
+```
+
+---
+
+## Development Workflow
+
+### 1. Feature Development Cycle
+```bash
+# 1. Create branch
+git checkout -b feature/xlsx-converter
+
+# 2. Read specification
+# docs/specs/xlsx-converter.md
+
+# 3. Update ROADMAP (mark [~])
+# docs/ROADMAP.md
+
+# 4. Implement feature
+# src/converters/xlsx.rs
+
+# 5. Write tests
+# tests/integration/test_xlsx.rs
+
+# 6. Run tests
+cargo test
+
+# 7. Run clippy
+cargo clippy -- -D warnings
+
+# 8. Format code
+cargo fmt
+
+# 9. Update CHANGELOG
+# docs/CHANGELOG.md
+
+# 10. Commit
+git add .
+git commit -m "feat(xlsx): implement XLSX to Markdown converter"
+
+# 11. Push and request review
+git push origin feature/xlsx-converter
+```
+
+### 2. Bug Fix Cycle
+```bash
+# 1. Create branch
+git checkout -b fix/123-pdf-memory-leak
+
+# 2. Write failing test
+# tests/integration/test_pdf.rs
+
+# 3. Fix bug
+# src/converters/pdf.rs
+
+# 4. Verify test passes
+cargo test
+
+# 5. Update CHANGELOG
+# docs/CHANGELOG.md
+
+# 6. Commit and push
+git commit -m "fix(pdf): resolve memory leak in page parsing [TASK-123]"
+git push origin fix/123-pdf-memory-leak
+```
+
+---
+
+## CLI Development
+
+### CLI Tool (optional feature)
+- Use `clap` with derive macros
+- Provide progress bars with `indicatif`
+- Use `colored` for terminal output
+- Handle signals gracefully (Ctrl+C)
+
+**Example**:
+```rust
+use clap::Parser;
+
+#[derive(Parser)]
+#[command(name = "transmutation")]
+#[command(about = "High-performance document conversion engine")]
+struct Cli {
+    /// Input file path
+    #[arg(short, long)]
+    input: String,
+    
+    /// Output format (markdown, json, images)
+    #[arg(short, long, default_value = "markdown")]
+    format: String,
+    
+    /// Output directory
+    #[arg(short, long, default_value = "output")]
+    output: String,
+}
+```
+
+---
+
+## Logging and Tracing
+
+### Use `tracing` for Structured Logging
+```rust
+use tracing::{info, warn, error, debug, trace};
+
+// At function entry
+#[tracing::instrument(skip(data))]
+async fn convert_document(path: &str, data: Vec<u8>) -> Result<String> {
+    info!(path = %path, size = data.len(), "Starting conversion");
+    
+    // During processing
+    debug!("Parsing document structure");
+    
+    // On errors
+    if let Err(e) = parse_document(&data) {
+        error!(error = %e, "Failed to parse document");
+        return Err(e);
+    }
+    
+    // On completion
+    info!("Conversion completed successfully");
+    Ok(result)
+}
+```
+
+### Log Levels
+- `trace` - Very detailed debugging
+- `debug` - Debugging information
+- `info` - General information
+- `warn` - Warnings (recoverable issues)
+- `error` - Errors (failed operations)
+
+### Configure with Environment
+```bash
+RUST_LOG=transmutation=debug cargo run
+```
+
+---
+
+## Deployment and Release
+
+### Building
+```bash
+# Debug build
+cargo build
+
+# Release build
+cargo build --release
+
+# With all features
+cargo build --release --all-features
+
+# Cross-compilation
+rustup target add x86_64-unknown-linux-musl
+cargo build --release --target x86_64-unknown-linux-musl
+```
+
+### Publishing to crates.io
+```bash
+# Login
+cargo login [api-token]
+
+# Dry run
+cargo publish --dry-run
+
+# Publish
+cargo publish
+```
+
+### Pre-Release Checklist
+- [ ] All tests passing
+- [ ] Documentation complete
+- [ ] Examples provided
+- [ ] `docs/CHANGELOG.md` updated
+- [ ] Version bumped in `Cargo.toml`
+- [ ] Git tag created
+- [ ] No private dependencies
+- [ ] Benchmarks run
+- [ ] Security audit passed (`cargo audit`)
+
+---
+
+## Continuous Integration
+
+### GitHub Actions
+- Run tests on push/PR
+- Run clippy with `-D warnings`
+- Check formatting with `cargo fmt --check`
+- Generate coverage reports
+- Run benchmarks on main branch
+- Security audit with `cargo audit`
+
+---
+
+## References
+
+### Official Documentation
+- [The Rust Programming Language](https://doc.rust-lang.org/book/)
+- [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
+- [Tokio Documentation](https://tokio.rs/)
+
+### Project Documentation
+- `docs/ROADMAP.md` - Development roadmap
+- `docs/CHANGELOG.md` - Change history
+- `gov/manuals/AI_INTEGRATION_MANUAL_TEMPLATE.md` - General AI integration guide
+- `gov/manuals/rust/AI_INTEGRATION_MANUAL_RUST.md` - Rust-specific guide
+- `gov/manuals/rust/BEST_PRACTICES.md` - Rust best practices
+
+### HiveLLM Ecosystem
+- Task Queue: `http://localhost:8080`
+- Vectorizer: `http://localhost:15002`
+
+---
+
+## Quick Commands Reference
+
+```bash
+# Development
+cargo check                          # Fast compile check
+cargo build                          # Debug build
+cargo run                            # Run binary
+cargo test                           # Run tests
+cargo bench                          # Run benchmarks
+
+# Code Quality
+cargo fmt                            # Format code
+cargo clippy -- -D warnings          # Lint with strict warnings
+cargo audit                          # Security audit
+
+# Documentation
+cargo doc --open                     # Generate and open docs
+cargo doc --no-deps                  # Docs without dependencies
+
+# Release
+cargo build --release                # Optimized build
+cargo publish --dry-run              # Test publish
+cargo publish                        # Publish to crates.io
+
+# Coverage (Linux)
+cargo tarpaulin --out Html           # Generate coverage report
+
+# Coverage (all platforms)
+cargo llvm-cov --html                # Alternative coverage tool
+```
+
+---
+
+## Context Management
+
+### At >90% Context
+1. Save chat history to Vectorizer:
+   - Collection: `chat-history`
+   - Include full transcript
+2. Create summary in `chat-summary`
+3. Continue work in new context
+
+---
+
+## Special Instructions
+
+### When Implementing Features
+1. Read specification in `docs/specs/[feature].md`
+2. Check existing code in Vectorizer first
+3. Implement following Rust best practices
+4. Write comprehensive tests (>90% coverage)
+5. Document all public APIs
+6. Update `docs/ROADMAP.md` status
+7. Request peer review (2+ agents)
+
+### When Fixing Bugs
+1. Write failing test first
+2. Fix the bug
+3. Verify test passes
+4. Add regression test
+5. Update `docs/CHANGELOG.md`
+
+### When Asked Questions
+1. Search Vectorizer first
+2. Check existing documentation
+3. Refer to Rust API Guidelines
+4. Provide working code examples
+
+---
+
+**Remember**: This is a **pure Rust** project building a **high-performance alternative to Docling**. Focus on speed, efficiency, and zero runtime dependencies. Every feature must be faster and lighter than Python equivalents.
+
+**NO PYTHON. NO C++. PURE RUST ONLY** (except optional FFI for Tesseract/FFmpeg features).
+
+---
+
+**Version**: 1.0.0  
+**Last Updated**: 2025-10-12  
+**Maintained by**: HiveLLM Team
+

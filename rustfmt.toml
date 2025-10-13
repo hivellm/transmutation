@@ -1,0 +1,33 @@
+# Rustfmt configuration for Transmutation
+
+# Edition
+edition = "2024"
+
+# Maximum line width
+max_width = 100
+
+# Use field init shorthand if possible
+use_field_init_shorthand = true
+
+# Use try shorthand
+use_try_shorthand = true
+
+# Import granularity
+imports_granularity = "Crate"
+
+# Group imports
+group_imports = "StdExternalCrate"
+
+# Format strings
+format_strings = true
+
+# Normalize comments
+normalize_comments = true
+
+# Wrap comments
+wrap_comments = true
+
+# Comment width
+comment_width = 100
+
+

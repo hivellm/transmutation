@@ -1,0 +1,79 @@
+cmake_minimum_required(VERSION 3.12)
+project(docling_ffi LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Add ROOT_PATH definition for docling-parse resources
+add_definitions(-DROOT_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../docling-parse")
+
+# Path to docling-parse installation
+set(DOCLING_PARSE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../docling-parse")
+set(DOCLING_EXTERNALS "${DOCLING_PARSE_ROOT}/externals")
+set(DOCLING_BUILD "${DOCLING_PARSE_ROOT}/build_linux_x86_docling")
+
+# Find docling-parse static libraries
+set(PARSE_V1_LIB "${DOCLING_BUILD}/libparse_v1.a")
+set(PARSE_V2_LIB "${DOCLING_BUILD}/libparse_v2.a")
+
+# Verify libraries exist
+if(NOT EXISTS "${PARSE_V1_LIB}")
+    message(FATAL_ERROR "libparse_v1.a not found at ${PARSE_V1_LIB}")
+endif()
+if(NOT EXISTS "${PARSE_V2_LIB}")
+    message(FATAL_ERROR "libparse_v2.a not found at ${PARSE_V2_LIB}")
+endif()
+
+# Find external dependencies (all built as part of docling-parse)
+set(QPDF_LIB "${DOCLING_BUILD}/extlib_qpdf/src/extlib_qpdf-build/libqpdf/libqpdf.a")
+set(JPEG_LIB "${DOCLING_BUILD}/extlib_jpeg/src/extlib_jpeg/libjpeg.a")
+set(LOGURU_LIB "${DOCLING_BUILD}/_deps/logurugitrepo-build/libloguru.a")
+
+# Verify external libraries exist
+if(NOT EXISTS "${QPDF_LIB}")
+    message(FATAL_ERROR "libqpdf.a not found at ${QPDF_LIB}")
+endif()
+if(NOT EXISTS "${JPEG_LIB}")
+    message(FATAL_ERROR "libjpeg.a not found at ${JPEG_LIB}")
+endif()
+if(NOT EXISTS "${LOGURU_LIB}")
+    message(FATAL_ERROR "libloguru.a not found at ${LOGURU_LIB}")
+endif()
+
+# Create FFI library
+add_library(docling_ffi SHARED 
+    docling_ffi.cpp
+)
+
+# Include directories
+target_include_directories(docling_ffi PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${DOCLING_PARSE_ROOT}/src
+    ${DOCLING_EXTERNALS}/include
+    ${DOCLING_BUILD}/_deps/logurugitrepo-src
+    ${DOCLING_BUILD}/_deps/jsongitrepo-src/include
+    ${DOCLING_BUILD}/_deps/utf8gitrepo-src/source
+)
+
+# Link libraries
+target_link_libraries(docling_ffi PRIVATE
+    ${PARSE_V1_LIB}
+    ${PARSE_V2_LIB}
+    ${QPDF_LIB}
+    ${JPEG_LIB}
+    ${LOGURU_LIB}
+    z  # zlib
+    dl
+    pthread
+    stdc++
+)
+
+# Installation
+install(TARGETS docling_ffi 
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
+
+install(FILES docling_ffi.h DESTINATION include)
+
