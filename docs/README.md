@@ -11,9 +11,11 @@
 |----------|-------------|----------|
 | [SETUP.md](SETUP.md) | Installation and build instructions | Everyone |
 | [CLI_GUIDE.md](CLI_GUIDE.md) | Command-line usage guide | Users |
+| [MSI_BUILD.md](MSI_BUILD.md) | Windows MSI installer creation | Windows users |
+| [MSI_DEPENDENCIES.md](MSI_DEPENDENCIES.md) | MSI dependency management strategies | Distributors |
+| [DEPENDENCIES.md](DEPENDENCIES.md) | Dependency management guide | Developers |
 | [FFI.md](FFI.md) | FFI integration (95%+ similarity) | Advanced users |
 | [BENCHMARKS.md](BENCHMARKS.md) | Performance comparison | Decision makers |
-| [STATUS.md](STATUS.md) | Current implementation status | Contributors |
 | [ROADMAP.md](ROADMAP.md) | Future development plans | Contributors |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Technical design | Developers |
 

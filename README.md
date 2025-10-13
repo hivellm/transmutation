@@ -160,11 +160,64 @@ transmutation/
 
 ### Installation
 
+**Windows MSI Installer:**
+```powershell
+# Download from releases or build:
+.\build-msi.ps1
+msiexec /i target\wix\transmutation-0.1.1-x86_64.msi
+```
+See [`docs/MSI_BUILD.md`](docs/MSI_BUILD.md) for details.
+
+**Cargo:**
 ```bash
 # Add to Cargo.toml
 [dependencies]
-transmutation = "0.1.0"
+transmutation = "0.1"
+
+# With specific features
+[dependencies.transmutation]
+version = "0.1"
+features = ["pdf", "office", "web"]  # Pure Rust, no external dependencies
+
+# With optional features (requires external tools)
+features = ["pdf", "pdf-to-image", "office", "tesseract", "audio"]
 ```
+
+### External Dependencies
+
+Transmutation is **mostly pure Rust**, but some features require external tools for advanced functionality:
+
+| Feature | Requires | Pure Rust Alternative |
+|---------|----------|----------------------|
+| `pdf` | ✅ **None** | Built-in |
+| `office` | ✅ **None** (Markdown) | Built-in |
+| `web` | ✅ **None** | Built-in |
+| `pdf-to-image` | ⚠️ poppler-utils | N/A |
+| `office` + `pdf-to-image` | ⚠️ LibreOffice | N/A |
+| `tesseract` | ⚠️ Tesseract OCR | N/A |
+| `audio/video` | ⚠️ FFmpeg | N/A |
+
+**During compilation**, `build.rs` will automatically **detect missing dependencies** and provide installation instructions:
+
+```bash
+cargo build --features "pdf-to-image"
+
+# If pdftoppm is missing, you'll see:
+⚠️  Optional External Dependencies Missing
+
+  ❌ pdftoppm (poppler-utils): PDF → Image conversion
+     Install: sudo apt-get install poppler-utils
+
+📖 Quick install (all dependencies):
+   ./install/install-deps-linux.sh
+```
+
+**Installation scripts** are provided for all platforms:
+- **Linux**: `./install/install-deps-linux.sh`
+- **macOS**: `./install/install-deps-macos.sh`  
+- **Windows**: `.\install\install-deps-windows.ps1` (or `.bat`)
+
+See [`install/README.md`](install/README.md) for detailed instructions.
 
 ### Basic Usage
 
@@ -406,10 +459,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 MIT License - see [LICENSE](LICENSE) for details.
 
+## 📝 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
+
+**Current Version**: 0.1.1 (October 13, 2025)
+
 ## 🔗 Links
 
 - **GitHub**: https://github.com/hivellm/transmutation
 - **Documentation**: https://docs.hivellm.org/transmutation
+- **Changelog**: [CHANGELOG.md](CHANGELOG.md)
 - **Docling Project**: https://github.com/docling-project
 - **HiveLLM Vectorizer**: https://github.com/hivellm/vectorizer
 
@@ -429,5 +489,11 @@ Powered by:
 
 ---
 
-**Status**: ✅ Phase 1 Complete - PDF to Markdown converter production ready (250x faster than Docling)
+**Status**: ✅ v0.1.1 - Production Ready with Professional Distribution Tools
+
+**Latest Updates (v0.1.1)**:
+- 🪟 Windows MSI Installer with dependency management
+- 🎨 Custom icons and branding
+- 📦 Multi-platform installation scripts
+- 🔧 Automated build and distribution tools
 

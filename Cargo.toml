@@ -2,7 +2,7 @@ cargo-features = ["edition2024"]
 
 [package]
 name = "transmutation"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["HiveLLM Team <team@hivellm.org>"]
 license = "MIT"
@@ -14,6 +14,13 @@ keywords = ["document", "conversion", "pdf", "llm", "embedding"]
 categories = ["parser-implementations", "text-processing", "multimedia"]
 readme = "README.md"
 rust-version = "1.85"
+
+# WiX Installer metadata for Windows MSI generation
+[package.metadata.wix]
+upgrade-guid = "12345678-1234-1234-1234-123456789012"
+path-guid = "87654321-4321-4321-4321-210987654321"
+license = "wix/License.rtf"
+eula = true
 
 [lib]
 name = "transmutation"
@@ -141,6 +148,10 @@ proptest = "1.6"
 tempfile = "3.20"
 mockall = "0.13"
 tokio-test = "0.4"
+
+[build-dependencies]
+# Windows resource compiler for embedding icons
+winres = "0.1"
 
 [features]
 default = ["pdf", "office", "web"]

@@ -2,8 +2,27 @@
 // Handles C++ compilation and linking for docling-parse FFI
 
 use std::path::Path;
+use std::process::Command;
 
 fn main() {
+    // Embed icon and metadata into Windows executable
+    #[cfg(target_os = "windows")]
+    {
+        let mut res = winres::WindowsResource::new();
+        res.set_icon("assets/icon.ico");
+        res.set("ProductName", "Transmutation");
+        res.set("FileDescription", "High-performance document conversion engine for AI/LLM embeddings");
+        res.set("CompanyName", "HiveLLM Team");
+        res.set("LegalCopyright", "Copyright (c) 2025 HiveLLM Team");
+        res.set("OriginalFilename", "transmutation.exe");
+        if let Err(e) = res.compile() {
+            eprintln!("Warning: Failed to compile Windows resources: {}", e);
+        }
+    }
+    
+    // Check for optional external dependencies
+    check_external_dependencies();
+    
     // Only build C++ if docling-ffi feature is enabled
     #[cfg(feature = "docling-ffi")]
     {
@@ -100,4 +119,145 @@ fn main() {
         }
     }
 }
+
+/// Check for optional external dependencies and provide helpful messages
+fn check_external_dependencies() {
+    let mut warnings: Vec<(&str, &str, String)> = Vec::new();
+    
+    // Check pdf-to-image feature dependencies
+    #[cfg(feature = "pdf-to-image")]
+    {
+        if !command_exists("pdftoppm") {
+            warnings.push((
+                "pdftoppm (poppler-utils)",
+                "PDF → Image conversion",
+                get_install_command("poppler-utils")
+            ));
+        }
+    }
+    
+    // Check office feature dependencies for image conversion
+    #[cfg(all(feature = "office", feature = "pdf-to-image"))]
+    {
+        if !command_exists("libreoffice") && !command_exists("soffice") {
+            warnings.push((
+                "LibreOffice",
+                "DOCX/PPTX → Image conversion",
+                get_install_command("libreoffice")
+            ));
+        }
+    }
+    
+    // Check tesseract feature dependencies
+    #[cfg(feature = "tesseract")]
+    {
+        if !command_exists("tesseract") {
+            warnings.push((
+                "Tesseract OCR",
+                "Image → Text (OCR)",
+                get_install_command("tesseract")
+            ));
+        }
+    }
+    
+    // Check ffmpeg feature dependencies
+    #[cfg(any(feature = "audio", feature = "video"))]
+    {
+        if !command_exists("ffmpeg") {
+            warnings.push((
+                "FFmpeg",
+                "Audio/Video processing",
+                get_install_command("ffmpeg")
+            ));
+        }
+    }
+    
+    // Print warnings if any dependencies are missing
+    if !warnings.is_empty() {
+        println!("cargo:warning=");
+        println!("cargo:warning=╔════════════════════════════════════════════════════════════╗");
+        println!("cargo:warning=║  ⚠️  Optional External Dependencies Missing             ║");
+        println!("cargo:warning=╚════════════════════════════════════════════════════════════╝");
+        println!("cargo:warning=");
+        println!("cargo:warning=Transmutation will compile, but some features won't work:");
+        println!("cargo:warning=");
+        
+        for (tool, feature, install_cmd) in &warnings {
+            println!("cargo:warning=  ❌ {}: {}", tool, feature);
+            println!("cargo:warning=     Install: {}", install_cmd);
+        }
+        
+        println!("cargo:warning=");
+        println!("cargo:warning=📖 For detailed installation instructions:");
+        println!("cargo:warning=   https://github.com/yourusername/transmutation/blob/main/install/README.md");
+        println!("cargo:warning=");
+        println!("cargo:warning=💡 Quick install (all dependencies):");
+        println!("cargo:warning={}", get_quick_install_all());
+        println!("cargo:warning=");
+    }
+}
+
+/// Check if a command exists in PATH
+fn command_exists(cmd: &str) -> bool {
+    Command::new(if cfg!(target_os = "windows") { "where" } else { "which" })
+        .arg(cmd)
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
+
+/// Get platform-specific install command for a tool
+fn get_install_command(tool: &str) -> String {
+    #[cfg(target_os = "linux")]
+    {
+        match tool {
+            "poppler-utils" => "sudo apt-get install poppler-utils".to_string(),
+            "libreoffice" => "sudo apt-get install libreoffice".to_string(),
+            "tesseract" => "sudo apt-get install tesseract-ocr".to_string(),
+            "ffmpeg" => "sudo apt-get install ffmpeg".to_string(),
+            _ => format!("sudo apt-get install {}", tool),
+        }
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        match tool {
+            "poppler-utils" => "brew install poppler".to_string(),
+            "libreoffice" => "brew install --cask libreoffice".to_string(),
+            "tesseract" => "brew install tesseract".to_string(),
+            "ffmpeg" => "brew install ffmpeg".to_string(),
+            _ => format!("brew install {}", tool),
+        }
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        match tool {
+            "poppler-utils" => "choco install poppler".to_string(),
+            "libreoffice" => "choco install libreoffice".to_string(),
+            "tesseract" => "choco install tesseract".to_string(),
+            "ffmpeg" => "choco install ffmpeg".to_string(),
+            _ => format!("choco install {}", tool),
+        }
+    }
+}
+
+/// Get platform-specific command to install all dependencies
+fn get_quick_install_all() -> &'static str {
+    #[cfg(target_os = "linux")]
+    {
+        "   ./install/install-deps-linux.sh"
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        "   ./install/install-deps-macos.sh"
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        "   .\\install\\install-deps-windows.ps1 (or .bat)"
+    }
+}
+
 
