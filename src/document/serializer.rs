@@ -62,7 +62,6 @@ impl MarkdownSerializer {
     }
 
     pub fn serialize(&self, doc: &DoclingDocument) -> Result<String> {
-        let mut output = String::new();
         let mut parts = Vec::new();
 
         for item in &doc.items {
@@ -71,7 +70,7 @@ impl MarkdownSerializer {
             }
         }
 
-        output = parts.join("\n\n");
+        let mut output = parts.join("\n\n");
 
         // Clean up excessive newlines
         while output.contains("\n\n\n") {

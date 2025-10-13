@@ -57,7 +57,10 @@ impl UnionFind {
     fn get_groups(&mut self) -> HashMap<usize, Vec<usize>> {
         let mut groups: HashMap<usize, Vec<usize>> = HashMap::new();
         
-        for &elem in self.parent.keys() {
+        // Clone keys to avoid borrowing issue
+        let keys: Vec<usize> = self.parent.keys().copied().collect();
+        
+        for elem in keys {
             let root = self.find(elem);
             groups.entry(root).or_insert_with(Vec::new).push(elem);
         }
@@ -196,7 +199,7 @@ impl LayoutPostprocessor {
         
         // Merge each group
         let mut merged_clusters = Vec::new();
-        for (root_id, group_ids) in groups {
+        for (_root_id, group_ids) in groups {
             let group_clusters: Vec<&Cluster> = group_ids
                 .iter()
                 .filter_map(|&id| clusters.iter().find(|c| c.id == id))

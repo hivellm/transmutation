@@ -353,7 +353,7 @@ impl PdfParser {
             }
             
             let page_id = page_ids[page_num];
-            let mut blocks = Vec::new();
+            let blocks = Vec::new();
             
             // Get page content
             let pages = self.document.get_pages();

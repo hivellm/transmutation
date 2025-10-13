@@ -56,10 +56,11 @@ impl TableStructureModel {
             let session = SessionBuilder::new()?
                 .with_intra_threads(4)?
                 .commit_from_file(&model_path)
-                .map_err(|e| TransmutationError::EngineError(
-                    "table-structure-model".to_string(),
-                    format!("Failed to load ONNX model: {}", e)
-                ))?;
+                .map_err(|e| TransmutationError::EngineError {
+                    engine: "table-structure-model".to_string(),
+                    message: format!("Failed to load ONNX model: {}", e),
+                    source: None,
+                })?;
             
             Ok(Self { session, model_path, scale })
         }
@@ -89,19 +90,135 @@ impl TableStructureModel {
     }
     
     #[cfg(feature = "docling-ffi")]
-    fn post_process_output(&self, _outputs: &[Value]) -> Result<TableStructure> {
-        // TODO: Implement actual post-processing
-        // 1. Extract row/column predictions
-        // 2. Build cell grid
-        // 3. Detect spans
-        // 4. Identify headers
+    fn post_process_output(&self, outputs: &[Value]) -> Result<TableStructure> {
+        // Extract row, column, and cell predictions from TableFormer
+        // Output format: [row_logits, col_logits, cell_logits]
+        if outputs.len() < 3 {
+            return Err(crate::TransmutationError::EngineError {
+                engine: "table-structure-model".to_string(),
+                message: format!("Expected 3 outputs (row, col, cell), got {}", outputs.len()),
+                source: None,
+            });
+        }
         
-        // Placeholder
+        // Extract predictions
+        let row_logits = outputs[0].try_extract_tensor::<f32>()?;
+        let col_logits = outputs[1].try_extract_tensor::<f32>()?;
+        let cell_logits = outputs[2].try_extract_tensor::<f32>()?;
+        
+        // Parse row and column structure
+        let rows = self.parse_structure_logits(&row_logits)?;
+        let cols = self.parse_structure_logits(&col_logits)?;
+        
+        // Build cell grid
+        let cells = self.build_cell_grid(&rows, &cols, &cell_logits)?;
+        
         Ok(TableStructure {
-            cells: Vec::new(),
-            num_rows: 0,
-            num_cols: 0,
+            cells,
+            num_rows: rows.len(),
+            num_cols: cols.len(),
         })
+    }
+    
+    /// Parse structure logits to extract row/column positions
+    #[cfg(feature = "docling-ffi")]
+    fn parse_structure_logits(&self, logits: &ndarray::ArrayView<f32, ndarray::Dim<ndarray::IxDynImpl>>) -> Result<Vec<f32>> {
+        // logits shape: [batch, sequence_length]
+        let shape = logits.shape();
+        if shape.len() < 2 {
+            return Ok(Vec::new());
+        }
+        
+        let seq_length = shape[1];
+        let threshold = 0.5;
+        
+        let mut positions = Vec::new();
+        
+        // Extract positions where confidence > threshold
+        for i in 0..seq_length {
+            let value = logits[[0, i]];
+            if value > threshold {
+                positions.push(i as f32);
+            }
+        }
+        
+        // If no clear structure detected, use heuristics
+        if positions.is_empty() {
+            // Default: assume uniform distribution
+            for i in 0..seq_length.min(10) {
+                positions.push(i as f32);
+            }
+        }
+        
+        Ok(positions)
+    }
+    
+    /// Build cell grid from row and column structure
+    #[cfg(feature = "docling-ffi")]
+    fn build_cell_grid(
+        &self,
+        rows: &[f32],
+        cols: &[f32],
+        cell_logits: &ndarray::ArrayView<f32, ndarray::Dim<ndarray::IxDynImpl>>,
+    ) -> Result<Vec<TableCell>> {
+        let mut cells = Vec::new();
+        
+        let num_rows = rows.len();
+        let num_cols = cols.len();
+        
+        if num_rows == 0 || num_cols == 0 {
+            return Ok(cells);
+        }
+        
+        // Create cells for each grid position
+        for row in 0..num_rows {
+            for col in 0..num_cols {
+                // Calculate cell bbox based on row/column positions
+                let y0 = if row > 0 { rows[row - 1] } else { 0.0 };
+                let y1 = rows[row];
+                let x0 = if col > 0 { cols[col - 1] } else { 0.0 };
+                let x1 = cols[col];
+                
+                // Detect spans (simplified - could be enhanced with cell_logits)
+                let (row_span, col_span) = self.detect_cell_spans(
+                    row, col, num_rows, num_cols, cell_logits
+                );
+                
+                // Detect if this is a header cell (first row typically)
+                let is_header = row == 0;
+                
+                cells.push(TableCell {
+                    row,
+                    col,
+                    row_span,
+                    col_span,
+                    bbox: (x0, y0, x1, y1),
+                    is_header,
+                });
+            }
+        }
+        
+        Ok(cells)
+    }
+    
+    /// Detect cell spans using cell logits
+    #[cfg(feature = "docling-ffi")]
+    fn detect_cell_spans(
+        &self,
+        _row: usize,
+        _col: usize,
+        _num_rows: usize,
+        _num_cols: usize,
+        _cell_logits: &ndarray::ArrayView<f32, ndarray::Dim<ndarray::IxDynImpl>>,
+    ) -> (usize, usize) {
+        // Simplified span detection
+        // In production, analyze cell_logits to detect merged cells
+        
+        // For now, assume no spans (each cell is 1x1)
+        // This can be enhanced by analyzing the cell_logits tensor
+        // to detect cells that span multiple rows/columns
+        
+        (1, 1) // (row_span, col_span)
     }
 }
 

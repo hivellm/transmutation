@@ -19,6 +19,9 @@ pub mod table_structure_model;
 pub mod model_manager;
 
 #[cfg(feature = "docling-ffi")]
+pub mod cell_matching;
+
+#[cfg(feature = "docling-ffi")]
 pub use layout_model::LayoutModel;
 
 #[cfg(feature = "docling-ffi")]
@@ -26,6 +29,9 @@ pub use table_structure_model::TableStructureModel;
 
 #[cfg(feature = "docling-ffi")]
 pub use model_manager::ModelManager;
+
+#[cfg(feature = "docling-ffi")]
+pub use cell_matching::{CellMatcher, MatchedCell};
 
 use crate::error::Result;
 

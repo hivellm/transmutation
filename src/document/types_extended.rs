@@ -6,6 +6,7 @@
 /// Reference: transmutation/docling-core/docling_core/types/doc/
 
 use serde::{Deserialize, Serialize};
+use super::types::{DocItemLabel, Formatting as BasicFormatting, TableData as BasicTableData};
 
 /// Coordinate origin for bounding boxes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

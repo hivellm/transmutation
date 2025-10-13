@@ -63,7 +63,7 @@ impl LayoutAnalyzer {
     }
 
     /// Detect the type of a text block
-    fn detect_block_type(&self, block: &TextBlock, all_blocks: &[TextBlock], index: usize) -> BlockType {
+    fn detect_block_type(&self, block: &TextBlock, _all_blocks: &[TextBlock], _index: usize) -> BlockType {
         let content = block.text.trim();
         
         // Check for formulas (high math symbol density)

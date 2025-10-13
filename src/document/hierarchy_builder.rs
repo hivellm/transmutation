@@ -139,7 +139,7 @@ impl HierarchyBuilder {
             let item = &items[i];
             
             match item {
-                DocItem::Table(ref table) if table.caption.is_none() => {
+                &DocItem::Table(ref table) if table.caption.is_none() => {
                     // Check if next item is caption (caption after table)
                     if i + 1 < items.len() {
                         if let DocItem::Paragraph(ref text_item) = items[i + 1] {
@@ -172,7 +172,7 @@ impl HierarchyBuilder {
                     result.push(item.clone());
                     i += 1;
                 }
-                DocItem::Picture(ref picture) if picture.caption.is_none() => {
+                &DocItem::Picture(ref picture) if picture.caption.is_none() => {
                     // Similar logic for pictures
                     if i + 1 < items.len() {
                         if let DocItem::Paragraph(ref text_item) = items[i + 1] {
@@ -271,7 +271,7 @@ impl RelationshipBuilder {
     /// Build relationships from document structure
     pub fn build_from_document(&mut self, doc: &DoclingDocument) -> Result<()> {
         let mut current_section: Option<String> = None;
-        let mut current_figure: Option<String> = None;
+        let mut _current_figure: Option<String> = None;
         
         for (idx, item) in doc.items.iter().enumerate() {
             let item_ref = format!("item_{}", idx);
@@ -287,7 +287,7 @@ impl RelationshipBuilder {
                     }
                 }
                 DocItem::Table(_) | DocItem::Picture(_) => {
-                    current_figure = Some(item_ref.clone());
+                    _current_figure = Some(item_ref.clone());
                     
                     // Link to current section
                     if let Some(ref section) = current_section {

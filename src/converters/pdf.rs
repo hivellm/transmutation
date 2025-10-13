@@ -601,7 +601,7 @@ impl PdfConverter {
     
     /// Generate Markdown from text blocks using Docling-style analysis
     /// This mimics what Docling does: layout detection + reading order + semantic understanding
-    fn docling_style_markdown_from_blocks(blocks: &[crate::engines::pdf_parser::TextBlock], page_width: f32, page_height: f32) -> String {
+    fn docling_style_markdown_from_blocks(blocks: &[crate::engines::pdf_parser::TextBlock], _page_width: f32, _page_height: f32) -> String {
         if blocks.is_empty() {
             return String::new();
         }
