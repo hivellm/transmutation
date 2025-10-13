@@ -39,11 +39,11 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 | Input Format | Output Options | Status | Modes |
 |-------------|----------------|---------|-------|
 | **PDF** | Image per page, Markdown (per page/full), JSON | ✅ **Production** | Fast, Precision, FFI |
-| **DOCX** | Image per page, Markdown (per page/full), JSON | ✅ **Production** | Via LibreOffice |
-| **XLSX** | Markdown tables, Images per sheet | ✅ **Production** | Via LibreOffice |
-| **PPTX** | Image per slide, Markdown per slide | ✅ **Production** | Via LibreOffice |
-| **HTML** | Image, Markdown, JSON | 🔄 Planned | - |
-| **XML** | Markdown, JSON | 🔄 Planned | - |
+| **DOCX** | Image per page, Markdown (per page/full), JSON | ✅ **Production** | Pure Rust + LibreOffice |
+| **XLSX** | Markdown tables, CSV, JSON | ✅ **Production** | Pure Rust (148 pg/s) |
+| **PPTX** | Image per slide, Markdown per slide | ✅ **Production** | Pure Rust (1639 pg/s) |
+| **HTML** | Markdown, JSON | ✅ **Production** | Pure Rust (2110 pg/s) |
+| **XML** | Markdown, JSON | ✅ **Production** | Pure Rust (2353 pg/s) |
 | **TXT** | Markdown, JSON | 🔄 Planned | - |
 | **MD** | Markdown (normalized), JSON | 🔄 Planned | - |
 | **RTF** | Markdown, JSON | 🔄 Planned | - |

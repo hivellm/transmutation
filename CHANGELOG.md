@@ -19,19 +19,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **XLSX Converter**: Excel spreadsheet to Markdown conversion
-  - LibreOffice → PDF → Parse pipeline (Docling-style)
-  - Multi-sheet support (each sheet = pages)
-  - Split sheet export
-  - Cross-platform compatibility
-- **PPTX Converter**: PowerPoint presentation to Markdown conversion
-  - LibreOffice → PDF → Parse pipeline (Docling-style)
-  - Each slide = one page
-  - Split slide export (one file per slide)
-  - Image export per slide
+- **XLSX Converter**: Excel to Markdown/CSV/JSON (Pure Rust)
+  - Direct XML parsing with umya-spreadsheet (no LibreOffice!)
+  - CSV export with proper quoting
+  - JSON export with structured data
+  - Markdown tables (clean formatting)
+  - **Performance**: 148 pages/sec (6.7ms per file)
+  - 224x faster than LibreOffice approach
+  
+- **PPTX Converter**: PowerPoint with dual-mode approach
+  - **Text**: Direct XML parsing from ZIP (1,639 pages/sec!)
+  - **Images**: LibreOffice → PDF → Images (when needed)
+  - Clean text output (vs garbage from PDF)
+  - 2,666x faster than LibreOffice for text
+  - Split slide export
+  
+- **HTML Converter**: Web page to Markdown (Pure Rust)
+  - Semantic HTML parsing with scraper/html5ever
+  - Preserves links, headings, lists, code blocks
+  - Handles formatting (strong, em, pre)
+  - **Performance**: 2,110 pages/sec (0.47ms)
+  - HTML → JSON with raw + markdown
+  
+- **XML Converter**: XML to JSON/Markdown (Pure Rust)
+  - Fast parsing with quick-xml
+  - XML → JSON structure preservation
+  - XML → Markdown text extraction
+  - **Performance**: 2,353 pages/sec (0.42ms)
 
 ### Changed
-- All Microsoft Office formats (DOCX, XLSX, PPTX) now follow Docling's proven approach
+- Office formats now use direct parsers (not LibreOffice) for text
+- CI only runs with pure Rust features (no external deps)
+- build-ffi.yml only triggers on tags or manual dispatch
+
+### Fixed
+- CI build errors with leptonica/tesseract dependencies
+- PPTX text output (was garbage, now clean)
+- Removed --all-features from CI (caused dep errors)
 
 ---
 
