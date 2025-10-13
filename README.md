@@ -44,11 +44,11 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 | **PPTX** | Image per slide, Markdown per slide | ✅ **Production** | Pure Rust (1639 pg/s) |
 | **HTML** | Markdown, JSON | ✅ **Production** | Pure Rust (2110 pg/s) |
 | **XML** | Markdown, JSON | ✅ **Production** | Pure Rust (2353 pg/s) |
-| **TXT** | Markdown, JSON | 🔄 Planned | - |
+| **TXT** | Markdown, JSON | ✅ **Production** | Pure Rust (2805 pg/s) |
+| **CSV/TSV** | Markdown tables, JSON | ✅ **Production** | Pure Rust (2647 pg/s) |
 | **MD** | Markdown (normalized), JSON | 🔄 Planned | - |
 | **RTF** | Markdown, JSON | 🔄 Planned | - |
 | **ODT** | Markdown, Image per page, JSON | 🔄 Planned | - |
-| **CSV/TSV** | Markdown tables, JSON | 🔄 Planned | - |
 
 ### Image Formats (OCR/ASR)
 

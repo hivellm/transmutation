@@ -21,6 +21,10 @@ pub mod html;
 #[cfg(feature = "web")]
 pub mod xml;
 
+// Text formats
+pub mod txt;
+pub mod csv;
+
 #[cfg(feature = "image-ocr")]
 pub mod image;
 

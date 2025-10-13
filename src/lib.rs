@@ -191,6 +191,25 @@ impl ConversionBuilder {
             return converter.convert(&self.input, output_format, self.options).await;
         }
 
+        // Text formats (always enabled)
+        if input_format == FileFormat::Txt {
+            use crate::converters::txt::TxtConverter;
+            let converter = TxtConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        if input_format == FileFormat::Csv {
+            use crate::converters::csv::CsvConverter;
+            let converter = CsvConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        if input_format == FileFormat::Tsv {
+            use crate::converters::csv::CsvConverter;
+            let converter = CsvConverter::new_tsv();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
         // Format not supported or feature not enabled
         Err(TransmutationError::UnsupportedFormat(format!(
             "Format {:?} is not supported or feature not enabled",

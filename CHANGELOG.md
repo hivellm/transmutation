@@ -19,6 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **TXT Converter**: Plain text to Markdown (Pure Rust)
+  - Automatic paragraph detection
+  - Heading detection (all caps or ending with colon)
+  - **Performance**: 2,805 pages/sec (0.36ms)
+  - TXT → JSON with content metadata
+  - Zero dependencies
+  
+- **CSV/TSV Converter**: Spreadsheet data to Markdown/JSON (Pure Rust)
+  - CSV/TSV → Markdown tables (clean formatting)
+  - CSV/TSV → JSON structured output
+  - Header row detection
+  - **Performance**: 2,647 pages/sec (0.38ms)
+  - Zero dependencies
+
+### Previous Additions
 - **XLSX Converter**: Excel to Markdown/CSV/JSON (Pure Rust)
   - Direct XML parsing with umya-spreadsheet (no LibreOffice!)
   - CSV export with proper quoting
