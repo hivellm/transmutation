@@ -91,12 +91,35 @@ impl PageAssembler {
             }
         });
         
-        // Join text with spaces
-        let text = cells
-            .iter()
-            .map(|cell| cell.text.as_str())
-            .collect::<Vec<_>>()
-            .join(" ");
+        // Smart joining: docling-parse returns one character per cell
+        // We need to detect word boundaries based on horizontal distance
+        let mut text = String::new();
+        let mut prev_x_end = 0.0;
+        let mut prev_y = 0.0;
+        
+        for cell in &cells {
+            let gap_x = cell.bbox.l - prev_x_end;
+            let gap_y = (cell.bbox.t - prev_y).abs();
+            let cell_width = cell.bbox.r - cell.bbox.l;
+            
+            // New line if vertical gap is significant
+            if prev_y > 0.0 && gap_y > 5.0 {
+                if !text.ends_with('\n') {
+                    text.push('\n');
+                }
+            } 
+            // Add space if horizontal gap is significant (word boundary)
+            // Use character width as reference: gap > 50% of char width = word boundary
+            else if prev_x_end > 0.0 && gap_x > (cell_width * 0.3) {
+                if !text.ends_with(' ') && !text.ends_with('\n') {
+                    text.push(' ');
+                }
+            }
+            
+            text.push_str(&cell.text);
+            prev_x_end = cell.bbox.r;
+            prev_y = cell.bbox.t;
+        }
         
         // Sanitize if enabled
         if self.options.enable_text_sanitization {
