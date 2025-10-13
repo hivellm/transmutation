@@ -43,10 +43,12 @@ pub mod output;
 pub mod pipeline;  // Docling-style flexible export pipeline
 pub mod types;
 pub mod utils;
+pub mod batch;  // Batch processing
 
 pub use converters::{ConverterMetadata, DocumentConverter};
 pub use error::{Result, TransmutationError};
 pub use types::*;
+pub use batch::{BatchProcessor, BatchResult};
 
 /// Current version of the Transmutation library
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -169,7 +171,12 @@ impl ConversionBuilder {
             return converter.convert(&self.input, output_format, self.options).await;
         }
 
-        if input_format == FileFormat::Zip || input_format == FileFormat::Tar || input_format == FileFormat::SevenZ {
+        if input_format == FileFormat::Zip 
+            || input_format == FileFormat::Tar 
+            || input_format == FileFormat::TarGz 
+            || input_format == FileFormat::TarBz2 
+            || input_format == FileFormat::SevenZ 
+        {
             use crate::converters::archive::ArchiveConverter;
             let converter = ArchiveConverter::new();
             return converter.convert(&self.input, output_format, self.options).await;

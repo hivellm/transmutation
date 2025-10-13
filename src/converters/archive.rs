@@ -13,6 +13,11 @@ use zip::ZipArchive;
 use std::io::{Cursor, Read};
 use std::collections::HashMap;
 
+#[cfg(feature = "archives-extended")]
+use tar::Archive as TarArchive;
+#[cfg(feature = "archives-extended")]
+use flate2::read::GzDecoder;
+
 /// Archive to document converter
 pub struct ArchiveConverter;
 
@@ -37,6 +42,68 @@ impl ArchiveConverter {
         }
         
         Ok(files)
+    }
+    
+    /// List files in TAR archive
+    #[cfg(feature = "archives-extended")]
+    async fn list_tar_files(&self, archive_path: &Path, is_gzipped: bool) -> Result<Vec<(String, u64)>> {
+        let data = fs::read(archive_path).await?;
+        let cursor = Cursor::new(data);
+        
+        let mut files = Vec::new();
+        
+        if is_gzipped {
+            let decoder = GzDecoder::new(cursor);
+            let mut archive = TarArchive::new(decoder);
+            
+            for entry in archive.entries()? {
+                let entry = entry?;
+                let path = entry.path()?;
+                if !entry.header().entry_type().is_dir() {
+                    files.push((
+                        path.display().to_string(),
+                        entry.header().size()?
+                    ));
+                }
+            }
+        } else {
+            let mut archive = TarArchive::new(cursor);
+            
+            for entry in archive.entries()? {
+                let entry = entry?;
+                let path = entry.path()?;
+                if !entry.header().entry_type().is_dir() {
+                    files.push((
+                        path.display().to_string(),
+                        entry.header().size()?
+                    ));
+                }
+            }
+        }
+        
+        Ok(files)
+    }
+    
+    /// List files in archive (auto-detect type)
+    async fn list_archive_files(&self, archive_path: &Path, format: FileFormat) -> Result<Vec<(String, u64)>> {
+        match format {
+            FileFormat::Zip => {
+                self.list_zip_files(archive_path).await
+            },
+            #[cfg(feature = "archives-extended")]
+            FileFormat::Tar => {
+                self.list_tar_files(archive_path, false).await
+            },
+            #[cfg(feature = "archives-extended")]
+            FileFormat::TarGz => {
+                self.list_tar_files(archive_path, true).await
+            },
+            _ => {
+                Err(crate::TransmutationError::UnsupportedFormat(
+                    format!("Archive format {:?} not yet supported", format)
+                ))
+            }
+        }
     }
     
     /// Generate archive index in Markdown
@@ -166,12 +233,15 @@ impl DocumentConverter for ArchiveConverter {
             .and_then(|n| n.to_str())
             .unwrap_or("archive");
         
+        // Detect archive format
+        let input_format = file_detect::detect_format(input).await?;
+        
         eprintln!("🔄 Archive Processing (Pure Rust)");
-        eprintln!("   Archive → List Files → {:?}", output_format);
+        eprintln!("   Archive ({:?}) → List Files → {:?}", input_format, output_format);
         eprintln!();
         
         // List files in archive
-        let files = self.list_zip_files(input).await?;
+        let files = self.list_archive_files(input, input_format).await?;
         eprintln!("📦 Found {} files in archive", files.len());
         
         // Convert to requested format
@@ -200,7 +270,7 @@ impl DocumentConverter for ArchiveConverter {
         
         Ok(ConversionResult {
             input_path: input.to_path_buf(),
-            input_format: FileFormat::Zip,
+            input_format,
             output_format,
             content: vec![ConversionOutput {
                 page_number: 1,
