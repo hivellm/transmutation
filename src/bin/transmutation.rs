@@ -251,23 +251,50 @@ async fn run_command(cli: Cli) -> Result<()> {
                 .await?;
             let duration = start.elapsed();
             
-            // Save output
-            result.save(&output_path).await?;
-            
-            // Display results
-            if !cli.quiet {
-                println!();
-                println!("{}", "✓ Conversion completed successfully!".green().bold());
+            // Save output(s) - handle multiple files for split pages or images
+            if result.content.len() > 1 {
+                // Multiple outputs (split pages or images)
+                let stem = output_path.file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("output");
+                let parent = output_path.parent().unwrap_or_else(|| Path::new("."));
+                let ext = output_path.extension()
+                    .and_then(|e| e.to_str())
+                    .unwrap_or("md");
                 
-                // Show where files were saved
-                if result.content.len() > 1 {
-                    let stem = output_path.file_stem().and_then(|s| s.to_str()).unwrap_or("output");
-                    let parent = output_path.parent().unwrap_or_else(|| Path::new("."));
-                    let output_dir = parent.join(stem);
-                    println!("  Saved to:     {} (directory with {} pages)", output_dir.display(), result.content.len());
-                } else {
+                if !cli.quiet {
+                    println!();
+                    println!("{}", "✓ Conversion completed successfully!".green().bold());
+                    println!("  Saving {} pages to: {}_*.{}", 
+                        result.content.len(), stem, ext);
+                }
+                
+                for chunk in &result.content {
+                    let page_path = parent.join(format!("{}_{}.{}", 
+                        stem, 
+                        chunk.page_number,
+                        ext
+                    ));
+                    
+                    tokio::fs::write(&page_path, &chunk.data).await?;
+                }
+                
+                if !cli.quiet {
+                    println!("  Saved to:     {}/ ({} files)", parent.display(), result.content.len());
+                }
+            } else {
+                // Single output (existing behavior)
+                result.save(&output_path).await?;
+                
+                if !cli.quiet {
+                    println!();
+                    println!("{}", "✓ Conversion completed successfully!".green().bold());
                     println!("  Saved to:     {}", output_path.display());
                 }
+            }
+            
+            // Display statistics
+            if !cli.quiet {
                 println!();
                 println!("{}", "Statistics:".yellow().bold());
                 println!("  Duration:     {:?}", duration);

@@ -40,6 +40,7 @@ pub mod integration;
 pub mod ml;
 pub mod optimization;
 pub mod output;
+pub mod pipeline;  // Docling-style flexible export pipeline
 pub mod types;
 pub mod utils;
 

@@ -74,13 +74,11 @@ ndarray = { version = "0.15", optional = true }
 # Spatial indexing
 rstar = { version = "0.12", optional = true }
 
-# PDF rendering for ML input
-pdfium-render = { version = "0.8", optional = true }
-
 # Document parsing
 # PDF
 lopdf = { version = "0.35", optional = true }
 pdf-extract = { version = "0.7", optional = true }
+pdfium-render = { version = "0.8", optional = true }
 
 # DOCX
 docx-rs = { version = "0.4", optional = true }
@@ -153,6 +151,7 @@ ffmpeg = ["ffmpeg-next"]
 
 # Format support (pure Rust implementations)
 pdf = ["lopdf", "pdf-extract"]
+pdf-to-image = ["dep:pdfium-render", "pdf"]  # PDF rendering to images per page
 office = ["docx-rs", "umya-spreadsheet"]  # calamine temporarily disabled
 web = ["scraper", "html5ever", "quick-xml", "roxmltree"]
 image-ocr = ["tesseract"]

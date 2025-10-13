@@ -402,6 +402,12 @@ impl PdfConverter {
         let parser = PdfParser::load(path)?;
         let pages = parser.extract_all_pages()?;
         
+        // Check if split_pages is enabled
+        if options.split_pages {
+            eprintln!("📄 Splitting into {} individual pages (precision mode)", pages.len());
+            return self.convert_pages_individually(path, &pages, options).await;
+        }
+        
         // Collect all text blocks from all pages
         let mut all_blocks = Vec::new();
         let mut total_width: f32 = 0.0;
@@ -437,6 +443,140 @@ impl PdfConverter {
                 token_count: Some(token_count),
             },
         }])
+    }
+    
+    /// Convert PDF to images (one per page) for vision model embeddings
+    #[cfg(feature = "pdf-to-image")]
+    async fn convert_to_images(
+        &self,
+        path: &Path,
+        format: crate::types::ImageFormat,
+        quality: u8,
+        dpi: u32,
+        _options: &ConversionOptions,
+    ) -> Result<Vec<ConversionOutput>> {
+        use pdfium_render::prelude::*;
+        
+        eprintln!("🖼️  Rendering PDF to images (DPI: {}, Format: {:?})...", dpi, format);
+        
+        let pdfium = Pdfium::default();
+        let document = pdfium.load_pdf_from_file(path, None)
+            .map_err(|e| crate::TransmutationError::engine_error("pdfium-render", format!("Failed to load PDF: {:?}", e)))?;
+        
+        let mut outputs = Vec::new();
+        let page_count = document.pages().len();
+        
+        for page_index in 0..page_count {
+            eprintln!("  Rendering page {}/{}...", page_index + 1, page_count);
+            
+            let page = document.pages().get(page_index)
+                .map_err(|e| crate::TransmutationError::engine_error("pdfium-render", format!("Failed to get page: {:?}", e)))?;
+            
+            // Calculate dimensions based on DPI
+            let width_points = page.width().value;
+            let height_points = page.height().value;
+            let width_pixels = (width_points * dpi as f32 / 72.0) as i32;
+            let height_pixels = (height_points * dpi as f32 / 72.0) as i32;
+            
+            // Render page to bitmap
+            let render_config = PdfRenderConfig::new()
+                .set_target_width(width_pixels)
+                .set_target_height(height_pixels);
+            
+            let bitmap = page.render_with_config(&render_config)
+                .map_err(|e| crate::TransmutationError::engine_error("pdfium-render", format!("Failed to render page: {:?}", e)))?;
+            
+            // Convert to requested image format
+            let image_data = match format {
+                crate::types::ImageFormat::Png => {
+                    bitmap.as_image().into_rgba8().as_raw().clone()
+                    // TODO: Encode as PNG properly
+                },
+                crate::types::ImageFormat::Jpeg => {
+                    bitmap.as_image().into_rgb8().as_raw().clone()
+                    // TODO: Encode as JPEG with quality
+                },
+                crate::types::ImageFormat::Webp => {
+                    bitmap.as_image().into_rgba8().as_raw().clone()
+                    // TODO: Encode as WebP with quality
+                },
+            };
+            
+            outputs.push(ConversionOutput {
+                page_number: page_index + 1,
+                data: image_data,
+                metadata: OutputMetadata {
+                    size_bytes: image_data.len() as u64,
+                    chunk_count: 1,
+                    token_count: None,
+                },
+            });
+        }
+        
+        eprintln!("✅ Rendered {} pages to images", page_count);
+        Ok(outputs)
+    }
+    
+    /// Convert PDF pages individually with precision mode quality
+    /// Each page is processed separately and returned as individual ConversionOutput
+    #[cfg(feature = "pdf")]
+    async fn convert_pages_individually(
+        &self,
+        path: &Path,
+        pages: &[PdfPage],
+        _options: &ConversionOptions,
+    ) -> Result<Vec<ConversionOutput>> {
+        use pdf_extract::extract_text_from_mem;
+        
+        let mut outputs = Vec::new();
+        
+        // Load original PDF bytes for page-by-page extraction
+        let pdf_bytes = tokio::fs::read(path).await?;
+        
+        for (page_idx, _page) in pages.iter().enumerate() {
+            eprintln!("  Processing page {}/{}...", page_idx + 1, pages.len());
+            
+            // For now, use pdf-extract on full document and split by page markers
+            // This is a workaround - ideally we'd extract each page individually
+            // TODO: Implement proper per-page extraction in PdfParser
+            
+            // Extract text for this specific page using pdf-extract
+            let full_text = extract_text_from_mem(&pdf_bytes)
+                .map_err(|e| crate::TransmutationError::engine_error("PDF Parser", format!("pdf-extract failed: {:?}", e)))?;
+            
+            // Split by page markers (pdf-extract adds \f between pages)
+            let page_texts: Vec<&str> = full_text.split('\x0C').collect();
+            
+            let page_text = if page_idx < page_texts.len() {
+                page_texts[page_idx].to_string()
+            } else {
+                // Fallback if page marker not found
+                _page.text_blocks
+                    .iter()
+                    .map(|b| b.text.as_str())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            };
+            
+            // Apply same precision mode processing as full document
+            let markdown = Self::join_paragraph_lines_enhanced(&page_text);
+            
+            let token_count = markdown.len() / 4;
+            let data = markdown.into_bytes();
+            let size_bytes = data.len() as u64;
+            
+            outputs.push(ConversionOutput {
+                page_number: page_idx + 1,
+                data,
+                metadata: OutputMetadata {
+                    size_bytes,
+                    chunk_count: 1,
+                    token_count: Some(token_count),
+                },
+            });
+        }
+        
+        Ok(outputs)
     }
     
     /// Convert PDF using docling-parse C++ FFI (95%+ similarity target)
@@ -1034,6 +1174,18 @@ impl DocumentConverter for PdfConverter {
             }
             OutputFormat::Json { .. } => {
                 self.convert_to_json(&parser, &options).await?
+            }
+            OutputFormat::Image { format, quality, dpi } => {
+                #[cfg(feature = "pdf-to-image")]
+                {
+                    self.convert_to_images(input, format, quality, dpi, &options).await?
+                }
+                #[cfg(not(feature = "pdf-to-image"))]
+                {
+                    return Err(crate::TransmutationError::InvalidOptions(
+                        "PDF to image conversion requires pdf-to-image feature".to_string()
+                    ));
+                }
             }
             _ => {
                 return Err(crate::TransmutationError::InvalidOptions(
