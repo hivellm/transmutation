@@ -152,31 +152,26 @@ Total:     ████████░░░░░░░░░░░░  42% Com
 - ✅ Split page export support
 - ✅ Cross-platform compatibility (Windows/Linux/macOS)
 
-#### XLSX Support 🔄 IN PROGRESS
-- ✅ Integrated `umya-spreadsheet` crate
-- 🔄 Implement XLSX → Markdown tables (in progress)
-- [ ] Implement XLSX → CSV export
-- [ ] Handle multiple sheets
-- [ ] Extract formulas
-- [ ] Support pivot tables metadata
+#### XLSX Support ✅ IMPLEMENTED
+- ✅ Integrated LibreOffice → PDF pipeline
+- ✅ Implemented XLSX → Markdown tables (via PDF)
+- ✅ Reuses PDF conversion infrastructure
+- ✅ Handles multiple sheets (each sheet = pages in PDF)
+- ✅ Cross-platform compatibility
+- ✅ Split sheet export support
 
-#### PPTX Support 📝 PLANNED
-- [ ] Integrate PowerPoint parsing library
-- [ ] Implement PPTX → Markdown converter
-- [ ] Implement PPTX → Image per slide
-- [ ] Extract speaker notes
-- [ ] Handle animations and transitions metadata
-- [ ] Preserve slide structure
+#### PPTX Support ✅ IMPLEMENTED
+- ✅ Integrated LibreOffice → PDF pipeline
+- ✅ Implemented PPTX → Markdown converter (via PDF)
+- ✅ Implemented PPTX → Image per slide
+- ✅ Each slide becomes one page in PDF
+- ✅ Preserves slide structure
+- ✅ Cross-platform compatibility
+- ✅ Split slide export support
 
-#### XLSX Support
-- [ ] Integrate `calamine` or `umya-spreadsheet` crate
-- [ ] Implement XLSX → Markdown tables
-- [ ] Implement XLSX → CSV export
-- [ ] Handle multiple sheets
-- [ ] Extract formulas and formatting
-- [ ] Support pivot tables metadata
+**Key Achievement**: All Microsoft Office formats (DOCX, XLSX, PPTX) now supported using Docling's proven LibreOffice → PDF pipeline approach.
 
-### Week 16-17: Web Formats
+### Week 16-17: Web Formats 📝 NEXT
 #### HTML Support
 - [ ] Integrate `scraper` and `html5ever` crates
 - [ ] Implement HTML → Markdown converter

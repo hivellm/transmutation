@@ -18,6 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **XLSX Converter**: Excel spreadsheet to Markdown conversion
+  - LibreOffice → PDF → Parse pipeline (Docling-style)
+  - Multi-sheet support (each sheet = pages)
+  - Split sheet export
+  - Cross-platform compatibility
+- **PPTX Converter**: PowerPoint presentation to Markdown conversion
+  - LibreOffice → PDF → Parse pipeline (Docling-style)
+  - Each slide = one page
+  - Split slide export (one file per slide)
+  - Image export per slide
+
+### Changed
+- All Microsoft Office formats (DOCX, XLSX, PPTX) now follow Docling's proven approach
+
 ---
 
 ## [0.1.1] - 2025-10-13
