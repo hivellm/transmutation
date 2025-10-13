@@ -1,11 +1,27 @@
 /// Markdown serializer for DoclingDocument
 /// Reimplementation of docling-core's markdown serializer in Rust
 use super::types::*;
+use super::types_extended::Formatting as ExtFormatting;
 use crate::error::Result;
+use regex::Regex;
+use once_cell::sync::Lazy;
+
+/// Pattern for detecting markdown special characters
+static MD_ESCAPE_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"([\\`*_{}[\]()#+\-.!|])").unwrap()
+});
+
+/// Pattern for detecting URLs
+static URL_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"https?://[^\s]+").unwrap()
+});
 
 pub struct MarkdownSerializer {
     indent: usize,
     escape_underscores: bool,
+    escape_special_chars: bool,
+    enable_tables: bool,
+    enable_images: bool,
 }
 
 impl Default for MarkdownSerializer {
@@ -13,6 +29,9 @@ impl Default for MarkdownSerializer {
         Self {
             indent: 4,
             escape_underscores: true,
+            escape_special_chars: true,
+            enable_tables: true,
+            enable_images: true,
         }
     }
 }
@@ -24,6 +43,21 @@ impl MarkdownSerializer {
 
     pub fn with_indent(mut self, indent: usize) -> Self {
         self.indent = indent;
+        self
+    }
+    
+    pub fn with_escape_special_chars(mut self, enable: bool) -> Self {
+        self.escape_special_chars = enable;
+        self
+    }
+    
+    pub fn with_tables(mut self, enable: bool) -> Self {
+        self.enable_tables = enable;
+        self
+    }
+    
+    pub fn with_images(mut self, enable: bool) -> Self {
+        self.enable_images = enable;
         self
     }
 
@@ -169,25 +203,104 @@ impl MarkdownSerializer {
     }
 
     fn apply_formatting(&self, text: &str, formatting: Option<&Formatting>) -> String {
-        let mut result = text.to_string();
-
-        // Escape underscores if needed
-        if self.escape_underscores && !result.contains("](") {
-            // Don't escape underscores in URLs
-            result = result.replace('_', r"\_");
-        }
+        let mut result = self.escape_markdown_chars(text);
 
         // Apply formatting
         if let Some(fmt) = formatting {
-            if fmt.bold {
+            // Apply in order: bold, italic, strikethrough
+            // For combined formatting: ***text*** = bold + italic
+            if fmt.bold && fmt.italic {
+                result = format!("***{}***", result);
+            } else if fmt.bold {
                 result = format!("**{}**", result);
-            }
-            if fmt.italic {
+            } else if fmt.italic {
                 result = format!("*{}*", result);
+            }
+            
+            if fmt.underline {
+                // Markdown doesn't have native underline, use HTML
+                result = format!("<u>{}</u>", result);
             }
         }
 
         result
+    }
+    
+    /// Apply advanced formatting with subscript, superscript, strikethrough
+    fn apply_extended_formatting(&self, text: &str, formatting: Option<&ExtFormatting>) -> String {
+        let mut result = self.escape_markdown_chars(text);
+
+        if let Some(fmt) = formatting {
+            // Apply in order to avoid conflicts
+            if fmt.strikethrough {
+                result = format!("~~{}~~", result);
+            }
+            
+            if fmt.subscript {
+                result = format!("<sub>{}</sub>", result);
+            }
+            
+            if fmt.superscript {
+                result = format!("<sup>{}</sup>", result);
+            }
+            
+            // Bold + Italic combined
+            if fmt.bold && fmt.italic {
+                result = format!("***{}***", result);
+            } else if fmt.bold {
+                result = format!("**{}**", result);
+            } else if fmt.italic {
+                result = format!("*{}*", result);
+            }
+            
+            if fmt.underline {
+                result = format!("<u>{}</u>", result);
+            }
+        }
+
+        result
+    }
+    
+    /// Escape markdown special characters
+    fn escape_markdown_chars(&self, text: &str) -> String {
+        if !self.escape_special_chars {
+            return text.to_string();
+        }
+        
+        // Don't escape inside URLs
+        if URL_PATTERN.is_match(text) {
+            return text.to_string();
+        }
+        
+        // Don't escape if already in code block
+        if text.starts_with('`') && text.ends_with('`') {
+            return text.to_string();
+        }
+        
+        // Escape special markdown characters
+        let mut result = text.to_string();
+        
+        // Only escape underscores if not in links
+        if self.escape_underscores && !text.contains("](") {
+            result = result.replace('_', r"\_");
+        }
+        
+        // Escape other special chars selectively
+        result = result.replace('*', r"\*");
+        result = result.replace('[', r"\[");
+        result = result.replace(']', r"\]");
+        
+        result
+    }
+    
+    /// Format text with hyperlink
+    fn format_link(&self, text: &str, url: &str) -> String {
+        format!("[{}]({})", text, url)
+    }
+    
+    /// Format inline code
+    fn format_inline_code(&self, text: &str) -> String {
+        format!("`{}`", text)
     }
 }
 
