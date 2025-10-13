@@ -69,7 +69,8 @@ transmutation convert <INPUT> [OPTIONS]
 Options:
   -o, --output <FILE>      Output file path
   -f, --format <FORMAT>    Output format [markdown|png|jpeg|webp|json|csv]
-  -s, --split-pages        Split output by pages
+  -s, --split-pages        Split output by pages (creates multiple files)
+  -d, --output-dir <DIR>   Output directory for split pages/images
   -l, --optimize-llm       Optimize for LLM processing
   -q, --quality <1-100>    Image quality (default: 85)
       --dpi <DPI>          DPI for image output (default: 150)
@@ -87,10 +88,17 @@ transmutation convert document.pdf
 # With LLM optimization
 transmutation convert document.pdf --optimize-llm
 
-# Split by pages
-transmutation convert document.pdf --split-pages -o chapters/
+# Split into pages (one MD per page) - NEW!
+transmutation convert document.pdf --precision --split-pages \
+  --output-dir data/pages -o document.md
+# Creates: data/pages/document_1.md, document_2.md, ..., document_N.md
 
-# High quality
+# Split into images (one PNG per page) - NEW!
+transmutation convert document.pdf --format png --dpi 150 \
+  --output-dir data/images -o document.png
+# Creates: data/images/document_1.png, document_2.png, ..., document_N.png
+
+# High quality single file
 transmutation convert document.pdf -f png --dpi 300 --quality 95
 ```
 

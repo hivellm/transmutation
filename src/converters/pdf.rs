@@ -446,74 +446,89 @@ impl PdfConverter {
     }
     
     /// Convert PDF to images (one per page) for vision model embeddings
+    /// Uses pdftoppm command-line tool (widely available on Linux/Mac)
     #[cfg(feature = "pdf-to-image")]
     async fn convert_to_images(
         &self,
         path: &Path,
         format: crate::types::ImageFormat,
-        quality: u8,
+        _quality: u8,
         dpi: u32,
         _options: &ConversionOptions,
     ) -> Result<Vec<ConversionOutput>> {
-        use pdfium_render::prelude::*;
+        use std::process::Command;
+        use tokio::fs;
         
         eprintln!("🖼️  Rendering PDF to images (DPI: {}, Format: {:?})...", dpi, format);
+        eprintln!("   Using pdftoppm command-line tool...");
         
-        let pdfium = Pdfium::default();
-        let document = pdfium.load_pdf_from_file(path, None)
-            .map_err(|e| crate::TransmutationError::engine_error("pdfium-render", format!("Failed to load PDF: {:?}", e)))?;
+        // Create temporary directory for images
+        let temp_dir = std::env::temp_dir().join(format!("transmutation_{}", std::process::id()));
+        fs::create_dir_all(&temp_dir).await?;
         
+        // Determine format flag for pdftoppm
+        let format_flag = match format {
+            crate::types::ImageFormat::Png => "png",
+            crate::types::ImageFormat::Jpeg => "jpeg",
+            crate::types::ImageFormat::Webp => "png", // pdftoppm doesn't support webp, use png
+        };
+        
+        // Run pdftoppm to convert PDF to images
+        let output = Command::new("pdftoppm")
+            .arg(format!("-{}", format_flag))
+            .arg("-r").arg(dpi.to_string())
+            .arg(path)
+            .arg(temp_dir.join("page"))
+            .output()
+            .map_err(|e| crate::TransmutationError::engine_error(
+                "pdftoppm", 
+                format!("Failed to run pdftoppm: {}. Make sure poppler-utils is installed (apt install poppler-utils)", e)
+            ))?;
+        
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(crate::TransmutationError::engine_error(
+                "pdftoppm",
+                format!("pdftoppm failed: {}", stderr)
+            ));
+        }
+        
+        // Read generated images
         let mut outputs = Vec::new();
-        let page_count = document.pages().len();
+        let mut entries = fs::read_dir(&temp_dir).await?;
+        let mut image_files = Vec::new();
         
-        for page_index in 0..page_count {
-            eprintln!("  Rendering page {}/{}...", page_index + 1, page_count);
+        while let Some(entry) = entries.next_entry().await? {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) == Some(format_flag) {
+                image_files.push(path);
+            }
+        }
+        
+        // Sort by page number (pdftoppm creates page-1.png, page-2.png, etc.)
+        image_files.sort();
+        
+        for (idx, image_path) in image_files.iter().enumerate() {
+            eprintln!("  Reading page {}/{}...", idx + 1, image_files.len());
             
-            let page = document.pages().get(page_index)
-                .map_err(|e| crate::TransmutationError::engine_error("pdfium-render", format!("Failed to get page: {:?}", e)))?;
-            
-            // Calculate dimensions based on DPI
-            let width_points = page.width().value;
-            let height_points = page.height().value;
-            let width_pixels = (width_points * dpi as f32 / 72.0) as i32;
-            let height_pixels = (height_points * dpi as f32 / 72.0) as i32;
-            
-            // Render page to bitmap
-            let render_config = PdfRenderConfig::new()
-                .set_target_width(width_pixels)
-                .set_target_height(height_pixels);
-            
-            let bitmap = page.render_with_config(&render_config)
-                .map_err(|e| crate::TransmutationError::engine_error("pdfium-render", format!("Failed to render page: {:?}", e)))?;
-            
-            // Convert to requested image format
-            let image_data = match format {
-                crate::types::ImageFormat::Png => {
-                    bitmap.as_image().into_rgba8().as_raw().clone()
-                    // TODO: Encode as PNG properly
-                },
-                crate::types::ImageFormat::Jpeg => {
-                    bitmap.as_image().into_rgb8().as_raw().clone()
-                    // TODO: Encode as JPEG with quality
-                },
-                crate::types::ImageFormat::Webp => {
-                    bitmap.as_image().into_rgba8().as_raw().clone()
-                    // TODO: Encode as WebP with quality
-                },
-            };
+            let image_data = fs::read(&image_path).await?;
+            let size_bytes = image_data.len() as u64;
             
             outputs.push(ConversionOutput {
-                page_number: page_index + 1,
+                page_number: idx + 1,
                 data: image_data,
                 metadata: OutputMetadata {
-                    size_bytes: image_data.len() as u64,
+                    size_bytes,
                     chunk_count: 1,
                     token_count: None,
                 },
             });
         }
         
-        eprintln!("✅ Rendered {} pages to images", page_count);
+        // Cleanup temp directory
+        let _ = fs::remove_dir_all(&temp_dir).await;
+        
+        eprintln!("✅ Rendered {} pages to images", outputs.len());
         Ok(outputs)
     }
     
