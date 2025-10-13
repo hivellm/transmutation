@@ -58,3 +58,4 @@ debug_*.rs
 
 # Cache
 .cache/
+data/
