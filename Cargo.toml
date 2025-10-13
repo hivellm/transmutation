@@ -1,9 +1,7 @@
-cargo-features = ["edition2024"]
-
 [package]
 name = "transmutation"
 version = "0.1.2"
-edition = "2024"
+edition = "2021"
 authors = ["HiveLLM Team <team@hivellm.org>"]
 license = "MIT"
 description = "High-performance document conversion engine for AI/LLM embeddings - 27 formats supported"
