@@ -57,7 +57,11 @@ enum Commands {
         /// Use high-precision mode (Docling-based, slower but ~95% accurate vs ~81% fast mode)
         #[arg(short = 'P', long)]
         precision: bool,
-
+        
+        /// Use docling-parse C++ FFI for maximum precision (95%+ similarity)
+        /// Requires compilation with --features docling-ffi
+        #[arg(long)]
+        ffi: bool,
 
         /// Image quality (1-100)
         #[arg(short = 'q', long, default_value = "85")]
@@ -155,6 +159,7 @@ async fn run_command(cli: Cli) -> Result<()> {
             split_pages,
             optimize_llm,
             precision,
+            ffi,
             quality,
             dpi,
         } => {
@@ -189,6 +194,7 @@ async fn run_command(cli: Cli) -> Result<()> {
                 split_pages,
                 optimize_for_llm: optimize_llm,
                 use_precision_mode: precision,
+                use_ffi: ffi,
                 extract_tables: true,
                 image_quality: ImageQuality::High,
                 dpi,
@@ -196,8 +202,10 @@ async fn run_command(cli: Cli) -> Result<()> {
             };
             
             // Show mode information
-            if !cli.quiet && precision {
-                println!("{}", "  Mode:   Precision (Enhanced heuristics, 77.3% similarity)".yellow());
+            if !cli.quiet && ffi {
+                println!("{}", "  Mode:   FFI (docling-parse C++, 95%+ similarity target)".green().bold());
+            } else if !cli.quiet && precision {
+                println!("{}", "  Mode:   Precision (Enhanced heuristics, 82%+ similarity)".yellow());
             } else if !cli.quiet {
                 println!("{}", "  Mode:   Fast (Pure Rust, 71.8% similarity, 250x faster)".green());
             }

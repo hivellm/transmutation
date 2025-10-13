@@ -17,8 +17,27 @@ Transmutation is a **pure Rust** document conversion engine designed to transfor
 - Convert documents to LLM-friendly formats (Markdown, Images, JSON)
 - Optimize output for embedding generation (text and multimodal)
 - Maintain maximum quality with minimum size
-- **Competitor to Docling** - Faster, more efficient, and easier to deploy
+- **Competitor to Docling** - **98x faster**, more efficient, and easier to deploy
 - Seamless integration with HiveLLM Vectorizer
+
+## 📊 Benchmark Results
+
+**Transmutation vs Docling** (Fast Mode - Pure Rust):
+
+| Metric | Paper 1 (15 pages) | Paper 2 (25 pages) | Average |
+|--------|--------------------|--------------------|---------|
+| **Similarity** | 76.36% | 84.44% | **80.40%** |
+| **Speed** | 108x faster | 88x faster | **98x faster** |
+| **Time (Docling)** | 31.36s | 40.56s | ~35s |
+| **Time (Transmutation)** | 0.29s | 0.46s | ~0.37s |
+
+- ✅ **80% similarity** - Acceptable for most use cases
+- ✅ **98x faster** - Near-instant conversion  
+- ✅ **Pure Rust** - No Python/ML dependencies
+- ✅ **Low memory** - 50 MB footprint
+- 🎯 **Goal**: 95% similarity (Precision Mode with C++ FFI - in development)
+
+See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 
 ## 📋 Supported Formats
 

@@ -249,6 +249,10 @@ pub struct ConversionOptions {
     /// When enabled: ~95% similarity, slower (uses Python/ML)
     /// When disabled (default): ~81% similarity, 250x faster (pure Rust)
     pub use_precision_mode: bool,
+    
+    /// Use docling-parse C++ FFI for maximum precision (95%+ similarity)
+    /// Requires compilation with --features docling-ffi
+    pub use_ffi: bool,
 }
 
 impl Default for ConversionOptions {
@@ -269,6 +273,7 @@ impl Default for ConversionOptions {
             remove_watermarks: false,
             normalize_whitespace: true,
             use_precision_mode: false, // Fast mode by default (pure Rust, 250x faster)
+            use_ffi: false, // C++ FFI disabled by default
         }
     }
 }

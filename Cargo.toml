@@ -67,6 +67,16 @@ leptess = { version = "0.14", optional = true }
 image = { version = "0.25", features = ["png", "jpeg", "gif", "bmp", "tiff", "webp"] }
 imageproc = "0.25"
 
+# ML & Computer Vision (for docling-ffi feature)
+ort = { version = "2.0", optional = true, features = ["download-binaries"] }
+ndarray = { version = "0.15", optional = true }
+
+# Spatial indexing
+rstar = { version = "0.12", optional = true }
+
+# PDF rendering for ML input
+pdfium-render = { version = "0.8", optional = true }
+
 # Document parsing
 # PDF
 lopdf = { version = "0.35", optional = true }
@@ -102,6 +112,9 @@ sevenz-rust = { version = "0.6", optional = true }
 # Parallelism
 rayon = "1.10"
 num_cpus = "1.16"
+
+# System directories
+dirs = "5.0"
 
 # Caching
 redis = { version = "0.28", features = ["tokio-comp", "connection-manager"], optional = true }
@@ -146,8 +159,8 @@ audio = ["ffmpeg"]  # Pure Rust audio transcription (no Python/Whisper dependenc
 video = ["ffmpeg"]
 archives = ["zip", "tar", "flate2", "sevenz-rust"]
 
-# Advanced layout analysis (future: C++ FFI to docling-parse)
-# ml = ["dep:libloading"]  # Enable C++ integration (not yet implemented)
+# Advanced layout analysis (C++ FFI to docling-parse + ML models)
+docling-ffi = ["ort", "ndarray", "rstar", "pdfium-render"]  # Enable C++ docling-parse + ONNX ML models
 
 # Caching backends
 cache-redis = ["redis"]

@@ -9,8 +9,11 @@ pub mod table_detector;
 #[cfg(feature = "pdf")]
 pub mod layout_analyzer;
 
-#[cfg(feature = "pdf")]
+#[cfg(all(feature = "pdf", feature = "docling-ffi"))]
 pub mod docling_parse_ffi;
+
+#[cfg(all(feature = "pdf", feature = "docling-ffi"))]
+pub mod docling_json_parser;
 
 #[cfg(feature = "tesseract")]
 pub mod tesseract;

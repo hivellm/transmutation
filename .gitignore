@@ -1,62 +1,58 @@
-# Rust build artifacts
-/target/
+# Rust
+target/
 Cargo.lock
+**/*.rs.bk
+*.pdb
 
-# IDE files
-.idea/
+# IDE
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
+
+# Build artifacts
+build_*/
+cpp/build*/
+libs/*.so
+libs/*.dll
+libs/*.dylib
+libs/*.lib
+*.o
+*.a
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
-.pytest_cache/
+venv/
+.venv/
 *.egg-info/
 dist/
-build/
-venv/
-env/
-.venv/
+*.egg
 
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# ML Models (large files)
+models/*.onnx
+models/*.pt
+models/*.pth
 
-# Test output
-test_output/
+# Temporary files
+*.tmp
+*.temp
 *.log
+*.json.bak
+
+# Data files for testing (except examples)
+data/*.pdf
+!data/example*.pdf
+
+# Debug files
+debug_*.py
+debug_*.rs
 
 # Cache
 .cache/
-*.cache
-
-# Models
-models/
-*.onnx
-*.pt
-*.bin
-
-# External repositories (for reference only)
-docling/
-docling-project/
-docling-core/
-docling-parse/
-
-# Environment files
-.env
-.env.local
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-data/

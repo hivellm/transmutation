@@ -1,0 +1,33 @@
+# Dockerfile para build das bibliotecas FFI do docling-parse (Linux ARM64)
+# Uso: docker buildx build --platform linux/arm64 -f Dockerfile.build-libs-arm -t transmutation-builder-arm .
+#      docker run --rm -v ${PWD}/libs:/output transmutation-builder-arm
+
+FROM --platform=linux/arm64 ubuntu:24.04 AS builder
+
+# Instalar dependências de build
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Criar diretório de trabalho
+WORKDIR /build
+
+# Copiar código fonte
+COPY docling-parse/ ./docling-parse/
+COPY cpp/ ./cpp/
+COPY build_cpp.sh ./
+
+# Tornar o script executável e executar build
+RUN chmod +x build_cpp.sh && ./build_cpp.sh
+
+# Stage final - apenas para copiar as libs
+FROM scratch AS exporter
+COPY --from=builder /build/libs/libdocling-ffi-linux_ARM.so /libdocling-ffi-linux_ARM.so
+
+# Comando para copiar as libs para o host
+FROM builder AS final
+CMD ["sh", "-c", "cp /build/libs/libdocling-ffi-linux_ARM.so /output/ && echo '✅ ARM Library copied to /output/libdocling-ffi-linux_ARM.so'"]
+

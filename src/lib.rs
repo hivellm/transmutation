@@ -31,9 +31,13 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod converters;
+#[cfg(all(feature = "pdf", feature = "docling-ffi"))]
+pub mod document;
 pub mod engines;
 pub mod error;
 pub mod integration;
+#[cfg(feature = "docling-ffi")]
+pub mod ml;
 pub mod optimization;
 pub mod output;
 pub mod types;
