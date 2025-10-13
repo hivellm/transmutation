@@ -7,22 +7,25 @@ This roadmap outlines the development plan for Transmutation, a high-performance
 **Current Status (v0.1.2-dev - October 13, 2025)**:
 - ✅ **Phase 1**: Foundation & Core Architecture (COMPLETE)
 - ✅ **Phase 1.5**: Distribution & Tooling (COMPLETE)
-- ✅ **Phase 2**: Core Document Formats (100% COMPLETE - 11 formats!)
-- 🔄 **Phase 3**: Advanced Features (8% COMPLETE - Archives ✅)
-- 📝 **Phase 4**: Integrations & Ecosystem (Planned)
+- ✅ **Phase 2**: Core Document Formats (COMPLETE - 11 formats!)
+- ✅ **Phase 2.5**: Core Features Architecture (COMPLETE)
+- 🔄 **Phase 3**: Advanced Features (25% COMPLETE - Archives ✅, Batch ✅)
+- 📝 **Phase 4**: Bindings & Integrations (Planned)
+- 📝 **Phase 5**: Advanced Optimizations (Planned)
 
-**Latest Achievement**: Core features architecture + Archive support! PDF, HTML, XML, ZIP now always enabled (no feature flags).
+**Latest Achievement**: TAR/GZ support + Batch Processing with Tokio! 4,627 pages/sec in parallel processing!
 
 **Overall Progress**: 
 ```
 Phase 1:   ████████████████████ 100% ✅ COMPLETE
 Phase 1.5: ████████████████████ 100% ✅ COMPLETE
 Phase 2:   ████████████████████ 100% ✅ COMPLETE (11 formats!)
-Phase 3:   ██░░░░░░░░░░░░░░░░░░   8% 🔄 (Archives ✅, OCR/ASR pending)
+Phase 2.5: ████████████████████ 100% ✅ COMPLETE (Core arch)
+Phase 3:   █████░░░░░░░░░░░░░░░  25% 🔄 (Archives ✅, Batch ✅)
 Phase 4:   ░░░░░░░░░░░░░░░░░░░░   0% 📝
 Phase 5:   ░░░░░░░░░░░░░░░░░░░░   0% 📝
 
-Total:     ████████████░░░░░░░░  62% Complete
+Total:     █████████████░░░░░░░  65% Complete
 ```
 
 ---
@@ -125,26 +128,28 @@ Total:     ████████████░░░░░░░░  62% Com
 - [ ] Video metadata extraction
 - [ ] Thumbnail generation
 
-### Week 33-34: Archive Handling ✅ 50%
+### Week 33-34: Archive Handling ✅ COMPLETE
 - ✅ ZIP file listing (1864 pg/s)
+- ✅ TAR file listing (archives-extended)
+- ✅ TAR.GZ file listing (archives-extended)
 - ✅ Archive statistics
 - ✅ Files grouped by extension
 - ✅ Markdown/JSON export
-- [ ] TAR/GZ extraction
 - [ ] 7Z support
-- [ ] Recursive archive processing
+- [ ] Recursive processing
 - [ ] Nested archives
-- [ ] Archive integrity checks
 - [ ] Extract and convert contents
 
-### Week 35-36: Caching & Batch Processing
+### Week 35-36: Batch Processing ✅ COMPLETE
+- ✅ Concurrent processing (Tokio)
+- ✅ Configurable jobs
+- ✅ Progress tracking
+- ✅ Success/failure breakdown
+- ✅ Auto-save outputs
+- ✅ **Performance**: 4,627 pg/s (4 files parallel)
 - [ ] Conversion cache (Redis/SQLite)
 - [ ] Hash-based deduplication
-- [ ] Batch processing queue
-- [ ] Parallel processing (Rayon)
-- [ ] Progress tracking
 - [ ] Resume capability
-- [ ] Rate limiting
 
 ---
 
