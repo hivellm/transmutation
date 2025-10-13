@@ -30,10 +30,44 @@ impl VideoConverter {
     
     /// Check if whisper is available
     fn check_whisper() -> bool {
-        Command::new("whisper")
-            .arg("--help")
-            .output()
-            .is_ok()
+        // Try whisper in PATH
+        if Command::new("whisper").arg("--help").output().is_ok() {
+            return true;
+        }
+        
+        // Try common installation paths
+        let paths = vec![
+            format!("{}/.local/bin/whisper", std::env::var("HOME").unwrap_or_default()),
+            "/usr/local/bin/whisper".to_string(),
+            "/usr/bin/whisper".to_string(),
+        ];
+        
+        for path in paths {
+            if std::path::Path::new(&path).exists() {
+                return true;
+            }
+        }
+        
+        false
+    }
+    
+    /// Get whisper command path
+    fn get_whisper_cmd() -> String {
+        // Try common paths
+        let paths = vec![
+            format!("{}/.local/bin/whisper", std::env::var("HOME").unwrap_or_default()),
+            "/usr/local/bin/whisper".to_string(),
+            "/usr/bin/whisper".to_string(),
+            "whisper".to_string(),
+        ];
+        
+        for path in &paths {
+            if std::path::Path::new(path).exists() || path == "whisper" {
+                return path.clone();
+            }
+        }
+        
+        "whisper".to_string()
     }
     
     /// Extract audio from video using FFmpeg
@@ -82,7 +116,8 @@ impl VideoConverter {
         
         eprintln!("🎤 Running Whisper transcription...");
         
-        let mut cmd = Command::new("whisper");
+        let whisper_cmd = Self::get_whisper_cmd();
+        let mut cmd = Command::new(&whisper_cmd);
         cmd.arg(audio_path);
         cmd.arg("--model").arg("base");  // Use base model
         cmd.arg("--output_format").arg("txt");

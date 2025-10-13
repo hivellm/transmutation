@@ -36,17 +36,17 @@ if %errorLevel% neq 0 (
     exit /b 1
 )
 
-echo [1/6] Installing Visual Studio Build Tools...
+echo [1/7] Installing Visual Studio Build Tools...
 winget install --id Microsoft.VisualStudio.2022.BuildTools --silent --accept-package-agreements --accept-source-agreements
 if %errorLevel% neq 0 echo   ⚠️ Build Tools installation may require manual confirmation
 
 echo.
-echo [2/6] Installing CMake and Git...
+echo [2/7] Installing CMake and Git...
 winget install --id Kitware.CMake --silent --accept-package-agreements --accept-source-agreements
 winget install --id Git.Git --silent --accept-package-agreements --accept-source-agreements
 
 echo.
-echo [3/6] Installing Poppler (PDF → Image)...
+echo [3/7] Installing Poppler (PDF → Image)...
 REM Poppler não tem pacote oficial no winget, baixar manualmente
 echo   ⚠️ Poppler must be installed manually:
 echo   1. Download: https://github.com/oschwartz10612/poppler-windows/releases/latest
@@ -55,16 +55,23 @@ echo   3. Add C:\Program Files\poppler\Library\bin\ to PATH
 echo   Or use: choco install poppler
 
 echo.
-echo [4/6] Installing LibreOffice (Office formats)...
+echo [4/7] Installing LibreOffice (Office formats)...
 winget install --id TheDocumentFoundation.LibreOffice --silent --accept-package-agreements --accept-source-agreements
 
 echo.
-echo [5/6] Installing Tesseract (OCR)...
+echo [5/7] Installing Tesseract (OCR)...
 winget install --id UB-Mannheim.TesseractOCR --silent --accept-package-agreements --accept-source-agreements
 
 echo.
-echo [6/6] Installing FFmpeg (Audio/Video)...
+echo [6/7] Installing FFmpeg (Video → Audio extraction)...
 winget install --id Gyan.FFmpeg --silent --accept-package-agreements --accept-source-agreements
+
+echo.
+echo [7/7] Installing Python + Whisper (Audio/Video → Text)...
+winget install --id Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements
+timeout /t 3 /nobreak >nul
+pip install --upgrade pip
+pip install openai-whisper
 
 echo.
 echo ╔════════════════════════════════════════╗
@@ -78,12 +85,16 @@ echo   ⚠️ Poppler (manual installation required)
 echo   ✓ LibreOffice
 echo   ✓ Tesseract OCR
 echo   ✓ FFmpeg
+echo   ✓ Python + Whisper
 echo.
 echo ⚠️  IMPORTANT: Restart your terminal/PowerShell to apply PATH changes
 echo.
 echo 🚀 After restart, you can run:
 echo    transmutation convert document.pdf --format png
 echo    transmutation convert document.docx -o output.md
+echo    transmutation convert image.jpg -o ocr.md
+echo    transmutation convert audio.mp3 -o transcript.md
+echo    transmutation convert video.mp4 -o transcript.md
 echo.
 echo 📝 For Poppler installation, see: transmutation\install\README.md
 echo.
