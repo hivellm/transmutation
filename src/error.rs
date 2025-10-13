@@ -69,6 +69,11 @@ pub enum TransmutationError {
     /// Unknown error
     #[error("Unknown error: {0}")]
     Unknown(String),
+    
+    /// ML/ONNX Runtime error
+    #[cfg(feature = "docling-ffi")]
+    #[error("ML error: {0}")]
+    MlError(String),
 }
 
 impl TransmutationError {
@@ -132,6 +137,14 @@ impl TransmutationError {
     /// Check if error is related to file not found
     pub fn is_not_found(&self) -> bool {
         matches!(self, Self::FileNotFound(_))
+    }
+}
+
+// ort::Error conversion for ML features
+#[cfg(feature = "docling-ffi")]
+impl From<ort::Error> for TransmutationError {
+    fn from(err: ort::Error) -> Self {
+        TransmutationError::MlError(err.to_string())
     }
 }
 

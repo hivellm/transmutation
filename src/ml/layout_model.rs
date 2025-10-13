@@ -85,11 +85,12 @@ impl LayoutModel {
     /// Run inference on preprocessed image
     #[cfg(feature = "docling-ffi")]
     fn run_inference(&mut self, input: &Array4<f32>) -> Result<Vec<DetectedRegion>> {
-        // Convert ndarray to ONNX tensor (ort v2 API)
-        let input_tensor = Tensor::from_array(input.view())?;
+        // Convert ndarray to ONNX tensor (ort v2 requires owned data)
+        let input_tensor = Tensor::from_array(input.to_owned())?;
         
         // Run inference (ort v2 requires mutable session)
-        let outputs = self.session.run([input_tensor])?;
+        // Pass as slice reference for SessionInputs compatibility
+        let outputs = self.session.run(&[input_tensor.into()])?;
         
         // Extract predictions
         let regions = self.post_process_output(&outputs)?;
