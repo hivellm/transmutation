@@ -110,13 +110,19 @@ Total:     ████████████████████  95% Com
 - ✅ Language configuration support
 - ✅ Markdown output with paragraphs
 - ✅ JSON output with OCR metadata
+- ✅ **Performance**: 88x faster than Docling (252ms vs 17s)
+- ✅ **Quality**: Equivalent to Docling (tested on Portuguese text)
 - ✅ **External dependency**: Tesseract OCR
-- [ ] Preprocessing (deskew, denoise) - Future
-- [ ] Confidence scoring - Future
-- [ ] Multi-column layout - Future
+
+**Clarification - What OCR Does**:
+- ✅ OCR extracts **existing text** from images (e.g., scanned documents, screenshots with text)
+- ❌ OCR does NOT describe visual content (e.g., "a cat sitting" - that requires Image Captioning models)
+- For visual descriptions, use Vision LLMs (GPT-4 Vision, LLaVA, etc.) - out of Transmutation scope
 
 ### Week 28-32: Audio/Video **OUT OF SCOPE**
-**Note**: Audio/video transcription removed from scope. Use specialized tools (Whisper, FFmpeg) directly.
+**Note**: Audio/Video transcription (Whisper/FFmpeg) removed from scope.
+- **ASR/Whisper** = Audio → Text transcription (not images!)
+- Use specialized tools directly for audio/video needs.
 
 ### Week 33-34: Archive Handling ✅ COMPLETE
 - ✅ ZIP file listing (1864 pg/s)
@@ -140,7 +146,7 @@ Total:     ████████████████████  95% Com
 
 ---
 
-## Phase 4: Advanced Optimizations
+## Phase 4: Advanced Optimizations & v1.0.0
 
 ### Performance
 - [ ] GPU acceleration for OCR
@@ -160,6 +166,39 @@ Total:     ████████████████████  95% Com
 - [ ] Security audit
 - [ ] Final testing
 - [ ] v1.0.0 release
+
+---
+
+## Future Considerations (Post v1.0.0)
+
+### Image Captioning (Visual Description)
+**Note**: Currently Transmutation only does OCR (text extraction). Visual description is a future enhancement.
+
+- [ ] **BLIP-2 ONNX Integration**
+  - Download ONNX model (~3GB)
+  - Use existing `ort` infrastructure
+  - Generate automatic image descriptions
+  - Output: "a cat sitting on a wooden surface"
+  - Performance target: <1s per image
+  
+- [ ] **GIT Model Integration**
+  - Smaller model (~1GB)
+  - Faster inference
+  - Good quality descriptions
+  - Alternative to BLIP-2
+
+**Implementation Strategy** (when/if implemented):
+1. Download pre-trained ONNX models
+2. Image preprocessing (resize, normalize)
+3. Model inference with `ort`
+4. Generate natural language descriptions
+5. Combine with OCR for full image understanding
+
+**Use Cases**:
+- Describing diagrams, charts, photos
+- Generating alt-text for accessibility
+- Visual content indexing for embeddings
+- Multimodal RAG systems
 
 ---
 
