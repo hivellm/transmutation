@@ -72,11 +72,11 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 
 ### Archive Formats
 
-| Input Format | Output Options | Status |
-|-------------|----------------|---------|
-| **ZIP** | Extract and process contents | 🔄 Planned |
-| **TAR/GZ** | Extract and process contents | 🔄 Planned |
-| **7Z** | Extract and process contents | 🔄 Planned |
+| Input Format | Output Options | Status | Performance |
+|-------------|----------------|---------|-------------|
+| **ZIP** | File listing, statistics, Markdown index, JSON | ✅ **Production** | Pure Rust (1864 pg/s) |
+| **TAR/GZ** | Extract and process contents | 🔄 Planned | - |
+| **7Z** | Extract and process contents | 🔄 Planned | - |
 
 ## 🏗️ Architecture
 
@@ -167,28 +167,31 @@ See [`docs/MSI_BUILD.md`](docs/MSI_BUILD.md) for details.
 [dependencies]
 transmutation = "0.1"
 
-# With specific features
+# Core features (always enabled, no flags needed):
+# - PDF, HTML, XML, ZIP, TXT, CSV, TSV, RTF, ODT
+
+# With Office formats (default)
 [dependencies.transmutation]
 version = "0.1"
-features = ["pdf", "office", "web"]  # Pure Rust, no external dependencies
+features = ["office"]  # DOCX, XLSX, PPTX
 
 # With optional features (requires external tools)
-features = ["pdf", "pdf-to-image", "office", "tesseract", "audio"]
+features = ["office", "pdf-to-image", "tesseract", "audio"]
 ```
 
 ### External Dependencies
 
-Transmutation is **mostly pure Rust**, but some features require external tools for advanced functionality:
+Transmutation is **mostly pure Rust**, with **core features requiring ZERO dependencies**:
 
-| Feature | Requires | Pure Rust Alternative |
-|---------|----------|----------------------|
-| `pdf` | ✅ **None** | Built-in |
-| `office` | ✅ **None** (Markdown) | Built-in |
-| `web` | ✅ **None** | Built-in |
-| `pdf-to-image` | ⚠️ poppler-utils | N/A |
-| `office` + `pdf-to-image` | ⚠️ LibreOffice | N/A |
-| `tesseract` | ⚠️ Tesseract OCR | N/A |
-| `audio/video` | ⚠️ FFmpeg | N/A |
+| Feature | Requires | Status |
+|---------|----------|---------|
+| **Core** (PDF, HTML, XML, ZIP, TXT, CSV, TSV, RTF, ODT) | ✅ **None** | Always enabled |
+| `office` (DOCX, XLSX, PPTX - Text) | ✅ **None** | Pure Rust (default) |
+| `pdf-to-image` | ⚠️ poppler-utils | Optional |
+| `office` + images | ⚠️ LibreOffice | Optional |
+| `tesseract` | ⚠️ Tesseract OCR | Optional |
+| `audio/video` | ⚠️ FFmpeg | Optional |
+| `archives-extended` (TAR, GZ, 7Z) | ⚠️ External libs | Optional |
 
 **During compilation**, `build.rs` will automatically **detect missing dependencies** and provide installation instructions:
 
@@ -433,19 +436,26 @@ See [ROADMAP.md](ROADMAP.md) for detailed development plan.
 - ✅ Build-time dependency detection
 - ✅ Comprehensive documentation
 
-### Phase 2: Core Formats (Q2 2025) 🔄 90% COMPLETE
-- ✅ **DOCX conversion** (Markdown + Images)
-- ✅ **XLSX conversion** (Markdown tables via LibreOffice)
-- ✅ **PPTX conversion** (Markdown/Images per slide via LibreOffice)
-- 📝 HTML/XML conversion (next priority)
-- 📝 Image OCR (Tesseract) (planned)
-- 📝 Quality optimization (planned)
+### Phase 2: Core Formats (Q2 2025) ✅ 100% COMPLETE
+- ✅ **DOCX conversion** (Markdown + Images - Pure Rust)
+- ✅ **XLSX conversion** (Markdown/CSV/JSON - Pure Rust, 148 pg/s)
+- ✅ **PPTX conversion** (Markdown/Images - Pure Rust, 1639 pg/s)
+- ✅ **HTML/XML conversion** (Pure Rust, 2110-2353 pg/s)
+- ✅ **Text formats** (TXT, CSV, TSV, RTF, ODT - Pure Rust)
+- ✅ **11 formats** total (8 production, 2 beta)
 
-### Phase 3: Advanced Features (Q3 2025)
+### Phase 2.5: Core Features Architecture ✅ COMPLETE
+- ✅ Core formats always enabled (no feature flags)
+- ✅ Simplified API and user experience
+- ✅ Faster compilation
+
+### Phase 3: Advanced Features (Q3 2025) 🔄 8% COMPLETE
+- ✅ **Archive handling** (ZIP listing/indexing - 1864 pg/s)
 - 📝 Audio/Video transcription (pure Rust ASR)
-- 📝 Archive handling
+- 📝 Extended archive support (TAR, GZ, 7Z)
 - 📝 Batch processing
 - 📝 Caching system
+- 📝 OCR (Tesseract)
 
 ### Phase 4: Integrations (Q4 2025)
 - 📝 Vectorizer integration

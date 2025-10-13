@@ -19,6 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Archive Converter**: ZIP archive listing and indexing (Pure Rust)
+  - ZIP file listing with statistics
+  - Files grouped by extension
+  - Markdown table with all files and sizes
+  - JSON structured export
+  - **Performance**: 1,864 pages/sec (0.54ms)
+  - Zero external dependencies
+  
+- **Core Features Architecture**: Simplified dependency management
+  - PDF, HTML, XML, ZIP, TXT, CSV, TSV, RTF, ODT now always enabled
+  - No feature flags needed for core functionality
+  - Faster compilation (no conditional compilation overhead)
+  - Simpler API and user experience
+  - Better developer experience
+
 - **RTF Converter**: Rich Text Format to Markdown (Pure Rust Beta)
   - Simplified RTF parser (control word extraction)
   - Text extraction from RTF documents

@@ -4,276 +4,82 @@
 
 This roadmap outlines the development plan for Transmutation, a high-performance document conversion engine designed for AI/LLM embeddings.
 
-**Current Status (v0.1.1 - October 13, 2025)**:
+**Current Status (v0.1.2-dev - October 13, 2025)**:
 - ✅ **Phase 1**: Foundation & Core Architecture (COMPLETE)
 - ✅ **Phase 1.5**: Distribution & Tooling (COMPLETE)
-- ✅ **Phase 2**: Core Document Formats (100% COMPLETE - Office ✅, Web ✅, Text ✅, RTF ⚠️ Beta, ODT ⚠️ Beta)
-- 📝 **Phase 3**: Advanced Features (Planned)
+- ✅ **Phase 2**: Core Document Formats (100% COMPLETE - 11 formats!)
+- 🔄 **Phase 3**: Advanced Features (8% COMPLETE - Archives ✅)
 - 📝 **Phase 4**: Integrations & Ecosystem (Planned)
 
-**Latest Achievement**: Phase 2 COMPLETE! RTF and ODT converters implemented (beta quality). 10 formats now supported!
+**Latest Achievement**: Core features architecture + Archive support! PDF, HTML, XML, ZIP now always enabled (no feature flags).
 
 **Overall Progress**: 
 ```
 Phase 1:   ████████████████████ 100% ✅ COMPLETE
 Phase 1.5: ████████████████████ 100% ✅ COMPLETE
-Phase 2:   ████████████████████ 100% ✅ COMPLETE (10 formats!)
-Phase 3:   ░░░░░░░░░░░░░░░░░░░░   0% 📝 Next up!
+Phase 2:   ████████████████████ 100% ✅ COMPLETE (11 formats!)
+Phase 3:   ██░░░░░░░░░░░░░░░░░░   8% 🔄 (Archives ✅, OCR/ASR pending)
 Phase 4:   ░░░░░░░░░░░░░░░░░░░░   0% 📝
 Phase 5:   ░░░░░░░░░░░░░░░░░░░░   0% 📝
 
-Total:     ████████████░░░░░░░░  60% Complete
+Total:     ████████████░░░░░░░░  62% Complete
 ```
 
 ---
 
 ## Phase 1: Foundation & Core Architecture ✅ COMPLETE
 
-**Timeline**: Weeks 1-12 (Completed October 13, 2025)  
-**Goal**: Establish project foundation and core conversion pipeline  
-**Status**: ✅ **Production Ready - EXCEEDED EXPECTATIONS**
-
-### Implemented Features
-- ✅ Complete Rust workspace and project structure
-- ✅ CI/CD pipeline configured
+- ✅ Project structure and architecture
 - ✅ Core `Converter` trait and interfaces
-- ✅ `OutputFormat` and `ConversionOptions` system
-- ✅ Comprehensive error handling
-- ✅ File type detection with `file-format` crate
-- ✅ PDF text extraction using `pdf-extract` crate
-- ✅ **Intelligent paragraph joining algorithm**
-- ✅ **Author detection and grouping**
-- ✅ **Heading detection (title, Abstract, sections)**
+- ✅ PDF text extraction (lopdf + pdf-extract)
 - ✅ Markdown generator with LLM optimization
-- ✅ Text cleanup and normalization (220+ chars)
 - ✅ CLI tool with convert/batch/info commands
-- ✅ Integration tests and examples
-- ✅ Performance benchmarks vs Docling (97 papers!)
-- ✅ **C++ FFI Integration (docling-parse)**
-- ✅ **ONNX ML Models (LayoutLMv3, 100% Rust inference)**
-- ✅ **Split Page Exports (MD + Images per page)**
-- ✅ **Docling-style Pipeline Architecture**
-- ✅ **--output-dir for organized multi-file exports**
-- ✅ **Smart Character Joining (perfect word spacing)**
-
-### Key Achievements
-- ✅ **98x faster than Docling** (avg across 97 papers)
-- ✅ **63.98 pages/second** average processing speed
-- ✅ **82%+ similarity** in Precision mode
-- ✅ **95%+ similarity** with FFI mode
-- ✅ **50MB memory footprint** (vs 2-3GB)
-- ✅ **4.8MB single binary** deployment
-- ✅ **Zero Python dependencies**
-- ✅ **3,006 pages processed in 46.9 seconds** (benchmark)
-- ✅ **95.9% success rate** on diverse papers
-- ✅ **55x compression** (528 MB → 9.6 MB)
-
-### Bonus Features (Beyond Original Scope)
-- ✅ **ML-powered layout detection** (LayoutLMv3 ONNX)
-- ✅ **Per-page MD export** (perfect for text embeddings)
-- ✅ **Per-page image export** (perfect for vision embeddings)
-- ✅ **Flexible pipeline architecture** (parse once, export many)
-- ✅ **Smart character-level joining** (handles 1-char-per-cell PDFs)
-- ✅ **Massive scale benchmark** (97 arXiv papers)
-
-**Deliverables Completed:**
-- ✅ Production-ready PDF → Markdown conversion (3 modes: Fast, Precision, FFI)
-- ✅ Core converter architecture (trait-based)
-- ✅ Full-featured CLI tool with --output-dir
-- ✅ Comprehensive test suite
-- ✅ **Verified 98x performance improvement over Docling**
-- ✅ **Proven at scale: 97 papers, 3000+ pages**
+- ✅ C++ FFI Integration (docling-parse)
+- ✅ ONNX ML Models (LayoutLMv3)
+- ✅ Split Page Exports (MD + Images per page)
+- ✅ Performance benchmarks (98x faster than Docling)
 
 ---
 
 ## Phase 1.5: Distribution & Tooling ✅ COMPLETE
-**Timeline**: Week 12 (October 13, 2025)  
-**Goal**: Professional distribution and installation tools  
-**Status**: ✅ **Complete - Production Ready**
 
-### Implemented Features
-- ✅ **Windows MSI Installer**
-  - Professional installer with WiX Toolset integration
-  - Automatic dependency detection and installation
-  - Custom application icons throughout
-  - MIT License embedded in installer UI
-  - Start Menu shortcuts with icons
-  - System PATH integration
-  - Upgrade/uninstall support
-  
-- ✅ **Multi-Platform Installation Scripts**
-  - Linux: apt-get based installer
-  - macOS: Homebrew based installer
-  - Windows: 3 variants (Chocolatey, winget, manual download)
-  - Automated WiX Toolset installer
-  - Dependency validation and guidance
-  
-- ✅ **Build System Enhancements**
-  - Icon embedding in Windows executables (winres)
-  - Build-time dependency checking
-  - Platform-specific installation instructions
-  - Compiler warning suppression
-  - Cross-platform build scripts
-  
-- ✅ **Documentation**
-  - MSI build guide (docs/MSI_BUILD.md)
-  - MSI dependency management (docs/MSI_DEPENDENCIES.md)
-  - Runtime dependencies guide (docs/DEPENDENCIES.md)
-  - Installation guide (install/README.md)
-  - Professional CHANGELOG.md
-
-### Key Achievements
-- ✅ **Professional Windows installer** ready for distribution
-- ✅ **One-click dependency installation** for all platforms
-- ✅ **19 MB repository** (cleaned from 543 MB - 96.5% reduction)
-- ✅ **Custom branding** with HiveLLM icons
-- ✅ **Zero friction** installation experience
-
-**Deliverables Completed:**
-- ✅ Windows MSI installer (v0.1.1)
-- ✅ 5 platform-specific installation scripts
-- ✅ Comprehensive distribution documentation
-- ✅ Professional packaging and branding
+- ✅ Windows MSI Installer (WiX Toolset)
+- ✅ Multi-platform installation scripts (Linux, macOS, Windows)
+- ✅ Icon embedding in executables
+- ✅ Build-time dependency checking
+- ✅ Documentation (MSI_BUILD.md, DEPENDENCIES.md)
+- ✅ Git repository cleanup (543 MB → 19 MB)
 
 ---
 
-## Phase 2: Core Document Formats (Q2 2025) 🔄 90% COMPLETE
-**Timeline**: Weeks 13-24  
-**Goal**: Support all major document formats
-**Status**: ✅ Office Formats Complete (DOCX, XLSX, PPTX), Web Formats Pending
+## Phase 2: Core Document Formats ✅ 100% COMPLETE
 
-### Week 13-15: Microsoft Office Formats ✅ 100% COMPLETE
-#### DOCX Support ✅ IMPLEMENTED
-- ✅ Integrated `docx-rs` crate
-- ✅ Implemented DOCX → Markdown converter (pure Rust)
-- ✅ Implemented DOCX → Image per page (LibreOffice + pdftoppm pipeline)
-- ✅ Extracted paragraphs and text formatting
-- ✅ Basic table extraction (structure detection)
-- ✅ Split page export support
-- ✅ Cross-platform compatibility (Windows/Linux/macOS)
+### Week 13-15: Office Formats ✅
+- ✅ DOCX → Markdown (docx-rs, pure Rust)
+- ✅ DOCX → Images (LibreOffice pipeline)
+- ✅ XLSX → Markdown/CSV/JSON (umya-spreadsheet, 148 pg/s)
+- ✅ PPTX → Markdown (ZIP/XML, 1639 pg/s)
+- ✅ PPTX → Images (LibreOffice pipeline)
 
-#### XLSX Support ✅ PRODUCTION READY
-- ✅ **Direct XML Parser** (umya-spreadsheet crate)
-- ✅ **Pure Rust** - No LibreOffice dependency
-- ✅ **Multiple Output Formats**:
-  - Markdown tables (clean, formatted)
-  - CSV (standard format with proper quoting)
-  - JSON (structured data with sheet metadata)
-- ✅ Multi-sheet support (all sheets exported)
-- ✅ **Performance**: 148 pages/sec (6.7ms per file)
-- ✅ **Quality**: Perfect table formatting, all data preserved
-- ✅ Tested with real-world data (391 rows, 5 columns)
+### Week 16-17: Web Formats ✅
+- ✅ HTML → Markdown (scraper, 2110 pg/s)
+- ✅ HTML → JSON
+- ✅ XML → Markdown (quick-xml, 2353 pg/s)
+- ✅ XML → JSON
 
-#### PPTX Support ✅ PRODUCTION READY
-- ✅ **Dual-Mode Converter**:
-  - **Text Export**: Direct XML parsing from PPTX ZIP (pure Rust)
-  - **Image Export**: LibreOffice → PDF → Images pipeline
-- ✅ **Text Extraction Performance**: 1,639 pages/sec (0.6ms per slide!)
-- ✅ **Quality**: Clean, readable text (vs garbage from PDF route)
-- ✅ Split slide export (one file per slide)
-- ✅ Multiple output formats (Markdown, PNG/JPEG)
-- ✅ LibreOffice only needed for image export
-- ✅ Tested with real presentations (2-10 slides)
-
-**Key Achievement**: 
-- **XLSX**: Pure Rust parser, 148x faster than LibreOffice, supports CSV/JSON/MD
-- **PPTX**: Hybrid approach - XML for text (1,639 pages/sec), LibreOffice for images
-- **All Office formats production ready with superior performance**
-
-**Performance Summary**:
-| Format | Text Extraction | Image Export | LibreOffice Needed? |
-|--------|----------------|--------------|---------------------|
-| **DOCX** | docx-rs (pure Rust) | LibreOffice → PDF | Only for images |
-| **XLSX** | umya-spreadsheet (pure Rust) | N/A | ❌ Never |
-| **PPTX** | ZIP/XML (pure Rust, 1639 pg/s) | LibreOffice → PDF | Only for images |
-
-**Conversion Time Comparison**:
-```
-XLSX: 6.7ms   (was ~1,500ms with LibreOffice) → 224x faster
-PPTX: 0.6ms   (was ~1,600ms with LibreOffice) → 2,666x faster
-```
-
-### Week 16-17: Web Formats ✅ COMPLETE
-#### HTML Support ✅ IMPLEMENTED
-- ✅ Integrated `scraper` and `html5ever` crates
-- ✅ Implemented HTML → Markdown converter (semantic parsing)
-- ✅ Preserves links, headings, lists, code blocks
-- ✅ Handles formatting (strong, em, code, pre)
-- ✅ Extract semantic structure (main, article, body)
-- ✅ **Performance**: 2,110 pages/sec (0.47ms per page)
-- ✅ HTML → JSON output (raw + markdown)
-- ✅ Pure Rust, zero dependencies
-
-#### XML Support ✅ IMPLEMENTED
-- ✅ Integrated `quick-xml` crate
-- ✅ Implemented XML → Markdown converter (text extraction)
-- ✅ Implemented XML → JSON converter (structure preservation)
-- ✅ Handles elements and attributes correctly
-- ✅ **Performance**: 2,353 pages/sec (0.42ms per page)
-- ✅ Memory-efficient streaming parser
-- ✅ Pure Rust, zero dependencies
-
-**Key Achievement**: 
-- Fastest XML/HTML parsers in the Rust ecosystem
-- Perfect semantic preservation
-- No external dependencies (unlike Pandoc, Beautiful Soup)
-
-### Week 18-19: Text and Rich Text Formats ✅ 90% COMPLETE
-#### TXT Converter ✅ IMPLEMENTED
-- ✅ Implemented TXT → Markdown converter
-- ✅ Automatic paragraph detection
-- ✅ Heading detection (all caps / ending with colon)
-- ✅ **Performance**: 2,805 pages/sec (0.36ms per page)
-- ✅ TXT → JSON output
-- ✅ Pure Rust, zero dependencies
-
-#### CSV/TSV Converter ✅ IMPLEMENTED
-- ✅ Implemented CSV/TSV → Markdown tables
-- ✅ CSV/TSV → JSON structured output
-- ✅ Proper table formatting
-- ✅ Header row detection
-- ✅ **Performance**: 2,647 pages/sec (0.38ms per page)
-- ✅ Pure Rust, zero dependencies
-
-**Key Achievement**:
-- Fastest text parsers in the ecosystem
-- Clean, semantic output
-- No external dependencies
-
-#### RTF Converter ⚠️ BETA
-- ✅ Implemented RTF → Markdown converter (simplified parser)
-- ✅ RTF control word parsing
-- ✅ Text extraction
-- ⚠️ **Note**: Simplified parser, may miss some formatting
-- ✅ **Performance**: 2,420 pages/sec (0.41ms per page)
-- ✅ Zero dependencies
-
-#### ODT Converter ⚠️ BETA
-- ✅ Implemented ODT → Markdown converter (ZIP + XML)
-- ✅ Extract content.xml from ZIP
-- ✅ Parse OpenDocument XML structure
-- ✅ Heading level detection
-- ⚠️ **Note**: Basic implementation, tables not yet supported
-- ✅ Zero dependencies
-
-**Phase 2 Summary**: 
-- **10 formats** implemented: PDF, DOCX, XLSX, PPTX, HTML, XML, TXT, CSV/TSV, RTF, ODT
-- **8 production-ready**, **2 beta**
-- **100% pure Rust** text parsing (no Python, no external parsers)
-- **Average speed**: 2,000+ pages/sec for text formats
-
-**Next Steps**:
-- [ ] Improve RTF parser (better control word handling)
-- [ ] Add ODT table support
-- [ ] Add format-specific optimizations
+### Week 18-19: Text Formats ✅
+- ✅ TXT → Markdown (2805 pg/s)
+- ✅ CSV/TSV → Markdown tables (2647 pg/s)
+- ✅ CSV/TSV → JSON
+- ✅ RTF → Markdown (2420 pg/s) ⚠️ Beta
+- ✅ ODT → Markdown (ZIP + XML) ⚠️ Beta
 
 ### Week 20-21: Quality Optimization
-- [ ] Implement compression algorithms
-- [ ] Add whitespace normalization
-- [ ] Remove headers/footers detection
-- [ ] Watermark removal (heuristic)
+- [ ] Compression algorithms
+- [ ] Whitespace normalization
+- [ ] Headers/footers removal
+- [ ] Watermark removal
 - [ ] Layout quality metrics
-- [ ] A/B testing framework for quality
 
 ### Week 22-24: Integration Testing
 - [ ] Cross-format conversion tests
@@ -281,281 +87,177 @@ PPTX: 0.6ms   (was ~1,600ms with LibreOffice) → 2,666x faster
 - [ ] Memory leak detection
 - [ ] Performance benchmarking
 - [ ] Regression test suite
-- [ ] Update documentation
-
-**Deliverables**:
-- Full support for DOCX, PPTX, XLSX
-- HTML/XML conversion
-- Text format conversion
-- Quality optimization pipeline
 
 ---
 
-## Phase 3: Advanced Features (Q3 2025)
-**Timeline**: Weeks 25-36  
-**Goal**: Add OCR, transcription, and advanced processing
+## Phase 2.5: Core Features Architecture ✅ COMPLETE
 
-### Week 25-27: Image OCR (Tesseract)
-- [ ] Integrate `tesseract-rs` or `leptess` crate
-- [ ] Implement OCR for JPG, PNG, TIFF, BMP, GIF, WEBP
-- [ ] Add language detection
-- [ ] Implement preprocessing (deskew, denoise)
-- [ ] Add confidence scoring
-- [ ] Support multi-column layouts
-- [ ] Batch processing for images
+- ✅ Core formats always enabled (no feature flags): PDF, HTML, XML, ZIP, TXT, CSV, TSV, RTF, ODT
+- ✅ Removed conditional compilation from engines
+- ✅ Simpler API and user experience
+- ✅ Faster compilation
 
-### Week 28-30: Audio Transcription (Whisper)
-- [ ] Integrate `whisper-rs` or Python Whisper via PyO3
-- [ ] Implement transcription for MP3, WAV, M4A
-- [ ] Add language detection and translation
-- [ ] Implement speaker diarization
-- [ ] Add timestamps and metadata
-- [ ] Support long-form audio chunking
-- [ ] Add confidence scores
+---
 
-### Week 31-32: Video Processing (FFmpeg)
-- [ ] Integrate `ffmpeg-next` or similar crate
-- [ ] Implement video → keyframe extraction
-- [ ] Implement video → audio → transcription pipeline
-- [ ] Add scene detection
-- [ ] Extract video metadata
-- [ ] Support various codecs (MP4, AVI, MKV, MOV)
-- [ ] Add thumbnail generation
+## Phase 3: Advanced Features 🔄 8% COMPLETE
 
-### Week 33-34: Archive Handling
-- [ ] Integrate `zip`, `tar`, `flate2` crates
-- [ ] Implement ZIP extraction and processing
-- [ ] Implement TAR/GZ extraction
-- [ ] Add 7Z support (via `sevenz-rust`)
+### Week 25-27: Image OCR
+- [ ] Integrate tesseract-rs/leptess
+- [ ] OCR for JPG, PNG, TIFF, BMP, GIF, WEBP
+- [ ] Language detection
+- [ ] Preprocessing (deskew, denoise)
+- [ ] Confidence scoring
+- [ ] Multi-column layout support
+
+### Week 28-30: Audio Transcription
+- [ ] Integrate whisper-rs
+- [ ] Transcription for MP3, WAV, M4A
+- [ ] Language detection
+- [ ] Speaker diarization
+- [ ] Timestamps and metadata
+- [ ] Long-form audio chunking
+
+### Week 31-32: Video Processing
+- [ ] Integrate ffmpeg-next
+- [ ] Video → keyframe extraction
+- [ ] Video → audio → transcription pipeline
+- [ ] Scene detection
+- [ ] Video metadata extraction
+- [ ] Thumbnail generation
+
+### Week 33-34: Archive Handling ✅ 50%
+- ✅ ZIP file listing (1864 pg/s)
+- ✅ Archive statistics
+- ✅ Files grouped by extension
+- ✅ Markdown/JSON export
+- [ ] TAR/GZ extraction
+- [ ] 7Z support
 - [ ] Recursive archive processing
-- [ ] Handle nested archives
-- [ ] Add archive integrity checks
+- [ ] Nested archives
+- [ ] Archive integrity checks
+- [ ] Extract and convert contents
 
 ### Week 35-36: Caching & Batch Processing
-- [ ] Implement conversion cache (Redis/SQLite)
-- [ ] Add hash-based deduplication
-- [ ] Implement batch processing queue
-- [ ] Add parallel processing (Rayon)
-- [ ] Create progress tracking
-- [ ] Add resume capability for large batches
-- [ ] Implement rate limiting
-
-**Deliverables**:
-- OCR support for images
-- Audio/video transcription
-- Archive handling
-- Efficient batch processing
+- [ ] Conversion cache (Redis/SQLite)
+- [ ] Hash-based deduplication
+- [ ] Batch processing queue
+- [ ] Parallel processing (Rayon)
+- [ ] Progress tracking
+- [ ] Resume capability
+- [ ] Rate limiting
 
 ---
 
-## Phase 4: Integrations & Ecosystem (Q4 2025)
-**Timeline**: Weeks 37-48  
-**Goal**: Integrate with LLM frameworks and expand language support
+## Phase 4: Integrations & Ecosystem
 
 ### Week 37-39: Vectorizer Integration
-- [ ] Create native Rust integration with Vectorizer
-- [ ] Implement automatic chunking for embeddings
-- [ ] Add streaming pipeline (convert → chunk → embed)
-- [ ] Support multimodal embeddings (text + image)
-- [ ] Add collection management
-- [ ] Create end-to-end examples
-- [ ] Performance optimization for vectorizer pipeline
+- [ ] Native Rust integration
+- [ ] Automatic chunking
+- [ ] Streaming pipeline (convert → chunk → embed)
+- [ ] Multimodal embeddings
+- [ ] Collection management
 
 ### Week 40-41: Python Bindings (PyO3)
-- [ ] Create Python module structure
-- [ ] Expose converter API
-- [ ] Add async support (`asyncio`)
-- [ ] Create `pip` package
-- [ ] Write Python documentation
-- [ ] Add Python examples
-- [ ] Publish to PyPI
+- [ ] Python module structure
+- [ ] Converter API
+- [ ] Async support (asyncio)
+- [ ] pip package
+- [ ] PyPI publish
 
 ### Week 42-43: Node.js Bindings (Neon)
-- [ ] Create Node.js module structure
-- [ ] Expose converter API
-- [ ] Add Promise/async support
-- [ ] Create `npm` package
-- [ ] Write Node.js documentation
-- [ ] Add Node.js examples
-- [ ] Publish to npm
+- [ ] Node.js module
+- [ ] Promise/async support
+- [ ] npm package
+- [ ] npm publish
 
 ### Week 44-45: LLM Framework Integrations
-#### LangChain Integration
-- [ ] Create LangChain document loader
-- [ ] Implement text splitter
-- [ ] Add metadata extraction
-- [ ] Create examples
+- [ ] LangChain document loader
+- [ ] LlamaIndex reader
+- [ ] Haystack converter
 
-#### LlamaIndex Integration
-- [ ] Create LlamaIndex reader
-- [ ] Implement node parser
-- [ ] Add metadata customization
-- [ ] Create examples
+### Week 46-47: WebAssembly
+- [ ] WASM build target
+- [ ] JavaScript wrapper
+- [ ] Browser examples
+- [ ] npm publish (@transmutation/wasm)
 
-#### Haystack Integration
-- [ ] Create Haystack converter
-- [ ] Implement preprocessor
-- [ ] Add pipeline components
-- [ ] Create examples
-
-### Week 46-47: WebAssembly Support
-- [ ] Create WASM build target
-- [ ] Optimize for web performance
-- [ ] Create JavaScript wrapper
-- [ ] Add browser examples
-- [ ] Publish to npm (@transmutation/wasm)
-
-### Week 48: Final Polish & Release
-- [ ] Comprehensive documentation review
-- [ ] Performance optimization pass
+### Week 48: v1.0.0 Release
+- [ ] Documentation review
+- [ ] Performance optimization
 - [ ] Security audit
-- [ ] Final testing across all platforms
-- [ ] Prepare v1.0.0 release
-- [ ] Write blog posts and announcement
-- [ ] Create video tutorials
-
-**Deliverables**:
-- Full Vectorizer integration
-- Python, Node.js, WASM bindings
-- LangChain, LlamaIndex, Haystack integrations
-- Production-ready v1.0.0 release
+- [ ] Final testing
+- [ ] v1.0.0 release
 
 ---
 
-## Phase 5: Production Hardening (Q1 2026)
-**Timeline**: Weeks 49-60  
-**Goal**: Enterprise features and production optimization
+## Phase 5: Production Hardening
 
 ### Week 49-51: Enterprise Features
-- [ ] Add API server (Actix-web/Axum)
-- [ ] Implement authentication/authorization
-- [ ] Add rate limiting and quotas
-- [ ] Create admin dashboard
-- [ ] Add usage analytics
-- [ ] Implement audit logging
-- [ ] Create Docker images
+- [ ] API server (Actix-web/Axum)
+- [ ] Authentication/authorization
+- [ ] Rate limiting and quotas
+- [ ] Admin dashboard
+- [ ] Usage analytics
+- [ ] Audit logging
+- [ ] Docker images
 
 ### Week 52-54: Monitoring & Observability
-- [ ] Add Prometheus metrics
-- [ ] Implement OpenTelemetry tracing
-- [ ] Create Grafana dashboards
-- [ ] Add health check endpoints
-- [ ] Implement circuit breakers
-- [ ] Add error tracking (Sentry)
+- [ ] Prometheus metrics
+- [ ] OpenTelemetry tracing
+- [ ] Grafana dashboards
+- [ ] Health checks
+- [ ] Circuit breakers
+- [ ] Error tracking (Sentry)
 
 ### Week 55-57: Scalability
-- [ ] Implement distributed processing
-- [ ] Add job queue (RabbitMQ/Redis)
-- [ ] Create worker pool management
-- [ ] Add horizontal scaling support
-- [ ] Implement load balancing
-- [ ] Add clustering support
+- [ ] Distributed processing
+- [ ] Job queue (RabbitMQ/Redis)
+- [ ] Worker pool management
+- [ ] Horizontal scaling
+- [ ] Load balancing
+- [ ] Clustering
 
 ### Week 58-60: Advanced Features
-- [ ] Add custom model support
-- [ ] Implement plugin system
-- [ ] Create format extension API
-- [ ] Add custom preprocessing hooks
-- [ ] Implement conversion pipelines
-- [ ] Add webhook notifications
-
-**Deliverables**:
-- Production-grade API server
-- Monitoring and observability
-- Distributed processing
-- Plugin architecture
+- [ ] Custom model support
+- [ ] Plugin system
+- [ ] Format extension API
+- [ ] Custom preprocessing hooks
+- [ ] Conversion pipelines
+- [ ] Webhook notifications
 
 ---
 
 ## Future Considerations
 
 ### Advanced AI Features
-- [ ] Fine-tuned models for specific document types
+- [ ] Fine-tuned models for document types
 - [ ] Intelligent layout understanding
 - [ ] Semantic chunking with embeddings
 - [ ] Multi-modal embeddings (CLIP, Gemini)
-- [ ] Automatic format detection and correction
 
 ### Additional Formats
-- [ ] EML/MSG (email) support
-- [ ] ICS (calendar) support
-- [ ] VCF (vCard) support
-- [ ] Markdown variants (GitHub, CommonMark, etc.)
+- [ ] EML/MSG (email)
+- [ ] ICS (calendar)
+- [ ] VCF (vCard)
 - [ ] LaTeX → Markdown
 - [ ] Jupyter Notebooks (.ipynb)
 
 ### Performance Enhancements
-- [ ] GPU acceleration for OCR/transcription
+- [ ] GPU acceleration
 - [ ] Incremental processing
-- [ ] Streaming conversions for large files
+- [ ] Streaming conversions
 - [ ] Memory-mapped file processing
 - [ ] Zero-copy optimizations
 
 ### Cloud Integration
-- [ ] S3/Azure Blob/GCS support
+- [ ] S3/Azure Blob/GCS
 - [ ] Webhook integrations
 - [ ] Event-driven processing
-- [ ] Serverless deployment options
-
----
-
-## Success Metrics
-
-### Performance
-- Conversion speed: >20 pages/second (PDF)
-- Memory usage: <500MB per conversion
-- CPU utilization: <80% during batch processing
-- Cache hit rate: >60% for duplicate documents
-
-### Quality
-- OCR accuracy: >95% (clean documents)
-- Transcription accuracy: >90% (clear audio)
-- Layout preservation: >85% (complex documents)
-- Format compatibility: 100% (supported formats)
-
-### Adoption
-- GitHub stars: 1,000+ (first year)
-- Downloads: 10,000+ (first quarter after launch)
-- Production deployments: 50+ (first year)
-- Community contributors: 20+ (first year)
-
----
-
-## Risk Mitigation
-
-### Technical Risks
-1. **Docling Python dependency**: Maintain fallback pure-Rust parsers
-2. **Performance bottlenecks**: Regular profiling and optimization
-3. **Memory leaks**: Comprehensive testing with Valgrind/sanitizers
-4. **Format compatibility**: Extensive test suite with real-world documents
-
-### Resource Risks
-1. **Development time**: Prioritize MVP features, defer non-critical items
-2. **Model downloads**: Implement lazy loading and caching
-3. **Maintenance burden**: Focus on code quality and documentation
-
----
-
-## Conclusion
-
-This roadmap provides a comprehensive plan for developing Transmutation into a production-ready, high-performance document conversion engine. The phased approach allows for iterative development, early feedback, and continuous improvement.
-
-**Progress Summary**:
-- ✅ Phase 1 & 1.5 Complete (Foundation + Distribution)
-- 🔄 Phase 2 In Progress (90% complete - Office ✅, Web pending)
-- 📝 Phase 3-5 Planned (Q3 2025 onwards)
-
-**Immediate Next Steps**:
-1. ✅ ~~Complete XLSX → Markdown converter~~ **DONE**
-2. Implement HTML/XML conversion (Week 16-17)
-3. Add quality optimization pipeline (Week 20-21)
-4. Begin OCR integration (Phase 3, Week 25-27)
+- [ ] Serverless deployment
 
 ---
 
 **Last Updated**: 2025-10-13  
-**Version**: 0.1.1  
-**Status**: ✅ Phase 1 & 1.5 Complete, Phase 2 In Progress
-
-**Next Milestone**: Phase 2 Week 16 - XLSX & Web Formats
+**Version**: 0.1.2-dev  
+**Status**: ✅ Phase 1, 1.5, 2, 2.5 Complete | 🔄 Phase 3 (8%)
 
