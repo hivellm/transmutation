@@ -21,6 +21,7 @@ static LINE_BREAK_PATTERN: Lazy<Regex> = Lazy::new(|| {
 
 /// Character normalization map (Unicode → ASCII/common forms)
 /// Reference: docling/models/page_assemble_model.py lines 34-65
+/// Extended with mathematical symbols, Greek letters, and special characters
 const CHAR_NORMALIZATION_MAP: &[(&str, &str)] = &[
     // Fractions and special symbols
     ("⁄", "/"),
@@ -33,6 +34,10 @@ const CHAR_NORMALIZATION_MAP: &[(&str, &str)] = &[
     ("\u{201D}", "\""),  // U+201D Right double quotation mark
     ("\u{201E}", "\""),  // U+201E Double low-9 quotation mark
     ("\u{201F}", "\""),  // U+201F Double high-reversed-9 quotation mark
+    ("‹", "<"),  // single left-pointing angle quotation mark
+    ("›", ">"),  // single right-pointing angle quotation mark
+    ("«", "<<"), // left-pointing double angle quotation mark
+    ("»", ">>"), // right-pointing double angle quotation mark
     
     // Dashes and hyphens
     ("–", "-"),  // en dash
@@ -40,11 +45,16 @@ const CHAR_NORMALIZATION_MAP: &[(&str, &str)] = &[
     ("‐", "-"),  // hyphen
     ("‑", "-"),  // non-breaking hyphen
     ("−", "-"),  // minus sign
+    ("‒", "-"),  // figure dash
+    ("―", "-"),  // horizontal bar
     
     // Bullets
     ("•", "·"),
     ("‣", "·"),
     ("⁃", "·"),
+    ("◦", "o"),
+    ("▪", "·"),
+    ("▫", "o"),
     
     // Ellipsis
     ("…", "..."),
@@ -53,11 +63,131 @@ const CHAR_NORMALIZATION_MAP: &[(&str, &str)] = &[
     (" ", " "),  // non-breaking space
     (" ", " "),  // thin space
     (" ", " "),  // hair space
+    (" ", " "),  // en space
+    (" ", " "),  // em space
     
-    // Math symbols
+    // Math symbols - basic
     ("×", "x"),
     ("÷", "/"),
     ("±", "+/-"),
+    ("∓", "-/+"),
+    
+    // Math symbols - comparison
+    ("≤", "<="),
+    ("≥", ">="),
+    ("≠", "!="),
+    ("≈", "~="),
+    ("≡", "==="),
+    ("≢", "!=="),
+    
+    // Math symbols - advanced
+    ("∞", "infinity"),
+    ("∫", "integral"),
+    ("∑", "sum"),
+    ("∏", "product"),
+    ("√", "sqrt"),
+    ("∛", "cbrt"),
+    ("∜", "fourthrt"),
+    ("∂", "d"),  // partial derivative
+    ("∆", "delta"),
+    ("∇", "nabla"),
+    
+    // Arrows
+    ("→", "->"),
+    ("←", "<-"),
+    ("↑", "^"),
+    ("↓", "v"),
+    ("↔", "<->"),
+    ("⇒", "=>"),
+    ("⇐", "<="),
+    ("⇔", "<=>"),
+    ("↦", "|->"),
+    
+    // Superscripts (for exponents in scientific notation)
+    ("⁰", "0"),
+    ("¹", "1"),
+    ("²", "2"),
+    ("³", "3"),
+    ("⁴", "4"),
+    ("⁵", "5"),
+    ("⁶", "6"),
+    ("⁷", "7"),
+    ("⁸", "8"),
+    ("⁹", "9"),
+    ("⁺", "+"),
+    ("⁻", "-"),
+    ("⁼", "="),
+    ("⁽", "("),
+    ("⁾", ")"),
+    
+    // Subscripts
+    ("₀", "0"),
+    ("₁", "1"),
+    ("₂", "2"),
+    ("₃", "3"),
+    ("₄", "4"),
+    ("₅", "5"),
+    ("₆", "6"),
+    ("₇", "7"),
+    ("₈", "8"),
+    ("₉", "9"),
+    ("₊", "+"),
+    ("₋", "-"),
+    ("₌", "="),
+    ("₍", "("),
+    ("₎", ")"),
+    
+    // Greek letters (common in scientific papers)
+    ("α", "alpha"),
+    ("β", "beta"),
+    ("γ", "gamma"),
+    ("δ", "delta"),
+    ("ε", "epsilon"),
+    ("ζ", "zeta"),
+    ("η", "eta"),
+    ("θ", "theta"),
+    ("ι", "iota"),
+    ("κ", "kappa"),
+    ("λ", "lambda"),
+    ("μ", "mu"),
+    ("ν", "nu"),
+    ("ξ", "xi"),
+    ("ο", "omicron"),
+    ("π", "pi"),
+    ("ρ", "rho"),
+    ("σ", "sigma"),
+    ("τ", "tau"),
+    ("υ", "upsilon"),
+    ("φ", "phi"),
+    ("χ", "chi"),
+    ("ψ", "psi"),
+    ("ω", "omega"),
+    
+    // Capital Greek letters
+    ("Α", "Alpha"),
+    ("Β", "Beta"),
+    ("Γ", "Gamma"),
+    ("Δ", "Delta"),
+    ("Ε", "Epsilon"),
+    ("Ζ", "Zeta"),
+    ("Η", "Eta"),
+    ("Θ", "Theta"),
+    ("Ι", "Iota"),
+    ("Κ", "Kappa"),
+    ("Λ", "Lambda"),
+    ("Μ", "Mu"),
+    ("Ν", "Nu"),
+    ("Ξ", "Xi"),
+    ("Ο", "Omicron"),
+    ("Π", "Pi"),
+    ("Ρ", "Rho"),
+    ("Σ", "Sigma"),
+    ("Τ", "Tau"),
+    ("Υ", "Upsilon"),
+    ("Φ", "Phi"),
+    ("Χ", "Chi"),
+    ("Ψ", "Psi"),
+    ("Ω", "Omega"),
     
     // Ligatures
     ("ﬁ", "fi"),
@@ -67,6 +197,20 @@ const CHAR_NORMALIZATION_MAP: &[(&str, &str)] = &[
     ("ﬄ", "ffl"),
     ("ﬅ", "ft"),
     ("ﬆ", "st"),
+    
+    // Special symbols
+    ("©", "(c)"),
+    ("®", "(R)"),
+    ("™", "(TM)"),
+    ("°", " degrees"),
+    ("§", "section"),
+    ("¶", "paragraph"),
+    ("†", "+"),  // dagger
+    ("‡", "++"), // double dagger
+    ("¢", "cents"),
+    ("£", "GBP"),
+    ("¥", "JPY"),
+    ("€", "EUR"),
 ];
 
 /// Text sanitizer for document text

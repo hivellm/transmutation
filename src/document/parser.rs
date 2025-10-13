@@ -111,34 +111,38 @@ impl DoclingJsonParser {
             }
         });
 
-        // Group into lines based on Y proximity and build paragraphs
-        let mut current_paragraph = Vec::new();
+        // Group into lines based on Y proximity, then merge adjacent lines into paragraphs
+        let mut current_line_cells = Vec::new();
+        let mut accumulated_lines = Vec::new();
         let mut prev_y = f64::MAX;
-        let line_threshold = 5.0; // pixels
+        let line_threshold = 15.0; // Increased from 5.0 to detect same-line cells better
 
         for (y, x0, x1, text) in cells_with_pos {
             if (prev_y - y).abs() > line_threshold {
-                // New line detected
-                if !current_paragraph.is_empty() {
-                    let paragraph_text = Self::join_cells(&current_paragraph);
-                    if !paragraph_text.is_empty() {
-                        Self::process_text_line(&paragraph_text, doc, heading_map);
+                // New line detected - process previous line
+                if !current_line_cells.is_empty() {
+                    let line_text = Self::join_cells(&current_line_cells);
+                    if !line_text.is_empty() {
+                        accumulated_lines.push(line_text);
                     }
-                    current_paragraph.clear();
+                    current_line_cells.clear();
                 }
                 prev_y = y;
             }
 
-            current_paragraph.push((x0, x1, text));
+            current_line_cells.push((x0, x1, text));
         }
 
-        // Flush last paragraph
-        if !current_paragraph.is_empty() {
-            let paragraph_text = Self::join_cells(&current_paragraph);
-            if !paragraph_text.is_empty() {
-                Self::process_text_line(&paragraph_text, doc, heading_map);
+        // Flush last line
+        if !current_line_cells.is_empty() {
+            let line_text = Self::join_cells(&current_line_cells);
+            if !line_text.is_empty() {
+                accumulated_lines.push(line_text);
             }
         }
+
+        // Now merge adjacent lines into paragraphs based on heuristics
+        Self::merge_lines_into_paragraphs(accumulated_lines, doc, heading_map);
 
         Ok(())
     }
@@ -162,6 +166,116 @@ impl DoclingJsonParser {
         }
 
         result.trim().to_string()
+    }
+
+    /// Merge adjacent lines into paragraphs based on heuristics
+    fn merge_lines_into_paragraphs(
+        lines: Vec<String>,
+        doc: &mut DoclingDocument,
+        heading_map: &HashMap<String, usize>,
+    ) {
+        if lines.is_empty() {
+            return;
+        }
+
+        let mut current_paragraph = String::new();
+        
+        for (i, line) in lines.iter().enumerate() {
+            let line_trimmed = line.trim();
+            
+            // Check if this is a heading
+            if heading_map.contains_key(&line_trimmed.to_lowercase()) {
+                // Flush current paragraph if any
+                if !current_paragraph.is_empty() {
+                    Self::process_text_line(&current_paragraph, doc, heading_map);
+                    current_paragraph.clear();
+                }
+                // Add heading immediately
+                Self::process_text_line(line_trimmed, doc, heading_map);
+                continue;
+            }
+            
+            // Check if line should be merged with previous
+            let should_merge = if current_paragraph.is_empty() {
+                false // First line of paragraph
+            } else {
+                Self::should_merge_lines(&current_paragraph, line_trimmed)
+            };
+            
+            if should_merge {
+                // Merge with space
+                current_paragraph.push(' ');
+                current_paragraph.push_str(line_trimmed);
+            } else {
+                // Start new paragraph
+                if !current_paragraph.is_empty() {
+                    Self::process_text_line(&current_paragraph, doc, heading_map);
+                }
+                current_paragraph = line_trimmed.to_string();
+            }
+            
+            // If this is the last line, flush
+            if i == lines.len() - 1 && !current_paragraph.is_empty() {
+                Self::process_text_line(&current_paragraph, doc, heading_map);
+            }
+        }
+    }
+    
+    /// Determine if two lines should be merged into same paragraph
+    fn should_merge_lines(prev_line: &str, current_line: &str) -> bool {
+        let prev_trimmed = prev_line.trim();
+        let current_trimmed = current_line.trim();
+        
+        if prev_trimmed.is_empty() || current_trimmed.is_empty() {
+            return false;
+        }
+        
+        // Don't merge if previous line ends with sentence-ending punctuation
+        if prev_trimmed.ends_with('.') || prev_trimmed.ends_with('!') || prev_trimmed.ends_with('?') {
+            // Unless it's an abbreviation (single letter + dot)
+            if let Some(last_word) = prev_trimmed.split_whitespace().last() {
+                if last_word.len() <= 2 && last_word.ends_with('.') {
+                    return true; // Likely abbreviation, merge
+                }
+            }
+            return false;
+        }
+        
+        // Don't merge if previous line ends with colon (likely list or heading)
+        if prev_trimmed.ends_with(':') {
+            return false;
+        }
+        
+        // Don't merge if current line starts with bullet/number (likely list item)
+        if current_trimmed.starts_with('-')
+            || current_trimmed.starts_with('•')
+            || current_trimmed.starts_with('*')
+            || (current_trimmed.len() > 2 
+                && current_trimmed.chars().next().unwrap().is_numeric()
+                && (current_trimmed.chars().nth(1) == Some('.') || current_trimmed.chars().nth(1) == Some(')')))
+        {
+            return false;
+        }
+        
+        // Merge if current line starts with lowercase (continuation)
+        if let Some(first_char) = current_trimmed.chars().next() {
+            if first_char.is_lowercase() {
+                return true;
+            }
+        }
+        
+        // Don't merge if previous line is very short (likely heading or list)
+        if prev_trimmed.len() < 30 {
+            return false;
+        }
+        
+        // Don't merge if current line is very short and all caps (likely heading)
+        if current_trimmed.len() < 50 && current_trimmed.chars().filter(|c| c.is_alphabetic()).all(|c| c.is_uppercase()) {
+            return false;
+        }
+        
+        // Default: merge if lines seem to continue (both reasonably long)
+        prev_trimmed.len() > 40 && current_trimmed.len() > 40
     }
 
     fn process_text_line(
