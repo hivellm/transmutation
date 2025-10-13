@@ -243,6 +243,22 @@ impl ConversionBuilder {
             return converter.convert(&self.input, output_format, self.options).await;
         }
 
+        // Audio formats (with Whisper if feature enabled)
+        #[cfg(feature = "audio")]
+        if input_format.is_audio() {
+            use crate::converters::audio::AudioConverter;
+            let converter = AudioConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
+        // Video formats (with FFmpeg + Whisper if feature enabled)
+        #[cfg(feature = "video")]
+        if input_format.is_video() {
+            use crate::converters::video::VideoConverter;
+            let converter = VideoConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
         // Format not supported or feature not enabled
         Err(TransmutationError::UnsupportedFormat(format!(
             "Format {:?} is not supported or feature not enabled",

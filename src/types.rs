@@ -34,12 +34,14 @@ pub enum FileFormat {
     Wav,
     M4a,
     Flac,
+    Ogg,
 
     // Video formats
     Mp4,
     Avi,
     Mkv,
     Mov,
+    Webm,
 
     // Archive formats
     Zip,
@@ -82,12 +84,12 @@ impl FileFormat {
 
     /// Check if format is audio
     pub fn is_audio(&self) -> bool {
-        matches!(self, Self::Mp3 | Self::Wav | Self::M4a | Self::Flac)
+        matches!(self, Self::Mp3 | Self::Wav | Self::M4a | Self::Flac | Self::Ogg)
     }
 
     /// Check if format is video
     pub fn is_video(&self) -> bool {
-        matches!(self, Self::Mp4 | Self::Avi | Self::Mkv | Self::Mov)
+        matches!(self, Self::Mp4 | Self::Avi | Self::Mkv | Self::Mov | Self::Webm)
     }
 
     /// Check if format is an archive
@@ -123,10 +125,12 @@ impl FileFormat {
             Self::Wav => "wav",
             Self::M4a => "m4a",
             Self::Flac => "flac",
+            Self::Ogg => "ogg",
             Self::Mp4 => "mp4",
             Self::Avi => "avi",
             Self::Mkv => "mkv",
             Self::Mov => "mov",
+            Self::Webm => "webm",
             Self::Zip => "zip",
             Self::Tar => "tar",
             Self::TarGz => "tar.gz",

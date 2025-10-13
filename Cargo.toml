@@ -2,11 +2,11 @@ cargo-features = ["edition2024"]
 
 [package]
 name = "transmutation"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 authors = ["HiveLLM Team <team@hivellm.org>"]
 license = "MIT"
-description = "High-performance document conversion engine for AI/LLM embeddings"
+description = "High-performance document conversion engine for AI/LLM embeddings - 27 formats supported"
 repository = "https://github.com/hivellm/transmutation"
 homepage = "https://hivellm.org/transmutation"
 documentation = "https://docs.rs/transmutation"
@@ -109,8 +109,7 @@ comrak = "0.29"
 regex = "1.11"
 once_cell = "1.20"
 
-# Audio/Video (optional)
-ffmpeg-next = { version = "8.0", optional = true }
+# Note: Audio/Video use external ffmpeg and whisper CLI tools (no Rust crates needed)
 
 # Parallelism
 rayon = "1.10"
@@ -145,15 +144,14 @@ default = ["office"]  # Core formats (PDF, HTML, XML, ZIP) are always enabled
 
 # Core engines (pure Rust implementations)
 tesseract = ["dep:tesseract", "dep:leptess"]
-ffmpeg = ["ffmpeg-next"]
 
 # Format support (pure Rust implementations)
 # Note: PDF, HTML, XML, and basic ZIP support are ALWAYS enabled (no feature flags)
 pdf-to-image = ["dep:pdfium-render"]  # PDF rendering to images per page (optional)
 office = ["docx-rs", "umya-spreadsheet"]  # Office formats (DOCX, XLSX, PPTX)
 image-ocr = ["tesseract"]
-audio = ["ffmpeg"]  # Pure Rust audio transcription (no Python/Whisper dependency)
-video = ["ffmpeg"]
+audio = []  # Audio transcription (requires external whisper CLI)
+video = []  # Video transcription (requires external ffmpeg + whisper CLI)
 archives-extended = ["tar", "flate2", "sevenz-rust"]  # Extended archive support (TAR, GZ, 7Z)
 
 # Advanced layout analysis (C++ FFI to docling-parse + ML models)
@@ -164,8 +162,6 @@ cli = ["clap", "indicatif", "console", "colored"]
 
 # All features (no external integrations - Transmutation is a library/CLI)
 full = [
-    "tesseract",
-    "ffmpeg",
     "pdf-to-image",
     "office",
     "image-ocr",
