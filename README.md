@@ -1,18 +1,5 @@
 # Transmutation
 
-[![CI](https://github.com/hivellm/transmutation/workflows/CI/badge.svg)](https://github.com/hivellm/transmutation/actions/workflows/ci.yml)
-[![Crates.io](https://img.shields.io/crates/v/transmutation.svg)](https://crates.io/crates/transmutation)
-[![Documentation](https://docs.rs/transmutation/badge.svg)](https://docs.rs/transmutation)
-[![License](https://img.shields.io/crates/l/transmutation.svg)](LICENSE)
-[![Rust Version](https://img.shields.io/badge/rust-1.85%2B%20nightly-orange.svg)](https://www.rust-lang.org)
-[![codecov](https://codecov.io/gh/hivellm/transmutation/branch/main/graph/badge.svg)](https://codecov.io/gh/hivellm/transmutation)
-
-![Version](https://img.shields.io/badge/version-0.1.1-blue)
-![Status](https://img.shields.io/badge/status-production%20ready-green)
-![Phase](https://img.shields.io/badge/phase-2%20(90%25)-brightgreen)
-![Downloads](https://img.shields.io/github/downloads/hivellm/transmutation/total)
-![Office](https://img.shields.io/badge/Office-PDF%20%7C%20DOCX%20%7C%20XLSX%20%7C%20PPTX-blue)
-
 **High-performance document conversion engine for AI/LLM embeddings**
 
 Transmutation is a **pure Rust** document conversion engine designed to transform various file formats into optimized text and image outputs suitable for LLM processing and vector embeddings. Built as a core component of the HiveLLM Vectorizer ecosystem, Transmutation is a **high-performance alternative to Docling**, offering superior speed, lower memory usage, and zero runtime dependencies.
