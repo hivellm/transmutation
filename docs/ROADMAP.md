@@ -9,12 +9,12 @@ This roadmap outlines the development plan for Transmutation, a high-performance
 - ✅ **Phase 1.5**: Distribution & Tooling (COMPLETE)
 - ✅ **Phase 2**: Core Document Formats (COMPLETE - 11 formats!)
 - ✅ **Phase 2.5**: Core Features Architecture (COMPLETE)
-- ✅ **Phase 3**: Advanced Features (COMPLETE - Archives ✅, Batch ✅, OCR ✅)
-- 📝 **Phase 4**: Advanced Optimizations (Next)
+- ✅ **Phase 3**: Advanced Features (COMPLETE - Archives ✅, Batch ✅, OCR ✅, ASR ✅)
+- 📝 **Phase 4**: Advanced Optimizations & v1.0.0
 
-**Latest Achievement**: Image OCR with Tesseract! 88x faster than Docling with equivalent quality (tested on Portuguese text)!
+**Latest Achievement**: Audio/Video transcription with Whisper! 5 audio + 5 video formats supported!
 
-**Scope**: Pure Rust library/CLI for document conversion. No external integrations (handled by HiveLLM Vectorizer).
+**Scope**: Pure Rust library/CLI for document conversion. External integrations handled by HiveLLM Vectorizer.
 
 **Overall Progress**: 
 ```
@@ -22,11 +22,17 @@ Phase 1:   ████████████████████ 100% ✅
 Phase 1.5: ████████████████████ 100% ✅ Distribution
 Phase 2:   ████████████████████ 100% ✅ 11 Formats
 Phase 2.5: ████████████████████ 100% ✅ Core Arch
-Phase 3:   ████████████████████ 100% ✅ Archives + Batch + OCR
+Phase 3:   ████████████████████ 100% ✅ Archives + Batch + OCR + ASR
 Phase 4:   ░░░░░░░░░░░░░░░░░░░░   0% 📝 Optimizations
 
 Total:     ████████████████████  95% Complete!!!
 ```
+
+**Formats Supported: 27 total!**
+- Documents (11): PDF, DOCX, XLSX, PPTX, HTML, XML, TXT, CSV, TSV, RTF, ODT
+- Images (6): JPG, PNG, TIFF, BMP, GIF, WEBP
+- Audio (5): MP3, WAV, M4A, FLAC, OGG
+- Video (5): MP4, AVI, MKV, MOV, WEBM
 
 ---
 
@@ -102,7 +108,7 @@ Total:     ████████████████████  95% Com
 
 ---
 
-## Phase 3: Advanced Features 🔄 75% COMPLETE
+## Phase 3: Advanced Features ✅ 100% COMPLETE
 
 ### Week 25-27: Image OCR ✅ COMPLETE
 - ✅ Integrated leptess (Tesseract wrapper)
@@ -117,12 +123,23 @@ Total:     ████████████████████  95% Com
 **Clarification - What OCR Does**:
 - ✅ OCR extracts **existing text** from images (e.g., scanned documents, screenshots with text)
 - ❌ OCR does NOT describe visual content (e.g., "a cat sitting" - that requires Image Captioning models)
-- For visual descriptions, use Vision LLMs (GPT-4 Vision, LLaVA, etc.) - out of Transmutation scope
+- For visual descriptions, see Future Considerations (BLIP-2, GIT models)
 
-### Week 28-32: Audio/Video **OUT OF SCOPE**
-**Note**: Audio/Video transcription (Whisper/FFmpeg) removed from scope.
-- **ASR/Whisper** = Audio → Text transcription (not images!)
-- Use specialized tools directly for audio/video needs.
+### Week 28-30: Audio Transcription ✅ COMPLETE
+- ✅ Integrated Whisper CLI (openai-whisper)
+- ✅ Audio → Text transcription for MP3, WAV, M4A, FLAC, OGG
+- ✅ Language auto-detection
+- ✅ Markdown output with transcript
+- ✅ JSON output with metadata
+- ✅ **External dependency**: Whisper CLI
+
+### Week 31-32: Video Transcription ✅ COMPLETE
+- ✅ Integrated FFmpeg + Whisper
+- ✅ Video → Audio → Text pipeline
+- ✅ Support for MP4, AVI, MKV, MOV, WEBM
+- ✅ Audio extraction with FFmpeg (16kHz mono WAV)
+- ✅ Automatic transcription with Whisper
+- ✅ **External dependencies**: FFmpeg + Whisper CLI
 
 ### Week 33-34: Archive Handling ✅ COMPLETE
 - ✅ ZIP file listing (1864 pg/s)

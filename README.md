@@ -63,7 +63,18 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 
 ### Audio/Video Formats
 
-**Note**: Audio/video transcription is out of scope for Transmutation. Use specialized tools like Whisper directly.
+| Input Format | Output Options | Engine | Status |
+|-------------|----------------|---------|---------|
+| **MP3** | Markdown (transcription), JSON | Whisper | ✅ **Production** |
+| **WAV** | Markdown (transcription), JSON | Whisper | ✅ **Production** |
+| **M4A** | Markdown (transcription), JSON | Whisper | ✅ **Production** |
+| **FLAC** | Markdown (transcription), JSON | Whisper | ✅ **Production** |
+| **OGG** | Markdown (transcription), JSON | Whisper | ✅ **Production** |
+| **MP4** | Markdown (transcription), JSON | FFmpeg + Whisper | ✅ **Production** |
+| **AVI** | Markdown (transcription), JSON | FFmpeg + Whisper | ✅ **Production** |
+| **MKV** | Markdown (transcription), JSON | FFmpeg + Whisper | ✅ **Production** |
+| **MOV** | Markdown (transcription), JSON | FFmpeg + Whisper | ✅ **Production** |
+| **WEBM** | Markdown (transcription), JSON | FFmpeg + Whisper | ✅ **Production** |
 
 ### Archive Formats
 
@@ -184,9 +195,10 @@ Transmutation is **mostly pure Rust**, with **core features requiring ZERO depen
 | `office` (DOCX, XLSX, PPTX - Text) | ✅ **None** | Pure Rust (default) |
 | `pdf-to-image` | ⚠️ poppler-utils | Optional |
 | `office` + images | ⚠️ LibreOffice | Optional |
-| `tesseract` | ⚠️ Tesseract OCR | Optional |
-| `audio/video` | ⚠️ FFmpeg | Optional |
-| `archives-extended` (TAR, GZ, 7Z) | ⚠️ External libs | Optional |
+| `image-ocr` | ⚠️ Tesseract OCR | Optional |
+| `audio` | ⚠️ Whisper CLI | Optional |
+| `video` | ⚠️ FFmpeg + Whisper | Optional |
+| `archives-extended` (TAR, GZ, 7Z) | ⚠️ tar, flate2 crates | Optional |
 
 **During compilation**, `build.rs` will automatically **detect missing dependencies** and provide installation instructions:
 
@@ -444,19 +456,16 @@ See [ROADMAP.md](ROADMAP.md) for detailed development plan.
 - ✅ Simplified API and user experience
 - ✅ Faster compilation
 
-### Phase 3: Advanced Features (Q3 2025) 🔄 8% COMPLETE
-- ✅ **Archive handling** (ZIP listing/indexing - 1864 pg/s)
-- 📝 Audio/Video transcription (pure Rust ASR)
-- 📝 Extended archive support (TAR, GZ, 7Z)
-- 📝 Batch processing
-- 📝 Caching system
-- 📝 OCR (Tesseract)
+### Phase 3: Advanced Features (Q3 2025) ✅ COMPLETE
+- ✅ **Archive handling** (ZIP, TAR, TAR.GZ - 1864 pg/s)
+- ✅ **Batch processing** (Concurrent with Tokio - 4,627 pg/s)
+- ✅ **Image OCR** (Tesseract - 6 formats, 88x faster than Docling)
 
-### Phase 4: Integrations (Q4 2025)
-- 📝 Vectorizer integration
-- 📝 LangChain/LlamaIndex support
-- 📝 Python/Node.js bindings
-- 📝 WASM support
+### Phase 4: Advanced Optimizations
+- 📝 Performance optimizations
+- 📝 Quality improvements (RTF, ODT)
+- 📝 Memory optimizations
+- 📝 v1.0.0 Release
 
 ## 🤝 Contributing
 

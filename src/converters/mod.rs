@@ -28,5 +28,11 @@ pub mod odt;
 #[cfg(feature = "image-ocr")]
 pub mod image;
 
+#[cfg(feature = "audio")]
+pub mod audio;
+
+#[cfg(feature = "video")]
+pub mod video;
+
 pub use traits::{ConverterMetadata, DocumentConverter};
 
