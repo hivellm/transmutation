@@ -2,9 +2,9 @@ name: Build with docling-parse FFI
 
 on:
   push:
-    branches: [ main, feature/* ]
-  pull_request:
-    branches: [ main ]
+    tags:
+      - 'v*'  # Only run on version tags (e.g., v0.1.0, v0.1.1)
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build-linux:

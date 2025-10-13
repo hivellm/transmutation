@@ -184,6 +184,13 @@ impl ConversionBuilder {
             return converter.convert(&self.input, output_format, self.options).await;
         }
 
+        #[cfg(feature = "web")]
+        if input_format == FileFormat::Xml {
+            use crate::converters::xml::XmlConverter;
+            let converter = XmlConverter::new();
+            return converter.convert(&self.input, output_format, self.options).await;
+        }
+
         // Format not supported or feature not enabled
         Err(TransmutationError::UnsupportedFormat(format!(
             "Format {:?} is not supported or feature not enabled",
