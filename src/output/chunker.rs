@@ -120,7 +120,8 @@ impl Chunker {
             let paragraph_tokens = self.estimate_tokens(paragraph);
             let current_tokens = self.estimate_tokens(&current_chunk);
 
-            if current_tokens + paragraph_tokens > self.max_chunk_size && !current_chunk.is_empty() {
+            if current_tokens + paragraph_tokens > self.max_chunk_size && !current_chunk.is_empty()
+            {
                 // Save current chunk
                 let chunk_end = chunk_start + current_chunk.len();
                 chunks.push(TextChunk {
@@ -282,7 +283,9 @@ mod tests {
 
             // There should be some overlap
             assert!(
-                prev_end.split_whitespace().any(|word| curr_start.contains(word)),
+                prev_end
+                    .split_whitespace()
+                    .any(|word| curr_start.contains(word)),
                 "Expected overlap between chunks"
             );
         }
@@ -317,5 +320,3 @@ mod tests {
         assert!(tokens >= 3 && tokens <= 5);
     }
 }
-
-

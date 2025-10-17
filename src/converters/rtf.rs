@@ -2,12 +2,16 @@
 //!
 //! Converts RTF files to Markdown by parsing RTF commands and extracting text.
 
-use super::traits::{ConverterMetadata, DocumentConverter};
-use crate::types::{ConversionOptions, ConversionResult, ConversionOutput, FileFormat, OutputFormat, OutputMetadata};
-use crate::Result;
-use async_trait::async_trait;
 use std::path::Path;
+
+use async_trait::async_trait;
 use tokio::fs;
+
+use super::traits::{ConverterMetadata, DocumentConverter};
+use crate::Result;
+use crate::types::{
+    ConversionOptions, ConversionOutput, ConversionResult, FileFormat, OutputFormat, OutputMetadata,
+};
 
 /// RTF to Markdown converter
 pub struct RtfConverter;
@@ -17,43 +21,43 @@ impl RtfConverter {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Parse RTF and convert to plain text/Markdown
     /// This is a simplified RTF parser that extracts text content
     fn rtf_to_markdown(&self, rtf: &str) -> String {
         let mut markdown = String::new();
         markdown.push_str("# Document\n\n");
-        
+
         let mut text_content = String::new();
         let mut in_control_word = false;
         let mut brace_depth = 0;
         let mut skip_next = false;
-        
+
         let chars: Vec<char> = rtf.chars().collect();
         let mut i = 0;
-        
+
         while i < chars.len() {
             let ch = chars[i];
-            
+
             if skip_next {
                 skip_next = false;
                 i += 1;
                 continue;
             }
-            
+
             match ch {
                 '{' => {
                     brace_depth += 1;
-                },
+                }
                 '}' => {
                     brace_depth -= 1;
                     in_control_word = false;
-                },
+                }
                 '\\' => {
                     // Check for control word
                     if i + 1 < chars.len() {
                         let next_ch = chars[i + 1];
-                        
+
                         // Escape sequences
                         if next_ch == '\\' || next_ch == '{' || next_ch == '}' {
                             text_content.push(next_ch);
@@ -63,11 +67,19 @@ impl RtfConverter {
                             if i + 3 < chars.len() {
                                 i += 3; // Skip \'XX
                             }
-                        } else if next_ch == 'p' && i + 3 < chars.len() && chars[i + 2] == 'a' && chars[i + 3] == 'r' {
+                        } else if next_ch == 'p'
+                            && i + 3 < chars.len()
+                            && chars[i + 2] == 'a'
+                            && chars[i + 3] == 'r'
+                        {
                             // Paragraph break
                             text_content.push_str("\n\n");
                             i += 3;
-                        } else if next_ch == 't' && i + 3 < chars.len() && chars[i + 2] == 'a' && chars[i + 3] == 'b' {
+                        } else if next_ch == 't'
+                            && i + 3 < chars.len()
+                            && chars[i + 2] == 'a'
+                            && chars[i + 3] == 'b'
+                        {
                             // Tab
                             text_content.push('\t');
                             i += 3;
@@ -75,7 +87,8 @@ impl RtfConverter {
                             // Skip control word
                             in_control_word = true;
                             i += 1;
-                            while i < chars.len() && (chars[i].is_alphanumeric() || chars[i] == '*') {
+                            while i < chars.len() && (chars[i].is_alphanumeric() || chars[i] == '*')
+                            {
                                 i += 1;
                             }
                             // Skip optional space after control word
@@ -85,37 +98,42 @@ impl RtfConverter {
                             i -= 1; // Adjust because we'll increment at the end
                         }
                     }
-                },
+                }
                 _ if brace_depth > 0 && !in_control_word && ch >= ' ' => {
                     // Regular text character
                     text_content.push(ch);
-                },
+                }
                 _ => {}
             }
-            
+
             i += 1;
         }
-        
+
         // Clean up text: remove extra spaces and add paragraphs
         let paragraphs: Vec<&str> = text_content
             .split("\n\n")
             .map(|p| p.trim())
             .filter(|p| !p.is_empty())
             .collect();
-        
+
         for para in paragraphs {
             // Detect potential headings
-            if para.len() < 80 && (para.chars().all(|c| !c.is_lowercase() || !c.is_alphabetic()) || para.ends_with(':')) {
+            if para.len() < 80
+                && (para
+                    .chars()
+                    .all(|c| !c.is_lowercase() || !c.is_alphabetic())
+                    || para.ends_with(':'))
+            {
                 markdown.push_str(&format!("## {}\n\n", para));
             } else {
                 markdown.push_str(&format!("{}\n\n", para));
             }
         }
-        
+
         if markdown.trim() == "# Document" {
             markdown.push_str("*No text content extracted from RTF*\n");
         }
-        
+
         markdown
     }
 }
@@ -154,17 +172,17 @@ impl DocumentConverter for RtfConverter {
         eprintln!("🔄 RTF Conversion (Pure Rust)");
         eprintln!("   RTF → Parsing → {:?}", output_format);
         eprintln!();
-        
+
         // Read RTF file
         let rtf_content = fs::read_to_string(input).await?;
-        
+
         // Convert to requested format
         let output_data = match output_format {
             OutputFormat::Markdown { .. } => {
                 eprintln!("📝 Converting to Markdown...");
                 let markdown = self.rtf_to_markdown(&rtf_content);
                 markdown.into_bytes()
-            },
+            }
             OutputFormat::Json { .. } => {
                 eprintln!("📝 Converting to JSON...");
                 let text = self.rtf_to_markdown(&rtf_content);
@@ -175,19 +193,20 @@ impl DocumentConverter for RtfConverter {
                     }
                 });
                 serde_json::to_string_pretty(&json)?.into_bytes()
-            },
+            }
             _ => {
-                return Err(crate::TransmutationError::UnsupportedFormat(
-                    format!("Output format {:?} not supported for RTF", output_format)
-                ));
+                return Err(crate::TransmutationError::UnsupportedFormat(format!(
+                    "Output format {:?} not supported for RTF",
+                    output_format
+                )));
             }
         };
-        
+
         let output_size = output_data.len() as u64;
         let input_size = fs::metadata(input).await?.len();
-        
+
         eprintln!("✅ RTF conversion complete!");
-        
+
         Ok(ConversionResult {
             input_path: input.to_path_buf(),
             input_format: FileFormat::Rtf,
@@ -231,4 +250,3 @@ impl DocumentConverter for RtfConverter {
         }
     }
 }
-

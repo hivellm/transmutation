@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
+use serde_json::Value;
+
 /// Parser for docling-parse JSON output to DoclingDocument
 use super::types::*;
 use crate::error::{Result, TransmutationError};
-use serde_json::Value;
-use std::collections::HashMap;
 
 pub struct DoclingJsonParser;
 
@@ -47,9 +49,7 @@ impl DoclingJsonParser {
 
     fn extract_toc_recursive(entries: &[Value], result: &mut Vec<(String, usize)>) {
         for entry in entries {
-            if let (Some(title), Some(level)) =
-                (entry["title"].as_str(), entry["level"].as_u64())
-            {
+            if let (Some(title), Some(level)) = (entry["title"].as_str(), entry["level"].as_u64()) {
                 result.push((title.to_string(), level as usize));
             }
 
@@ -94,7 +94,10 @@ impl DoclingJsonParser {
                 ) {
                     let trimmed = text.trim();
                     // Filter out non-meaningful single characters and whitespace
-                    if !trimmed.is_empty() && !(trimmed.len() == 1 && !trimmed.chars().next().unwrap().is_alphanumeric()) {
+                    if !trimmed.is_empty()
+                        && !(trimmed.len() == 1
+                            && !trimmed.chars().next().unwrap().is_alphanumeric())
+                    {
                         cells_with_pos.push((y, x0, x1, text.to_string()));
                     }
                 }
@@ -179,10 +182,10 @@ impl DoclingJsonParser {
         }
 
         let mut current_paragraph = String::new();
-        
+
         for (i, line) in lines.iter().enumerate() {
             let line_trimmed = line.trim();
-            
+
             // Check if this is a heading
             if heading_map.contains_key(&line_trimmed.to_lowercase()) {
                 // Flush current paragraph if any
@@ -194,14 +197,14 @@ impl DoclingJsonParser {
                 Self::process_text_line(line_trimmed, doc, heading_map);
                 continue;
             }
-            
+
             // Check if line should be merged with previous
             let should_merge = if current_paragraph.is_empty() {
                 false // First line of paragraph
             } else {
                 Self::should_merge_lines(&current_paragraph, line_trimmed)
             };
-            
+
             if should_merge {
                 // Merge with space
                 current_paragraph.push(' ');
@@ -213,25 +216,26 @@ impl DoclingJsonParser {
                 }
                 current_paragraph = line_trimmed.to_string();
             }
-            
+
             // If this is the last line, flush
             if i == lines.len() - 1 && !current_paragraph.is_empty() {
                 Self::process_text_line(&current_paragraph, doc, heading_map);
             }
         }
     }
-    
+
     /// Determine if two lines should be merged into same paragraph
     fn should_merge_lines(prev_line: &str, current_line: &str) -> bool {
         let prev_trimmed = prev_line.trim();
         let current_trimmed = current_line.trim();
-        
+
         if prev_trimmed.is_empty() || current_trimmed.is_empty() {
             return false;
         }
-        
+
         // Don't merge if previous line ends with sentence-ending punctuation
-        if prev_trimmed.ends_with('.') || prev_trimmed.ends_with('!') || prev_trimmed.ends_with('?') {
+        if prev_trimmed.ends_with('.') || prev_trimmed.ends_with('!') || prev_trimmed.ends_with('?')
+        {
             // Unless it's an abbreviation (single letter + dot)
             if let Some(last_word) = prev_trimmed.split_whitespace().last() {
                 if last_word.len() <= 2 && last_word.ends_with('.') {
@@ -240,40 +244,46 @@ impl DoclingJsonParser {
             }
             return false;
         }
-        
+
         // Don't merge if previous line ends with colon (likely list or heading)
         if prev_trimmed.ends_with(':') {
             return false;
         }
-        
+
         // Don't merge if current line starts with bullet/number (likely list item)
         if current_trimmed.starts_with('-')
             || current_trimmed.starts_with('•')
             || current_trimmed.starts_with('*')
-            || (current_trimmed.len() > 2 
+            || (current_trimmed.len() > 2
                 && current_trimmed.chars().next().unwrap().is_numeric()
-                && (current_trimmed.chars().nth(1) == Some('.') || current_trimmed.chars().nth(1) == Some(')')))
+                && (current_trimmed.chars().nth(1) == Some('.')
+                    || current_trimmed.chars().nth(1) == Some(')')))
         {
             return false;
         }
-        
+
         // Merge if current line starts with lowercase (continuation)
         if let Some(first_char) = current_trimmed.chars().next() {
             if first_char.is_lowercase() {
                 return true;
             }
         }
-        
+
         // Don't merge if previous line is very short (likely heading or list)
         if prev_trimmed.len() < 30 {
             return false;
         }
-        
+
         // Don't merge if current line is very short and all caps (likely heading)
-        if current_trimmed.len() < 50 && current_trimmed.chars().filter(|c| c.is_alphabetic()).all(|c| c.is_uppercase()) {
+        if current_trimmed.len() < 50
+            && current_trimmed
+                .chars()
+                .filter(|c| c.is_alphabetic())
+                .all(|c| c.is_uppercase())
+        {
             return false;
         }
-        
+
         // Default: merge if lines seem to continue (both reasonably long)
         prev_trimmed.len() > 40 && current_trimmed.len() > 40
     }
@@ -308,6 +318,4 @@ impl DoclingJsonParser {
             }));
         }
     }
-
 }
-

@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 /// Document types inspired by docling-core
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DoclingDocument {
@@ -122,7 +123,7 @@ pub enum DocItemLabel {
     Formula,
     Table,
     Picture,
-    Figure,  // Alias for Picture (docling compatibility)
+    Figure, // Alias for Picture (docling compatibility)
     CheckboxSelected,
     CheckboxUnselected,
 }
@@ -136,4 +137,3 @@ impl Default for Formatting {
         }
     }
 }
-

@@ -93,7 +93,7 @@ impl TextOptimizer {
     /// Remove headers and footers (heuristic)
     fn remove_headers_footers_impl(&self, text: &str) -> String {
         let lines: Vec<&str> = text.lines().collect();
-        
+
         if lines.len() < 10 {
             return text.to_string(); // Too short to have headers/footers
         }
@@ -101,18 +101,18 @@ impl TextOptimizer {
         // Detect repeated patterns at top/bottom
         // This is a simple heuristic - can be improved
         let mut filtered_lines = Vec::new();
-        
+
         for line in lines {
             // Skip likely page numbers (just digits)
             if line.trim().chars().all(|c| c.is_ascii_digit()) {
                 continue;
             }
-            
+
             // Skip very short lines at boundaries (likely headers/footers)
             if line.trim().len() < 5 {
                 continue;
             }
-            
+
             filtered_lines.push(line);
         }
 
@@ -127,7 +127,7 @@ impl TextOptimizer {
 
         for line in lines {
             let trimmed = line.trim();
-            
+
             if trimmed.is_empty() {
                 // Empty line - end current paragraph
                 if !current_paragraph.is_empty() {
@@ -141,7 +141,7 @@ impl TextOptimizer {
                     result.push(current_paragraph.join(" "));
                     current_paragraph.clear();
                 }
-                
+
                 current_paragraph.push(trimmed.to_string());
             }
         }
@@ -238,18 +238,10 @@ mod tests {
         let optimizer = TextOptimizer::new();
         let text = "This  is  a  test-\ntext  with\n\n\n\nmultiple  issues.";
         let result = optimizer.optimize(text);
-        
+
         // Should have normalized whitespace
         assert!(!result.contains("  "));
         // Should have removed hyphenation
         assert!(!result.contains("-\n"));
     }
 }
-
-
-
-
-
-
-
-

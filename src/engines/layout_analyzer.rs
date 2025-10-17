@@ -46,7 +46,7 @@ impl LayoutAnalyzer {
 
             // Detect block type
             let block_type = self.detect_block_type(block, blocks, i);
-            
+
             analyzed.push(AnalyzedBlock {
                 block_type: block_type.clone(),
                 content: content.to_string(),
@@ -63,9 +63,14 @@ impl LayoutAnalyzer {
     }
 
     /// Detect the type of a text block
-    fn detect_block_type(&self, block: &TextBlock, _all_blocks: &[TextBlock], _index: usize) -> BlockType {
+    fn detect_block_type(
+        &self,
+        block: &TextBlock,
+        _all_blocks: &[TextBlock],
+        _index: usize,
+    ) -> BlockType {
         let content = block.text.trim();
-        
+
         // Check for formulas (high math symbol density)
         if self.is_formula(content) {
             return BlockType::Formula;
@@ -124,14 +129,25 @@ impl LayoutAnalyzer {
     /// Check if content is a section heading (e.g., "1 Introduction")
     fn is_section_heading(&self, content: &str) -> bool {
         let trimmed = content.trim();
-        
+
         // Keywords that indicate sections (exact match at start)
-        let section_keywords = ["Abstract", "Introduction", "Background", "Conclusion", 
-                               "Acknowledgements", "References", "Appendix", "Attention Visualizations"];
-        if section_keywords.iter().any(|&kw| trimmed == kw || trimmed.starts_with(&format!("{} ", kw))) {
+        let section_keywords = [
+            "Abstract",
+            "Introduction",
+            "Background",
+            "Conclusion",
+            "Acknowledgements",
+            "References",
+            "Appendix",
+            "Attention Visualizations",
+        ];
+        if section_keywords
+            .iter()
+            .any(|&kw| trimmed == kw || trimmed.starts_with(&format!("{} ", kw)))
+        {
             return true;
         }
-        
+
         // Pattern: single digit + space + capitalized word (like "1 Introduction")
         if let Some(first_char) = trimmed.chars().next() {
             if first_char.is_numeric() {
@@ -139,7 +155,7 @@ impl LayoutAnalyzer {
                 if parts.len() == 2 {
                     let number_part = parts[0];
                     let text_part = parts[1];
-                    
+
                     // Single digit only (not "3.1")
                     if number_part.len() == 1 && number_part.chars().all(|c| c.is_numeric()) {
                         // Text part starts with capital
@@ -150,20 +166,20 @@ impl LayoutAnalyzer {
                 }
             }
         }
-        
+
         false
     }
 
     /// Check if content is a subsection heading (e.g., "3.1 Encoder")
     fn is_subsection_heading(&self, content: &str) -> bool {
         let trimmed = content.trim();
-        
+
         // Pattern like "3.1", "3.2.1", etc.
         if trimmed.len() < 150 {
             let first_part = trimmed.split_whitespace().next().unwrap_or("");
             let dot_count = first_part.matches('.').count();
             let digit_count = first_part.chars().filter(|c| c.is_numeric()).count();
-            
+
             // Must have pattern like "3.1" or "3.2.1" or "3.2.2"
             if dot_count >= 1 && digit_count >= 2 && first_part.len() < 10 {
                 // Verify there's text after the number
@@ -172,14 +188,14 @@ impl LayoutAnalyzer {
                 }
             }
         }
-        
+
         false
     }
 
     /// Check if content is a list item
     fn is_list_item(&self, content: &str) -> bool {
         let trimmed = content.trim();
-        
+
         // Bullet points
         if trimmed.starts_with('•') || trimmed.starts_with('▪') || trimmed.starts_with('◦') {
             return true;
@@ -195,8 +211,11 @@ impl LayoutAnalyzer {
             if first_word.ends_with('.') || first_word.ends_with(')') {
                 let without_punct = first_word.trim_end_matches(&['.', ')'][..]);
                 // Roman numerals, letters, or numbers
-                if without_punct.chars().all(|c| c.is_numeric() || c.is_alphabetic()) 
-                    && without_punct.len() <= 3 {
+                if without_punct
+                    .chars()
+                    .all(|c| c.is_numeric() || c.is_alphabetic())
+                    && without_punct.len() <= 3
+                {
                     return true;
                 }
             }
@@ -208,12 +227,14 @@ impl LayoutAnalyzer {
     /// Check if content contains a formula
     fn is_formula(&self, content: &str) -> bool {
         // Math Unicode characters
-        let math_chars = ['∑', '∫', '√', '∈', '∉', '⊂', '⊃', '≤', '≥', '≠', '≈', '∞',
-                         '∂', '∇', '×', '÷', '±', 'α', 'β', 'γ', 'δ', 'θ', 'λ', 'μ', 'π', 'σ', 'ω'];
-        
+        let math_chars = [
+            '∑', '∫', '√', '∈', '∉', '⊂', '⊃', '≤', '≥', '≠', '≈', '∞', '∂', '∇', '×', '÷', '±',
+            'α', 'β', 'γ', 'δ', 'θ', 'λ', 'μ', 'π', 'σ', 'ω',
+        ];
+
         let math_count = content.chars().filter(|c| math_chars.contains(c)).count();
         let total_chars = content.chars().count();
-        
+
         // High density of math symbols (>10%)
         if total_chars > 0 && (math_count as f32 / total_chars as f32) > 0.1 {
             return true;
@@ -225,7 +246,12 @@ impl LayoutAnalyzer {
         }
 
         // Equations with equals and operators
-        if content.contains('=') && (content.matches('+').count() + content.matches('*').count() + content.matches('/').count()) >= 2 {
+        if content.contains('=')
+            && (content.matches('+').count()
+                + content.matches('*').count()
+                + content.matches('/').count())
+                >= 2
+        {
             // But exclude table rows or code
             if !content.contains('|') && content.len() < 200 {
                 return true;
@@ -238,8 +264,10 @@ impl LayoutAnalyzer {
     /// Check if content is an image caption
     fn is_image_caption(&self, content: &str) -> bool {
         let lower = content.to_lowercase();
-        lower.starts_with("figure") || lower.starts_with("fig.") || 
-        lower.starts_with("image") || lower.starts_with("diagram")
+        lower.starts_with("figure")
+            || lower.starts_with("fig.")
+            || lower.starts_with("image")
+            || lower.starts_with("diagram")
     }
 
     /// Get heading level based on block type and font size
@@ -274,7 +302,9 @@ impl LayoutAnalyzer {
         for block in blocks {
             match (&current, &block.block_type) {
                 // Merge consecutive paragraphs if Y gap is small
-                (Some(curr), BlockType::Paragraph) if matches!(curr.block_type, BlockType::Paragraph) => {
+                (Some(curr), BlockType::Paragraph)
+                    if matches!(curr.block_type, BlockType::Paragraph) =>
+                {
                     if let Some(ref mut c) = current {
                         // Check if should merge (close Y positions)
                         let y_diff = (c.y_position - block.y_position).abs();
@@ -394,4 +424,3 @@ mod tests {
         assert!(!analyzer.is_image_caption("Regular text"));
     }
 }
-

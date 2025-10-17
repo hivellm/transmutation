@@ -8,5 +8,5 @@ pub mod markdown;
 // pub mod json;
 // pub mod csv;
 
-pub use chunker::{Chunker, ChunkStrategy, TextChunk};
+pub use chunker::{ChunkStrategy, Chunker, TextChunk};
 pub use markdown::MarkdownGenerator;

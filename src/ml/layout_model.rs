@@ -1,18 +1,19 @@
+use std::path::Path;
+
+use image::GenericImageView;
+use ndarray::Array4;
+#[cfg(feature = "docling-ffi")]
+use ort::{
+    session::{Session, builder::SessionBuilder},
+    value::{Tensor, Value},
+};
+
 /// Layout detection model using ONNX
-/// 
+///
 /// Detects document regions: text, tables, figures, headers, etc.
 /// Based on docling's LayoutModel (docling_ibm_models)
 use crate::error::{Result, TransmutationError};
 use crate::ml::{DocumentModel, preprocessing};
-use ndarray::Array4;
-use std::path::Path;
-use image::GenericImageView;
-
-#[cfg(feature = "docling-ffi")]
-use ort::{
-    session::{Session, builder::SessionBuilder},
-    value::{Value, Tensor},
-};
 
 /// Document layout regions detected by the model
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,7 +59,7 @@ impl LayoutModel {
     /// Load layout model from ONNX file
     pub fn new<P: AsRef<Path>>(model_path: P) -> Result<Self> {
         let model_path = model_path.as_ref().to_path_buf();
-        
+
         #[cfg(feature = "docling-ffi")]
         {
             let session = SessionBuilder::new()?
@@ -69,19 +70,22 @@ impl LayoutModel {
                     message: format!("Failed to load ONNX model: {}", e),
                     source: None,
                 })?;
-            
-            Ok(Self { session, model_path })
+
+            Ok(Self {
+                session,
+                model_path,
+            })
         }
-        
+
         #[cfg(not(feature = "docling-ffi"))]
         {
             Err(TransmutationError::EngineError(
                 "layout-model".to_string(),
-                "docling-ffi feature not enabled".to_string()
+                "docling-ffi feature not enabled".to_string(),
             ))
         }
     }
-    
+
     /// Run inference on preprocessed image
     #[cfg(feature = "docling-ffi")]
     fn run_inference(&mut self, input: &Array4<f32>) -> Result<Vec<DetectedRegion>> {
@@ -90,7 +94,7 @@ impl LayoutModel {
         let shape = input.shape().to_vec();
         let data = input.iter().copied().collect::<Vec<f32>>();
         let input_tensor = Tensor::from_array((shape, data))?;
-        
+
         // Run inference (ort v2 requires mutable session)
         // Extract outputs in a separate scope to end mutable borrow
         let (output_data, output_shape) = {
@@ -99,13 +103,17 @@ impl LayoutModel {
             let (shape, data) = output_value.try_extract_tensor::<f32>()?;
             (data.to_vec(), shape.to_vec())
         };
-        
+
         // Now process with immutable borrow
         self.post_process_output_from_data(&output_shape, &output_data)
     }
-    
+
     #[cfg(feature = "docling-ffi")]
-    fn post_process_output_from_data(&self, shape: &[i64], data: &[f32]) -> Result<Vec<DetectedRegion>> {
+    fn post_process_output_from_data(
+        &self,
+        shape: &[i64],
+        data: &[f32],
+    ) -> Result<Vec<DetectedRegion>> {
         // Extract segmentation masks from ONNX output
         // Output format: [batch, num_classes, height, width]
         if shape.len() != 4 {
@@ -115,40 +123,38 @@ impl LayoutModel {
                 source: None,
             });
         }
-        
+
         let num_classes = shape[1] as usize;
         let height = shape[2] as usize;
         let width = shape[3] as usize;
-        
+
         // Reconstruct ndarray from shape and data for easier manipulation
         use ndarray::Array4;
-        let masks_array = Array4::from_shape_vec(
-            (1, num_classes, height, width),
-            data.to_vec()
-        ).map_err(|e| crate::TransmutationError::EngineError {
-            engine: "layout-model".to_string(),
-            message: format!("Failed to reshape tensor: {}", e),
-            source: None,
-        })?;
-        
+        let masks_array = Array4::from_shape_vec((1, num_classes, height, width), data.to_vec())
+            .map_err(|e| crate::TransmutationError::EngineError {
+                engine: "layout-model".to_string(),
+                message: format!("Failed to reshape tensor: {}", e),
+                source: None,
+            })?;
+
         // Process each class mask
         let mut all_regions = Vec::new();
-        
+
         for class_id in 0..num_classes {
             // Extract mask for this class
             let class_mask = masks_array.slice(ndarray::s![0, class_id, .., ..]);
-            
+
             // Convert mask to regions using connected components
             let regions = self.mask_to_regions(&class_mask, class_id, width, height)?;
             all_regions.extend(regions);
         }
-        
+
         // Apply Non-Maximum Suppression to remove overlapping detections
         let filtered_regions = self.apply_nms(all_regions, 0.5)?;
-        
+
         Ok(filtered_regions)
     }
-    
+
     /// Convert binary mask to bounding box regions using connected components
     #[cfg(feature = "docling-ffi")]
     fn mask_to_regions(
@@ -160,23 +166,24 @@ impl LayoutModel {
     ) -> Result<Vec<DetectedRegion>> {
         let threshold = 0.5; // Confidence threshold
         let mut regions = Vec::new();
-        
+
         // Simple threshold-based approach
         // For production, use connected components algorithm
         let mut visited = vec![vec![false; width]; height];
-        
+
         for y in 0..height {
             for x in 0..width {
                 if mask[[y, x]] > threshold && !visited[y][x] {
                     // Start a new region
-                    let bbox = self.flood_fill_bbox(mask, &mut visited, x, y, width, height, threshold);
-                    
+                    let bbox =
+                        self.flood_fill_bbox(mask, &mut visited, x, y, width, height, threshold);
+
                     if let Some((x0, y0, x1, y1)) = bbox {
                         // Map class_id to LayoutLabel
                         if let Some(label) = self.class_id_to_label(class_id) {
                             // Calculate confidence (average of mask values in bbox)
                             let confidence = self.calculate_region_confidence(mask, x0, y0, x1, y1);
-                            
+
                             regions.push(DetectedRegion {
                                 label,
                                 bbox: (x0 as f32, y0 as f32, x1 as f32, y1 as f32),
@@ -187,10 +194,10 @@ impl LayoutModel {
                 }
             }
         }
-        
+
         Ok(regions)
     }
-    
+
     /// Flood fill to find connected component bounding box
     #[cfg(feature = "docling-ffi")]
     fn flood_fill_bbox(
@@ -208,35 +215,43 @@ impl LayoutModel {
         let mut min_y = start_y;
         let mut max_x = start_x;
         let mut max_y = start_y;
-        
+
         while let Some((x, y)) = stack.pop() {
             if x >= width || y >= height || visited[y][x] || mask[[y, x]] <= threshold {
                 continue;
             }
-            
+
             visited[y][x] = true;
-            
+
             // Update bounding box
             min_x = min_x.min(x);
             min_y = min_y.min(y);
             max_x = max_x.max(x);
             max_y = max_y.max(y);
-            
+
             // Add neighbors (4-connectivity)
-            if x > 0 { stack.push((x - 1, y)); }
-            if x + 1 < width { stack.push((x + 1, y)); }
-            if y > 0 { stack.push((x, y - 1)); }
-            if y + 1 < height { stack.push((x, y + 1)); }
+            if x > 0 {
+                stack.push((x - 1, y));
+            }
+            if x + 1 < width {
+                stack.push((x + 1, y));
+            }
+            if y > 0 {
+                stack.push((x, y - 1));
+            }
+            if y + 1 < height {
+                stack.push((x, y + 1));
+            }
         }
-        
+
         // Filter out very small regions
         if (max_x - min_x) < 5 || (max_y - min_y) < 5 {
             return None;
         }
-        
+
         Some((min_x, min_y, max_x, max_y))
     }
-    
+
     /// Calculate average confidence in region
     #[cfg(feature = "docling-ffi")]
     fn calculate_region_confidence(
@@ -249,7 +264,7 @@ impl LayoutModel {
     ) -> f32 {
         let mut sum = 0.0;
         let mut count = 0;
-        
+
         for y in y0..=y1 {
             for x in x0..=x1 {
                 if y < mask.shape()[0] && x < mask.shape()[1] {
@@ -258,76 +273,76 @@ impl LayoutModel {
                 }
             }
         }
-        
-        if count > 0 {
-            sum / count as f32
-        } else {
-            0.0
-        }
+
+        if count > 0 { sum / count as f32 } else { 0.0 }
     }
-    
+
     /// Apply Non-Maximum Suppression to filter overlapping regions
     #[cfg(feature = "docling-ffi")]
-    fn apply_nms(&self, mut regions: Vec<DetectedRegion>, iou_threshold: f32) -> Result<Vec<DetectedRegion>> {
+    fn apply_nms(
+        &self,
+        mut regions: Vec<DetectedRegion>,
+        iou_threshold: f32,
+    ) -> Result<Vec<DetectedRegion>> {
         // Sort by confidence (descending)
         regions.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
-        
+
         let mut keep = Vec::new();
         let mut suppressed = vec![false; regions.len()];
-        
+
         for i in 0..regions.len() {
             if suppressed[i] {
                 continue;
             }
-            
+
             keep.push(regions[i].clone());
-            
+
             // Suppress overlapping regions
             for j in (i + 1)..regions.len() {
                 if suppressed[j] {
                     continue;
                 }
-                
+
                 let iou = self.calculate_iou(&regions[i].bbox, &regions[j].bbox);
                 if iou > iou_threshold {
                     suppressed[j] = true;
                 }
             }
         }
-        
+
         Ok(keep)
     }
-    
+
     /// Calculate Intersection over Union (IoU)
     #[cfg(feature = "docling-ffi")]
     fn calculate_iou(&self, bbox1: &(f32, f32, f32, f32), bbox2: &(f32, f32, f32, f32)) -> f32 {
         let (x1_min, y1_min, x1_max, y1_max) = bbox1;
         let (x2_min, y2_min, x2_max, y2_max) = bbox2;
-        
+
         // Calculate intersection
         let inter_x_min = x1_min.max(*x2_min);
         let inter_y_min = y1_min.max(*y2_min);
         let inter_x_max = x1_max.min(*x2_max);
         let inter_y_max = y1_max.min(*y2_max);
-        
+
         if inter_x_max <= inter_x_min || inter_y_max <= inter_y_min {
             return 0.0;
         }
-        
+
         let inter_area = (inter_x_max - inter_x_min) * (inter_y_max - inter_y_min);
-        
+
         // Calculate union
         let area1 = (x1_max - x1_min) * (y1_max - y1_min);
         let area2 = (x2_max - x2_min) * (y2_max - y2_min);
         let union_area = area1 + area2 - inter_area;
-        
+
         if union_area > 0.0 {
             inter_area / union_area
         } else {
             0.0
         }
     }
-    
+
     /// Map class ID to LayoutLabel
     /// Based on docling's class definitions
     #[cfg(feature = "docling-ffi")]
@@ -354,23 +369,23 @@ impl LayoutModel {
 impl DocumentModel for LayoutModel {
     type Input = image::DynamicImage;
     type Output = LayoutPrediction;
-    
+
     fn predict(&mut self, input: &Self::Input) -> Result<Self::Output> {
         // Preprocess image
         let tensor = preprocessing::preprocess_for_layout(input)?;
-        
+
         // Run inference
         let regions = self.run_inference(&tensor)?;
-        
+
         let (width, height) = input.dimensions();
-        
+
         Ok(LayoutPrediction {
             regions,
             page_width: width,
             page_height: height,
         })
     }
-    
+
     fn name(&self) -> &str {
         "LayoutModel"
     }
@@ -379,7 +394,7 @@ impl DocumentModel for LayoutModel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     #[ignore] // Requires actual ONNX model file
     fn test_load_model() {
@@ -387,4 +402,3 @@ mod tests {
         // Will fail if model doesn't exist, which is expected
     }
 }
-

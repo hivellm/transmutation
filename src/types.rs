@@ -1,8 +1,9 @@
 //! Core types for Transmutation
 
-use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+
+use serde::{Deserialize, Serialize};
 
 /// Supported file formats
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -84,12 +85,18 @@ impl FileFormat {
 
     /// Check if format is audio
     pub fn is_audio(&self) -> bool {
-        matches!(self, Self::Mp3 | Self::Wav | Self::M4a | Self::Flac | Self::Ogg)
+        matches!(
+            self,
+            Self::Mp3 | Self::Wav | Self::M4a | Self::Flac | Self::Ogg
+        )
     }
 
     /// Check if format is video
     pub fn is_video(&self) -> bool {
-        matches!(self, Self::Mp4 | Self::Avi | Self::Mkv | Self::Mov | Self::Webm)
+        matches!(
+            self,
+            Self::Mp4 | Self::Avi | Self::Mkv | Self::Mov | Self::Webm
+        )
     }
 
     /// Check if format is an archive
@@ -247,13 +254,13 @@ pub struct ConversionOptions {
     pub remove_watermarks: bool,
     /// Normalize whitespace
     pub normalize_whitespace: bool,
-    
+
     // Precision mode
     /// Use high-precision mode (Docling-based layout analysis)
     /// When enabled: ~95% similarity, slower (uses Python/ML)
     /// When disabled (default): ~81% similarity, 250x faster (pure Rust)
     pub use_precision_mode: bool,
-    
+
     /// Use docling-parse C++ FFI for maximum precision (95%+ similarity)
     /// Requires compilation with --features docling-ffi
     pub use_ffi: bool,
@@ -277,7 +284,7 @@ impl Default for ConversionOptions {
             remove_watermarks: false,
             normalize_whitespace: true,
             use_precision_mode: false, // Fast mode by default (pure Rust, 250x faster)
-            use_ffi: false, // C++ FFI disabled by default
+            use_ffi: false,            // C++ FFI disabled by default
         }
     }
 }
@@ -341,7 +348,7 @@ impl ConversionResult {
                 .unwrap_or("output");
             let parent = output_path.parent().unwrap_or_else(|| Path::new("."));
             let output_dir = parent.join(stem);
-            
+
             // Create directory
             tokio::fs::create_dir_all(&output_dir).await?;
 
@@ -355,7 +362,7 @@ impl ConversionResult {
                 let file_path = output_dir.join(format!("page_{:04}.{}", i + 1, ext));
                 tokio::fs::write(&file_path, &output.data).await?;
             }
-            
+
             // Save metadata JSON
             let metadata_json = serde_json::json!({
                 "input": self.input_path.to_string_lossy(),
@@ -376,7 +383,7 @@ impl ConversionResult {
                     "tables_extracted": self.statistics.tables_extracted,
                 }
             });
-            
+
             let metadata_path = output_dir.join("metadata.json");
             let json_str = serde_json::to_string_pretty(&metadata_json)
                 .map_err(|e| crate::TransmutationError::SerializationError(e))?;
@@ -491,4 +498,3 @@ mod tests {
         assert!(matches!(md, OutputFormat::Markdown { .. }));
     }
 }
-

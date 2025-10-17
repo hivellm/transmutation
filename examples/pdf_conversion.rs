@@ -7,7 +7,7 @@
 //! cargo run --example pdf_conversion --features pdf path/to/document.pdf
 //! ```
 
-use transmutation::{Converter, ConversionOptions, OutputFormat};
+use transmutation::{ConversionOptions, Converter, OutputFormat};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,7 +43,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Input size:  {} bytes", result.input_size());
     println!("  Output size: {} bytes", result.output_size());
     println!("  Duration:    {:?}", result.duration());
-    println!("  Compression: {:.1}%", 
+    println!(
+        "  Compression: {:.1}%",
         (1.0 - result.output_size() as f64 / result.input_size() as f64) * 100.0
     );
 
@@ -62,7 +63,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    println!("✓ Generated {} separate Markdown files", result.page_count());
+    println!(
+        "✓ Generated {} separate Markdown files",
+        result.page_count()
+    );
     result.save("output_pages/document.md").await?;
     println!("  Saved to: output_pages/document_page_*.md");
 
@@ -106,12 +110,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("✓ Converted with custom options");
     println!("  Pages: {}", result.page_count());
     println!("  Tables: {}", result.metadata.page_count);
-    
+
     result.save("output_custom.md").await?;
     println!("  Saved to: output_custom.md");
 
     println!("\n✨ All examples completed successfully!");
-    
+
     Ok(())
 }
-

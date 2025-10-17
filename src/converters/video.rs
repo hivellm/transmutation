@@ -2,14 +2,18 @@
 //!
 //! Converts video files to text by extracting audio and using Whisper ASR.
 
-use super::traits::{ConverterMetadata, DocumentConverter};
-use crate::types::{ConversionOptions, ConversionResult, ConversionOutput, FileFormat, OutputFormat, OutputMetadata};
-use crate::Result;
-use async_trait::async_trait;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use tokio::fs;
+
+use async_trait::async_trait;
 use tempfile::NamedTempFile;
+use tokio::fs;
+
+use super::traits::{ConverterMetadata, DocumentConverter};
+use crate::Result;
+use crate::types::{
+    ConversionOptions, ConversionOutput, ConversionResult, FileFormat, OutputFormat, OutputMetadata,
+};
 
 /// Video to text converter (FFmpeg + Whisper)
 pub struct VideoConverter;
@@ -19,159 +23,192 @@ impl VideoConverter {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Check if ffmpeg is available
     fn check_ffmpeg() -> bool {
-        Command::new("ffmpeg")
-            .arg("-version")
-            .output()
-            .is_ok()
+        Command::new("ffmpeg").arg("-version").output().is_ok()
     }
-    
+
     /// Check if whisper is available
     fn check_whisper() -> bool {
         // Try whisper in PATH
         if Command::new("whisper").arg("--help").output().is_ok() {
             return true;
         }
-        
+
         // Try common installation paths
         let paths = vec![
-            format!("{}/.local/bin/whisper", std::env::var("HOME").unwrap_or_default()),
+            format!(
+                "{}/.local/bin/whisper",
+                std::env::var("HOME").unwrap_or_default()
+            ),
             "/usr/local/bin/whisper".to_string(),
             "/usr/bin/whisper".to_string(),
         ];
-        
+
         for path in paths {
             if std::path::Path::new(&path).exists() {
                 return true;
             }
         }
-        
+
         false
     }
-    
+
     /// Get whisper command path
     fn get_whisper_cmd() -> String {
         // Try common paths
         let paths = vec![
-            format!("{}/.local/bin/whisper", std::env::var("HOME").unwrap_or_default()),
+            format!(
+                "{}/.local/bin/whisper",
+                std::env::var("HOME").unwrap_or_default()
+            ),
             "/usr/local/bin/whisper".to_string(),
             "/usr/bin/whisper".to_string(),
             "whisper".to_string(),
         ];
-        
+
         for path in &paths {
             if std::path::Path::new(path).exists() || path == "whisper" {
                 return path.clone();
             }
         }
-        
+
         "whisper".to_string()
     }
-    
+
     /// Extract audio from video using FFmpeg
     async fn extract_audio(&self, video_path: &Path) -> Result<PathBuf> {
         if !Self::check_ffmpeg() {
             return Err(crate::TransmutationError::conversion_failed(
-                "FFmpeg not found. Install: sudo apt-get install ffmpeg"
+                "FFmpeg not found. Install: sudo apt-get install ffmpeg",
             ));
         }
-        
+
         // Create temporary audio file
-        let temp_audio = NamedTempFile::new()
-            .map_err(|e| crate::TransmutationError::conversion_failed(&format!("Failed to create temp file: {}", e)))?;
-        
+        let temp_audio = NamedTempFile::new().map_err(|e| {
+            crate::TransmutationError::conversion_failed(&format!(
+                "Failed to create temp file: {}",
+                e
+            ))
+        })?;
+
         let audio_path = temp_audio.path().with_extension("wav");
-        
+
         eprintln!("🎬 Extracting audio with FFmpeg...");
-        
+
         // Extract audio to WAV format
         let output = Command::new("ffmpeg")
-            .arg("-i").arg(video_path)
-            .arg("-vn")  // No video
-            .arg("-acodec").arg("pcm_s16le")  // WAV format
-            .arg("-ar").arg("16000")  // 16kHz sample rate (Whisper default)
-            .arg("-ac").arg("1")  // Mono
-            .arg("-y")  // Overwrite
+            .arg("-i")
+            .arg(video_path)
+            .arg("-vn") // No video
+            .arg("-acodec")
+            .arg("pcm_s16le") // WAV format
+            .arg("-ar")
+            .arg("16000") // 16kHz sample rate (Whisper default)
+            .arg("-ac")
+            .arg("1") // Mono
+            .arg("-y") // Overwrite
             .arg(&audio_path)
             .output()
-            .map_err(|e| crate::TransmutationError::conversion_failed(&format!("FFmpeg execution failed: {}", e)))?;
-        
+            .map_err(|e| {
+                crate::TransmutationError::conversion_failed(&format!(
+                    "FFmpeg execution failed: {}",
+                    e
+                ))
+            })?;
+
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(crate::TransmutationError::conversion_failed(&format!("FFmpeg failed: {}", stderr)));
+            return Err(crate::TransmutationError::conversion_failed(&format!(
+                "FFmpeg failed: {}",
+                stderr
+            )));
         }
-        
+
         Ok(audio_path)
     }
-    
+
     /// Transcribe audio using Whisper
     async fn transcribe_audio(&self, audio_path: &Path, language: Option<&str>) -> Result<String> {
         if !Self::check_whisper() {
             return Err(crate::TransmutationError::conversion_failed(
-                "Whisper not found. Install: pip install openai-whisper"
+                "Whisper not found. Install: pip install openai-whisper",
             ));
         }
-        
+
         eprintln!("🎤 Running Whisper transcription...");
-        
+
         let whisper_cmd = Self::get_whisper_cmd();
         let mut cmd = Command::new(&whisper_cmd);
         cmd.arg(audio_path);
-        cmd.arg("--model").arg("base");  // Use base model
+        cmd.arg("--model").arg("base"); // Use base model
         cmd.arg("--output_format").arg("txt");
         cmd.arg("--output_dir").arg("/tmp");
-        
+
         if let Some(lang) = language {
             cmd.arg("--language").arg(lang);
         }
-        
-        let output = cmd.output()
-            .map_err(|e| crate::TransmutationError::conversion_failed(&format!("Whisper execution failed: {}", e)))?;
-        
+
+        let output = cmd.output().map_err(|e| {
+            crate::TransmutationError::conversion_failed(&format!(
+                "Whisper execution failed: {}",
+                e
+            ))
+        })?;
+
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(crate::TransmutationError::conversion_failed(&format!("Whisper failed: {}", stderr)));
+            return Err(crate::TransmutationError::conversion_failed(&format!(
+                "Whisper failed: {}",
+                stderr
+            )));
         }
-        
+
         // Read transcription
-        let audio_name = audio_path.file_stem()
+        let audio_name = audio_path
+            .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("audio");
         let transcript_path = format!("/tmp/{}.txt", audio_name);
-        
-        let transcript = tokio::fs::read_to_string(&transcript_path).await
-            .map_err(|e| crate::TransmutationError::conversion_failed(&format!("Failed to read transcript: {}", e)))?;
-        
+
+        let transcript = tokio::fs::read_to_string(&transcript_path)
+            .await
+            .map_err(|e| {
+                crate::TransmutationError::conversion_failed(&format!(
+                    "Failed to read transcript: {}",
+                    e
+                ))
+            })?;
+
         // Clean up
         let _ = tokio::fs::remove_file(&transcript_path).await;
-        
+
         Ok(transcript)
     }
-    
+
     /// Convert video to Markdown
     async fn video_to_markdown(&self, video_path: &Path, language: Option<&str>) -> Result<String> {
         // Extract audio
         let audio_path = self.extract_audio(video_path).await?;
-        
+
         // Transcribe
         let transcript = self.transcribe_audio(&audio_path, language).await?;
-        
+
         // Clean up audio file
         let _ = tokio::fs::remove_file(&audio_path).await;
-        
+
         let mut markdown = String::new();
         markdown.push_str("# Video Transcription\n\n");
-        
+
         if let Some(lang) = language {
             markdown.push_str(&format!("**Language**: {}\n\n", lang));
         }
-        
+
         markdown.push_str("## Transcript\n\n");
         markdown.push_str(&transcript);
         markdown.push('\n');
-        
+
         Ok(markdown)
     }
 }
@@ -216,18 +253,18 @@ impl DocumentConverter for VideoConverter {
         eprintln!("🔄 Video Transcription (FFmpeg + Whisper)");
         eprintln!("   Video → Audio → Whisper → {:?}", output_format);
         eprintln!();
-        
-        let language = None;  // Auto-detect
-        
+
+        let language = None; // Auto-detect
+
         // Convert video to text
         let markdown = self.video_to_markdown(input, language).await?;
-        
+
         // Convert to requested format
         let output_data = match output_format {
             OutputFormat::Markdown { .. } => {
                 eprintln!("✅ Transcription complete!");
                 markdown.into_bytes()
-            },
+            }
             OutputFormat::Json { .. } => {
                 eprintln!("📝 Converting to JSON...");
                 let json = serde_json::json!({
@@ -238,17 +275,18 @@ impl DocumentConverter for VideoConverter {
                     }
                 });
                 serde_json::to_string_pretty(&json)?.into_bytes()
-            },
+            }
             _ => {
-                return Err(crate::TransmutationError::UnsupportedFormat(
-                    format!("Output format {:?} not supported for video", output_format)
-                ));
+                return Err(crate::TransmutationError::UnsupportedFormat(format!(
+                    "Output format {:?} not supported for video",
+                    output_format
+                )));
             }
         };
-        
+
         let output_size = output_data.len() as u64;
         let input_size = fs::metadata(input).await?.len();
-        
+
         Ok(ConversionResult {
             input_path: input.to_path_buf(),
             input_format: crate::utils::file_detect::detect_format(input).await?,
@@ -292,4 +330,3 @@ impl DocumentConverter for VideoConverter {
         }
     }
 }
-

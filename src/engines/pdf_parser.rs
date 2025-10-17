@@ -3,13 +3,14 @@
 //! This module provides text extraction from PDF files using the `lopdf` crate.
 //! It handles various PDF encodings, multi-column layouts, and positional information.
 
-use crate::engines::table_detector::{DetectedTable, TableDetector};
-use crate::{Result, TransmutationError};
-use lopdf::Document;
 use std::path::Path;
 
+use lopdf::Document;
 #[cfg(feature = "pdf")]
 use pdf_extract::*;
+
+use crate::engines::table_detector::{DetectedTable, TableDetector};
+use crate::{Result, TransmutationError};
 
 /// PDF parser for text extraction
 pub struct PdfParser {
@@ -89,7 +90,7 @@ impl PdfParser {
     /// Extract text from a specific page (0-indexed)
     pub fn extract_text(&self, page_num: usize) -> Result<String> {
         let page_ids = self.get_page_ids();
-        
+
         if page_num >= page_ids.len() {
             return Err(TransmutationError::InvalidOptions(format!(
                 "Page {} does not exist (total pages: {})",
@@ -99,17 +100,15 @@ impl PdfParser {
         }
 
         let page_id = page_ids[page_num];
-        
+
         // Extract text from page
-        let text = self.document
-            .extract_text(&[page_id])
-            .map_err(|e| {
-                TransmutationError::engine_error_with_source(
-                    "PDF Parser",
-                    format!("Failed to extract text from page {}", page_num),
-                    e,
-                )
-            })?;
+        let text = self.document.extract_text(&[page_id]).map_err(|e| {
+            TransmutationError::engine_error_with_source(
+                "PDF Parser",
+                format!("Failed to extract text from page {}", page_num),
+                e,
+            )
+        })?;
 
         // Post-process to improve paragraph detection
         self.improve_paragraph_breaks(&text)
@@ -120,32 +119,34 @@ impl PdfParser {
         let mut result = String::new();
         let lines: Vec<&str> = text.lines().collect();
         let mut i = 0;
-        
+
         while i < lines.len() {
             let line = lines[i].trim();
-            
+
             if line.is_empty() {
                 i += 1;
                 continue;
             }
-            
+
             // Handle title
             if line.contains("Attention Is All You Need") {
                 result.push_str("\n\n## Attention Is All You Need\n\n");
                 i += 1;
                 continue;
             }
-            
+
             // Handle author lines (contains email)
-            if line.contains("@") && (line.contains(".com") || line.contains(".edu") || line.contains(".org")) {
+            if line.contains("@")
+                && (line.contains(".com") || line.contains(".edu") || line.contains(".org"))
+            {
                 // Split multiple authors in same line
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 let mut current_author = String::new();
-                
+
                 for part in parts {
                     current_author.push_str(part);
                     current_author.push(' ');
-                    
+
                     // If this part ends with email domain, end the author line
                     if part.ends_with(".com") || part.ends_with(".edu") || part.ends_with(".org") {
                         result.push_str(current_author.trim());
@@ -153,11 +154,11 @@ impl PdfParser {
                         current_author.clear();
                     }
                 }
-                
+
                 i += 1;
                 continue;
             }
-            
+
             // Handle Abstract
             if line.starts_with("Abstract ") || line == "Abstract" {
                 result.push_str("## Abstract\n\n");
@@ -169,91 +170,125 @@ impl PdfParser {
                 i += 1;
                 continue;
             }
-            
+
             // Handle numbered sections (1 Introduction, 2 Background, etc.)
             if line.len() > 3 && line.chars().next().unwrap().is_numeric() {
                 let first_word = line.split_whitespace().nth(1).unwrap_or("");
-                if ["Introduction", "Background", "Model", "Training", "Results", "Conclusion"].contains(&first_word) {
+                if [
+                    "Introduction",
+                    "Background",
+                    "Model",
+                    "Training",
+                    "Results",
+                    "Conclusion",
+                ]
+                .contains(&first_word)
+                {
                     result.push_str(&format!("## {}\n\n", line));
                     i += 1;
                     continue;
                 }
             }
-            
+
             // Regular line - add it
             result.push_str(line);
             result.push_str("\n\n");
-            
+
             i += 1;
         }
-        
+
         // Clean up extra whitespace
         result = result.replace("\n\n\n\n", "\n\n");
         result = result.replace("\n\n\n", "\n\n");
-        
+
         // Handle subsections like 3.1, 3.2, etc.
         for major in 1..10 {
             for minor in 1..10 {
-                for word in ["Encoder", "Decoder", "Attention", "Positional", "Position-wise", 
-                            "Embeddings", "Applications", "Scaled", "Multi-Head", "Training", 
-                            "Hardware", "Optimizer", "Regularization", "Machine", "Model", "English"] {
+                for word in [
+                    "Encoder",
+                    "Decoder",
+                    "Attention",
+                    "Positional",
+                    "Position-wise",
+                    "Embeddings",
+                    "Applications",
+                    "Scaled",
+                    "Multi-Head",
+                    "Training",
+                    "Hardware",
+                    "Optimizer",
+                    "Regularization",
+                    "Machine",
+                    "Model",
+                    "English",
+                ] {
                     let pattern = format!(" {}.{} {}", major, minor, word);
                     let replacement = format!("\n\n## {}.{} {}", major, minor, word);
                     result = result.replace(&pattern, &replacement);
                 }
-                
+
                 for subminor in 1..10 {
-                    for word in ["Scaled", "Multi-Head", "Applications", "Training", "Data", "Hardware"] {
+                    for word in [
+                        "Scaled",
+                        "Multi-Head",
+                        "Applications",
+                        "Training",
+                        "Data",
+                        "Hardware",
+                    ] {
                         let pattern2 = format!(" {}.{}.{} {}", major, minor, subminor, word);
-                        let replacement2 = format!("\n\n## {}.{}.{} {}", major, minor, subminor, word);
+                        let replacement2 =
+                            format!("\n\n## {}.{}.{} {}", major, minor, subminor, word);
                         result = result.replace(&pattern2, &replacement2);
                     }
                 }
             }
         }
-        
+
         // Clean up double ## that might have been created
         result = result.replace("## ## ", "## ");
-        
+
         // Final cleanup
         let mut final_result = String::new();
         let lines: Vec<&str> = result.lines().collect();
-        
+
         for (i, line) in lines.iter().enumerate() {
             final_result.push_str(line);
             final_result.push('\n');
-            
+
             // Add extra break after certain patterns
             if let Some(next) = lines.get(i + 1) {
                 let trimmed_current = line.trim();
                 let trimmed_next = next.trim();
-                
-                if trimmed_current.ends_with('.') 
+
+                if trimmed_current.ends_with('.')
                     && trimmed_next.len() > 0
                     && !trimmed_next.starts_with("##")
-                    && trimmed_next.chars().next().map(|c| c.is_uppercase()).unwrap_or(false)
+                    && trimmed_next
+                        .chars()
+                        .next()
+                        .map(|c| c.is_uppercase())
+                        .unwrap_or(false)
                 {
                     final_result.push('\n');
                 }
             }
         }
-        
+
         Ok(final_result)
     }
 
     /// Extract all text from the PDF
     pub fn extract_all_text(&self) -> Result<String> {
         let page_ids = self.get_page_ids();
-        
-        let text = self.document
-            .extract_text(&page_ids)
-            .map_err(|e| {
-                TransmutationError::engine_error_with_source(
-                    "PDF Parser",
-                    "Failed to extract all text",
-                    e,
-                )
-            })?;
+
+        let text = self.document.extract_text(&page_ids).map_err(|e| {
+            TransmutationError::engine_error_with_source(
+                "PDF Parser",
+                "Failed to extract all text",
+                e,
+            )
+        })?;
 
         Ok(text)
     }
@@ -261,18 +296,22 @@ impl PdfParser {
     /// Get page size (width, height) in points
     pub fn get_page_size(&self, page_num: usize) -> Result<(f32, f32)> {
         let page_ids = self.get_page_ids();
-        
+
         if page_num >= page_ids.len() {
             return Err(TransmutationError::InvalidOptions(format!(
-                "Page {} does not exist", page_num
+                "Page {} does not exist",
+                page_num
             )));
         }
 
         let page_id = page_ids[page_num];
         let pages = self.document.get_pages();
-        
+
         if let Some(&(page_obj_num, page_obj_generation)) = pages.get(&page_id) {
-            if let Ok(page_dict) = self.document.get_object((page_obj_num, page_obj_generation)) {
+            if let Ok(page_dict) = self
+                .document
+                .get_object((page_obj_num, page_obj_generation))
+            {
                 if let Ok(page) = page_dict.as_dict() {
                     if let Ok(media_box) = page.get(b"MediaBox") {
                         if let Ok(media_box_array) = media_box.as_array() {
@@ -318,108 +357,105 @@ impl PdfParser {
             if page_num >= page_ids.len() {
                 return Ok(Vec::new());
             }
-            
+
             let page_id = page_ids[page_num];
-            
+
             // Get page content
             let pages = self.document.get_pages();
             let page_ref = match pages.get(&page_id) {
                 Some(r) => r,
                 None => return Ok(Vec::new()),
             };
-            
+
             // Parse content stream
             let content = match self.document.get_and_decode_page_content(*page_ref) {
                 Ok(c) => c,
                 Err(_) => return Ok(Vec::new()),
             };
-            
+
             self.parse_content_operations(&content)
         }
-        
+
         #[cfg(not(feature = "pdf"))]
         Ok(Vec::new())
     }
-    
+
     /// OLD UNUSED CODE - keeping for reference
     fn extract_text_blocks_OLD(&self, page_num: usize) -> Result<Vec<TextBlock>> {
         #[cfg(feature = "pdf")]
         {
             use lopdf::Object;
-            
+
             let page_ids = self.get_page_ids();
             if page_num >= page_ids.len() {
                 return Ok(Vec::new());
             }
-            
+
             let page_id = page_ids[page_num];
             let blocks = Vec::new();
-            
+
             // Get page content
             let pages = self.document.get_pages();
             let page_ref = match pages.get(&page_id) {
                 Some(r) => r,
                 None => return Ok(blocks),
             };
-            
+
             let page_obj = match self.document.get_object(*page_ref) {
                 Ok(obj) => obj,
                 Err(_) => return Ok(blocks),
             };
-            
+
             let page_dict = match page_obj.as_dict() {
                 Ok(dict) => dict,
                 Err(_) => return Ok(blocks),
             };
-            
+
             // Get page content stream(s)
             let contents = match page_dict.get(b"Contents") {
                 Ok(c) => c,
                 Err(_) => return Ok(blocks),
             };
-            
+
             // Decode content stream
             let content_data = match contents {
-                Object::Reference(r) => {
-                    match self.document.get_object(*r) {
-                        Ok(obj) => {
-                            match obj.as_stream() {
-                                Ok(stream) => {
-                                    match stream.decode_content() {
-                                        Ok(data) => data,
-                                        Err(_) => return Ok(blocks),
-                                    }
-                                }
-                                Err(_) => return Ok(blocks),
-                            }
-                        }
+                Object::Reference(r) => match self.document.get_object(*r) {
+                    Ok(obj) => match obj.as_stream() {
+                        Ok(stream) => match stream.decode_content() {
+                            Ok(data) => data,
+                            Err(_) => return Ok(blocks),
+                        },
                         Err(_) => return Ok(blocks),
-                    }
-                }
+                    },
+                    Err(_) => return Ok(blocks),
+                },
                 _ => return Ok(blocks),
             };
-            
+
             // Parse content stream operations
             self.parse_content_operations(&content_data)
         }
-        
+
         #[cfg(not(feature = "pdf"))]
         {
             Ok(Vec::new())
         }
     }
-    
+
     /// Parse PDF content operations to extract text blocks
-    fn parse_content_operations(&self, content: &lopdf::content::Content) -> Result<Vec<TextBlock>> {
+    fn parse_content_operations(
+        &self,
+        content: &lopdf::content::Content,
+    ) -> Result<Vec<TextBlock>> {
         use lopdf::Object;
-        
+
         let mut blocks = Vec::new();
         let mut current_x = 0.0;
         let mut current_y = 0.0;
         let mut current_font_size = 12.0;
         let mut line_start_x = 0.0;
         let mut line_start_y = 0.0;
-        
+
         for operation in &content.operations {
             match operation.operator.as_ref() {
                 // BT - Begin text object (reset position)
@@ -429,16 +465,16 @@ impl PdfParser {
                     line_start_x = 0.0;
                     line_start_y = 0.0;
                 }
-                
+
                 // ET - End text object
                 "ET" => {}
-                
+
                 // Tm - Text matrix (sets absolute position)
                 "Tm" if operation.operands.len() >= 6 => {
                     // Matrix: [a b c d e f] where e=x, f=y
                     if let (Ok(x), Ok(y)) = (
                         operation.operands[4].as_float(),
-                        operation.operands[5].as_float()
+                        operation.operands[5].as_float(),
                     ) {
                         current_x = x;
                         current_y = y;
@@ -446,23 +482,23 @@ impl PdfParser {
                         line_start_y = current_y;
                     }
                 }
-                
+
                 // Td - Move text position (relative)
                 "Td" if operation.operands.len() >= 2 => {
                     if let (Ok(tx), Ok(ty)) = (
                         operation.operands[0].as_float(),
-                        operation.operands[1].as_float()
+                        operation.operands[1].as_float(),
                     ) {
                         current_x += tx;
                         current_y += ty;
                     }
                 }
-                
+
                 // TD - Move text position and set leading
                 "TD" if operation.operands.len() >= 2 => {
                     if let (Ok(tx), Ok(ty)) = (
                         operation.operands[0].as_float(),
-                        operation.operands[1].as_float()
+                        operation.operands[1].as_float(),
                     ) {
                         current_x += tx;
                         current_y += ty;
@@ -470,21 +506,21 @@ impl PdfParser {
                         line_start_y = current_y;
                     }
                 }
-                
+
                 // T* - Move to start of next line
                 "T*" => {
                     current_x = line_start_x;
                     current_y = line_start_y - current_font_size * 1.2; // Typical leading
                     line_start_y = current_y;
                 }
-                
+
                 // Tf - Set font and size
                 "Tf" if operation.operands.len() >= 2 => {
                     if let Ok(size) = operation.operands[1].as_float() {
                         current_font_size = size;
                     }
                 }
-                
+
                 // Tj - Show text
                 "Tj" if operation.operands.len() >= 1 => {
                     if let Ok(text_bytes) = operation.operands[0].as_str() {
@@ -503,7 +539,7 @@ impl PdfParser {
                         }
                     }
                 }
-                
+
                 // TJ - Show text with positioning array
                 "TJ" if operation.operands.len() >= 1 => {
                     if let Ok(array) = operation.operands[0].as_array() {
@@ -532,13 +568,13 @@ impl PdfParser {
                         }
                     }
                 }
-                
+
                 // ' - Move to next line and show text
                 "'" if operation.operands.len() >= 1 => {
                     current_x = line_start_x;
                     current_y = line_start_y - current_font_size * 1.2;
                     line_start_y = current_y;
-                    
+
                     if let Ok(text_bytes) = operation.operands[0].as_str() {
                         let text = String::from_utf8_lossy(text_bytes).to_string();
                         if !text.trim().is_empty() {
@@ -552,41 +588,52 @@ impl PdfParser {
                         }
                     }
                 }
-                
+
                 _ => {}
             }
         }
-        
+
         Ok(blocks)
     }
 
     /// Estimate font size from text content heuristics
     fn estimate_font_size(&self, line: &str) -> f32 {
         let trimmed = line.trim();
-        
+
         // Very short lines in ALL CAPS or with numbers (like titles)
-        if trimmed.len() < 50 && trimmed.chars().filter(|c| c.is_uppercase()).count() > trimmed.len() / 2 {
+        if trimmed.len() < 50
+            && trimmed.chars().filter(|c| c.is_uppercase()).count() > trimmed.len() / 2
+        {
             return 18.0; // Likely a heading
         }
-        
+
         // Lines starting with numbered sections
-        if trimmed.starts_with(|c: char| c.is_numeric()) && trimmed.contains("Introduction") 
-            || trimmed.contains("Abstract") || trimmed.contains("Conclusion") {
+        if trimmed.starts_with(|c: char| c.is_numeric()) && trimmed.contains("Introduction")
+            || trimmed.contains("Abstract")
+            || trimmed.contains("Conclusion")
+        {
             return 16.0; // Section heading
         }
-        
+
         // Lines starting with subsection numbers like "3.1"
-        if trimmed.chars().take(5).filter(|c| c.is_numeric() || *c == '.').count() >= 3 {
+        if trimmed
+            .chars()
+            .take(5)
+            .filter(|c| c.is_numeric() || *c == '.')
+            .count()
+            >= 3
+        {
             return 14.0; // Subsection
         }
-        
+
         // Default body text
         10.0
     }
 
     /// Reconstruct text from blocks in reading order
     fn reconstruct_text_from_blocks(&self, blocks: &[TextBlock]) -> String {
-        blocks.iter()
+        blocks
+            .iter()
             .map(|b| b.text.as_str())
             .collect::<Vec<_>>()
             .join("\n")
@@ -634,7 +681,8 @@ impl PdfParser {
                 // Extract modification date
                 if let Ok(modified) = info.get(b"ModDate") {
                     if let Ok(modified_bytes) = modified.as_str() {
-                        metadata.modified = Some(String::from_utf8_lossy(modified_bytes).to_string());
+                        metadata.modified =
+                            Some(String::from_utf8_lossy(modified_bytes).to_string());
                     }
                 }
 
@@ -648,14 +696,16 @@ impl PdfParser {
                 // Extract keywords
                 if let Ok(keywords) = info.get(b"Keywords") {
                     if let Ok(keywords_bytes) = keywords.as_str() {
-                        metadata.keywords = Some(String::from_utf8_lossy(keywords_bytes).to_string());
+                        metadata.keywords =
+                            Some(String::from_utf8_lossy(keywords_bytes).to_string());
                     }
                 }
 
                 // Extract producer
                 if let Ok(producer) = info.get(b"Producer") {
                     if let Ok(producer_bytes) = producer.as_str() {
-                        metadata.producer = Some(String::from_utf8_lossy(producer_bytes).to_string());
+                        metadata.producer =
+                            Some(String::from_utf8_lossy(producer_bytes).to_string());
                     }
                 }
             }
@@ -758,4 +808,3 @@ mod tests {
     // Integration tests require actual PDF files
     // These will be added in tests/pdf_parser_tests.rs with fixtures
 }
-

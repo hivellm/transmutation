@@ -64,7 +64,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Save each page separately if split_pages is enabled
     if options.split_pages {
         result.save("data/output").await?;
-        println!("\n💾 Saved {} pages to data/output_page_*.md", result.page_count());
+        println!(
+            "\n💾 Saved {} pages to data/output_page_*.md",
+            result.page_count()
+        );
     } else {
         result.save("data/output.md").await?;
         println!("\n💾 Saved to data/output.md");
@@ -72,5 +75,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
-

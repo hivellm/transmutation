@@ -3,10 +3,11 @@
 //! This binary provides a command-line interface to the Transmutation library,
 //! allowing users to convert documents from the terminal on Windows, Mac, and Linux.
 
-use clap::{Parser, Subcommand, ValueEnum};
-use colored::*;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+
+use clap::{Parser, Subcommand, ValueEnum};
+use colored::*;
 use transmutation::{ConversionOptions, Converter, ImageQuality, OutputFormat, Result};
 
 #[derive(Parser)]
@@ -57,11 +58,11 @@ enum Commands {
         /// Optimize for LLM processing
         #[arg(short = 'l', long)]
         optimize_llm: bool,
-        
+
         /// Use high-precision mode (Docling-based, slower but ~95% accurate vs ~81% fast mode)
         #[arg(short = 'P', long)]
         precision: bool,
-        
+
         /// Use docling-parse C++ FFI for maximum precision (95%+ similarity)
         /// Requires compilation with --features docling-ffi
         #[arg(long)]
@@ -172,7 +173,7 @@ async fn run_command(cli: Cli) -> Result<()> {
                 println!("{}", "Converting document...".cyan().bold());
                 println!("  Input:  {}", input.display());
             }
-            
+
             let output_path = output.unwrap_or_else(|| {
                 let mut path = input.clone();
                 path.set_extension(match format {
@@ -185,15 +186,15 @@ async fn run_command(cli: Cli) -> Result<()> {
                 });
                 path
             });
-            
+
             if !cli.quiet {
                 println!("  Output: {}", output_path.display());
                 println!("  Format: {:?}", format);
             }
-            
+
             // Create converter
             let converter = Converter::new()?;
-            
+
             // Configure options
             let options = ConversionOptions {
                 split_pages,
@@ -205,16 +206,27 @@ async fn run_command(cli: Cli) -> Result<()> {
                 dpi,
                 ..Default::default()
             };
-            
+
             // Show mode information
             if !cli.quiet && ffi {
-                println!("{}", "  Mode:   FFI (docling-parse C++, 95%+ similarity target)".green().bold());
+                println!(
+                    "{}",
+                    "  Mode:   FFI (docling-parse C++, 95%+ similarity target)"
+                        .green()
+                        .bold()
+                );
             } else if !cli.quiet && precision {
-                println!("{}", "  Mode:   Precision (Enhanced heuristics, 82%+ similarity)".yellow());
+                println!(
+                    "{}",
+                    "  Mode:   Precision (Enhanced heuristics, 82%+ similarity)".yellow()
+                );
             } else if !cli.quiet {
-                println!("{}", "  Mode:   Fast (Pure Rust, 71.8% similarity, 250x faster)".green());
+                println!(
+                    "{}",
+                    "  Mode:   Fast (Pure Rust, 71.8% similarity, 250x faster)".green()
+                );
             }
-            
+
             // Determine output format
             let output_format = match format {
                 OutputFormatArg::Markdown => OutputFormat::Markdown {
@@ -245,7 +257,7 @@ async fn run_command(cli: Cli) -> Result<()> {
                     include_headers: true,
                 },
             };
-            
+
             // Perform conversion
             let start = Instant::now();
             let result = converter
@@ -255,60 +267,66 @@ async fn run_command(cli: Cli) -> Result<()> {
                 .execute()
                 .await?;
             let duration = start.elapsed();
-            
+
             // Save output(s) - handle multiple files for split pages or images
             if result.content.len() > 1 {
                 // Multiple outputs (split pages or images)
-                let stem = output_path.file_stem()
+                let stem = output_path
+                    .file_stem()
                     .and_then(|s| s.to_str())
                     .unwrap_or("output");
-                
+
                 // Use output_dir if specified, otherwise use parent of output file
                 let parent = if let Some(ref dir) = output_dir {
                     // Create output directory if it doesn't exist
                     tokio::fs::create_dir_all(dir).await?;
                     dir.clone()
                 } else {
-                    output_path.parent()
+                    output_path
+                        .parent()
                         .map(|p| p.to_path_buf())
                         .unwrap_or_else(|| PathBuf::from("."))
                 };
-                
-                let ext = output_path.extension()
+
+                let ext = output_path
+                    .extension()
                     .and_then(|e| e.to_str())
                     .unwrap_or("md");
-                
+
                 if !cli.quiet {
                     println!();
                     println!("{}", "✓ Conversion completed successfully!".green().bold());
-                    println!("  Saving {} pages to: {}/", 
-                        result.content.len(), parent.display());
+                    println!(
+                        "  Saving {} pages to: {}/",
+                        result.content.len(),
+                        parent.display()
+                    );
                 }
-                
+
                 for chunk in &result.content {
-                    let page_path = parent.join(format!("{}_{}.{}", 
-                        stem, 
-                        chunk.page_number,
-                        ext
-                    ));
-                    
+                    let page_path = parent.join(format!("{}_{}.{}", stem, chunk.page_number, ext));
+
                     tokio::fs::write(&page_path, &chunk.data).await?;
                 }
-                
+
                 if !cli.quiet {
-                    println!("  Saved to:     {}/ ({} files)", parent.display(), result.content.len());
+                    println!(
+                        "  Saved to:     {}/ ({} files)",
+                        parent.display(),
+                        result.content.len()
+                    );
                 }
             } else {
                 // Single output (existing behavior)
                 result.save(&output_path).await?;
-                
+
                 if !cli.quiet {
                     println!();
                     println!("{}", "✓ Conversion completed successfully!".green().bold());
                     println!("  Saved to:     {}", output_path.display());
                 }
             }
-            
+
             // Display statistics
             if !cli.quiet {
                 println!();
@@ -316,11 +334,19 @@ async fn run_command(cli: Cli) -> Result<()> {
                 println!("  Duration:     {:?}", duration);
                 println!("  Pages:        {}", result.statistics.pages_processed);
                 println!("  Tables:       {}", result.statistics.tables_extracted);
-                println!("  Input size:   {:.2} MB", result.statistics.input_size_bytes as f64 / 1_000_000.0);
-                println!("  Output size:  {:.2} MB", result.statistics.output_size_bytes as f64 / 1_000_000.0);
-                println!("  Speed:        {:.2} pages/sec", 
-                    result.statistics.pages_processed as f64 / duration.as_secs_f64());
-                
+                println!(
+                    "  Input size:   {:.2} MB",
+                    result.statistics.input_size_bytes as f64 / 1_000_000.0
+                );
+                println!(
+                    "  Output size:  {:.2} MB",
+                    result.statistics.output_size_bytes as f64 / 1_000_000.0
+                );
+                println!(
+                    "  Speed:        {:.2} pages/sec",
+                    result.statistics.pages_processed as f64 / duration.as_secs_f64()
+                );
+
                 if let Some(title) = &result.metadata.title {
                     println!();
                     println!("{}", "Metadata:".yellow().bold());
@@ -330,7 +356,7 @@ async fn run_command(cli: Cli) -> Result<()> {
                     }
                 }
             }
-            
+
             Ok(())
         }
 
@@ -346,13 +372,13 @@ async fn run_command(cli: Cli) -> Result<()> {
             println!("  Output:  {}", output.display());
             println!("  Format:  {:?}", format);
             println!("  Workers: {}", jobs);
-            
+
             if continue_on_error {
                 println!("  Mode:    Continue on errors");
             }
-            
+
             // TODO: Implement batch conversion
-            
+
             println!("{}", "✓ Batch conversion completed!".green().bold());
             Ok(())
         }
@@ -360,44 +386,48 @@ async fn run_command(cli: Cli) -> Result<()> {
         Commands::Info { input } => {
             println!("{}", "Document Information".cyan().bold());
             println!("  File: {}", input.display());
-            
+
             // TODO: Implement document info extraction
-            
+
             println!("\n{}", "Format Detection:".yellow());
             println!("  Type: Unknown (not implemented)");
             println!("  Size: Unknown");
-            
+
             Ok(())
         }
 
         Commands::Formats => {
             println!("{}", "Supported Formats".cyan().bold());
             println!();
-            
+
             println!("{}", "Documents:".yellow().bold());
             println!("  PDF, DOCX, PPTX, XLSX, HTML, XML, TXT, MD, RTF, ODT");
             println!();
-            
+
             println!("{}", "Images (with OCR):".yellow().bold());
             println!("  JPG, PNG, TIFF, BMP, GIF, WEBP");
             println!();
-            
+
             println!("{}", "Audio/Video:".yellow().bold());
             println!("  MP3, MP4, WAV, M4A (transcription via Whisper)");
             println!();
-            
+
             println!("{}", "Archives:".yellow().bold());
             println!("  ZIP, TAR, GZ, 7Z");
             println!();
-            
+
             println!("{}", "Output Formats:".yellow().bold());
             println!("  Markdown, PNG, JPEG, WebP, JSON, CSV");
-            
+
             Ok(())
         }
 
         Commands::Version => {
-            println!("{} {}", "Transmutation".cyan().bold(), transmutation::VERSION);
+            println!(
+                "{} {}",
+                "Transmutation".cyan().bold(),
+                transmutation::VERSION
+            );
             println!();
             println!("Build Information:");
             println!("  Rust Edition: 2024");
@@ -409,7 +439,7 @@ async fn run_command(cli: Cli) -> Result<()> {
             print_engine_status("HTML/XML Parser", cfg!(feature = "web"));
             print_engine_status("Tesseract OCR", cfg!(feature = "tesseract"));
             print_engine_status("FFmpeg", cfg!(feature = "ffmpeg"));
-            
+
             Ok(())
         }
     }
@@ -417,23 +447,37 @@ async fn run_command(cli: Cli) -> Result<()> {
 
 fn get_enabled_features() -> String {
     let mut features = Vec::new();
-    
+
     // Core features (always enabled, no flags)
     features.push("pdf");
     features.push("html");
     features.push("xml");
     features.push("zip");
     features.push("text");
-    
+
     // Optional features
-    if cfg!(feature = "office") { features.push("office"); }
-    if cfg!(feature = "pdf-to-image") { features.push("pdf-to-image"); }
-    if cfg!(feature = "image-ocr") { features.push("image-ocr"); }
-    if cfg!(feature = "tesseract") { features.push("tesseract"); }
-    if cfg!(feature = "ffmpeg") { features.push("ffmpeg"); }
-    if cfg!(feature = "archives-extended") { features.push("archives-extended"); }
-    if cfg!(feature = "docling-ffi") { features.push("docling-ffi"); }
-    
+    if cfg!(feature = "office") {
+        features.push("office");
+    }
+    if cfg!(feature = "pdf-to-image") {
+        features.push("pdf-to-image");
+    }
+    if cfg!(feature = "image-ocr") {
+        features.push("image-ocr");
+    }
+    if cfg!(feature = "tesseract") {
+        features.push("tesseract");
+    }
+    if cfg!(feature = "ffmpeg") {
+        features.push("ffmpeg");
+    }
+    if cfg!(feature = "archives-extended") {
+        features.push("archives-extended");
+    }
+    if cfg!(feature = "docling-ffi") {
+        features.push("docling-ffi");
+    }
+
     if features.is_empty() {
         "none".to_string()
     } else {
@@ -448,4 +492,3 @@ fn print_engine_status(name: &str, enabled: bool) {
         println!("  {} {} {}", "✗".red(), name, "(disabled)".dimmed());
     }
 }
-

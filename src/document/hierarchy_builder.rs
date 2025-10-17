@@ -1,9 +1,10 @@
+use std::collections::HashMap;
+
 /// Document hierarchy builder - creates section trees and relationships
-/// 
+///
 /// Based on docling-core document structure
 use crate::document::types::{DocItem, DoclingDocument, ListItemData, SectionHeaderItem};
 use crate::error::{Result, TransmutationError};
-use std::collections::HashMap;
 
 /// Hierarchy builder for document structure
 pub struct HierarchyBuilder {
@@ -20,40 +21,40 @@ impl HierarchyBuilder {
             enable_caption_pairing: true,
         }
     }
-    
+
     /// Build complete document with hierarchy from items
     pub fn build(&self, filename: String, mut items: Vec<DocItem>) -> Result<DoclingDocument> {
         // Build section tree if enabled
         if self.enable_section_tree {
             items = self.build_section_tree(items)?;
         }
-        
+
         // Group consecutive list items if enabled
         if self.enable_list_grouping {
             items = self.group_list_items(items)?;
         }
-        
+
         // Pair captions with figures/tables if enabled
         if self.enable_caption_pairing {
             items = self.pair_captions(items)?;
         }
-        
+
         let mut doc = DoclingDocument::new(filename);
-        
+
         for item in items {
             doc.add_item(item);
         }
-        
+
         Ok(doc)
     }
-    
+
     /// Build section tree - ensure proper nesting of section headers
-    /// 
+    ///
     /// This doesn't restructure the flat list, but validates levels are consistent
     fn build_section_tree(&self, items: Vec<DocItem>) -> Result<Vec<DocItem>> {
         let mut result = Vec::new();
         let mut current_level = 0;
-        
+
         for item in items {
             match &item {
                 DocItem::SectionHeader(header) => {
@@ -63,9 +64,9 @@ impl HierarchyBuilder {
                     } else {
                         header.level
                     };
-                    
+
                     current_level = adjusted_level;
-                    
+
                     result.push(DocItem::SectionHeader(SectionHeaderItem {
                         level: adjusted_level,
                         ..header.clone()
@@ -76,18 +77,18 @@ impl HierarchyBuilder {
                 }
             }
         }
-        
+
         Ok(result)
     }
-    
+
     /// Group consecutive list items (future: could create ListGroup items)
-    /// 
+    ///
     /// For now, just detects and validates list nesting
     fn group_list_items(&self, items: Vec<DocItem>) -> Result<Vec<DocItem>> {
         let mut result = Vec::new();
         let mut current_list: Vec<ListItemData> = Vec::new();
         let mut prev_level = 0;
-        
+
         for item in items {
             match item {
                 DocItem::ListItem(ref list_item) => {
@@ -97,9 +98,9 @@ impl HierarchyBuilder {
                     } else {
                         list_item.level
                     };
-                    
+
                     prev_level = adjusted_level;
-                    
+
                     current_list.push(ListItemData {
                         level: adjusted_level,
                         ..list_item.clone()
@@ -115,29 +116,29 @@ impl HierarchyBuilder {
                 }
             }
         }
-        
+
         // Flush remaining list items
         for list_item in current_list {
             result.push(DocItem::ListItem(list_item));
         }
-        
+
         Ok(result)
     }
-    
+
     /// Pair captions with their corresponding figures/tables
-    /// 
+    ///
     /// Looks for caption items immediately before/after figure/table items
     fn pair_captions(&self, items: Vec<DocItem>) -> Result<Vec<DocItem>> {
         if items.len() < 2 {
             return Ok(items);
         }
-        
+
         let mut result = Vec::new();
         let mut i = 0;
-        
+
         while i < items.len() {
             let item = &items[i];
-            
+
             match item {
                 &DocItem::Table(ref table) if table.caption.is_none() => {
                     // Check if next item is caption (caption after table)
@@ -153,20 +154,21 @@ impl HierarchyBuilder {
                             }
                         }
                     }
-                    
+
                     // Check if previous item was caption (caption before table)
                     if !result.is_empty() {
                         // Clone text before mutating result
-                        let caption_text = if let Some(DocItem::Paragraph(text_item)) = result.last() {
-                            if Self::is_likely_caption(&text_item.text) {
-                                Some(text_item.text.clone())
+                        let caption_text =
+                            if let Some(DocItem::Paragraph(text_item)) = result.last() {
+                                if Self::is_likely_caption(&text_item.text) {
+                                    Some(text_item.text.clone())
+                                } else {
+                                    None
+                                }
                             } else {
                                 None
-                            }
-                        } else {
-                            None
-                        };
-                        
+                            };
+
                         if let Some(caption) = caption_text {
                             result.pop();
                             let mut new_table = table.clone();
@@ -176,7 +178,7 @@ impl HierarchyBuilder {
                             continue;
                         }
                     }
-                    
+
                     result.push(item.clone());
                     i += 1;
                 }
@@ -193,19 +195,20 @@ impl HierarchyBuilder {
                             }
                         }
                     }
-                    
+
                     if !result.is_empty() {
                         // Clone text before mutating result
-                        let caption_text = if let Some(DocItem::Paragraph(text_item)) = result.last() {
-                            if Self::is_likely_caption(&text_item.text) {
-                                Some(text_item.text.clone())
+                        let caption_text =
+                            if let Some(DocItem::Paragraph(text_item)) = result.last() {
+                                if Self::is_likely_caption(&text_item.text) {
+                                    Some(text_item.text.clone())
+                                } else {
+                                    None
+                                }
                             } else {
                                 None
-                            }
-                        } else {
-                            None
-                        };
-                        
+                            };
+
                         if let Some(caption) = caption_text {
                             result.pop();
                             let mut new_picture = picture.clone();
@@ -215,7 +218,7 @@ impl HierarchyBuilder {
                             continue;
                         }
                     }
-                    
+
                     result.push(item.clone());
                     i += 1;
                 }
@@ -225,14 +228,14 @@ impl HierarchyBuilder {
                 }
             }
         }
-        
+
         Ok(result)
     }
-    
+
     /// Detect if text is likely a caption
     fn is_likely_caption(text: &str) -> bool {
         let lower = text.to_lowercase();
-        
+
         // Common caption patterns
         lower.starts_with("figure ")
             || lower.starts_with("fig. ")
@@ -251,7 +254,7 @@ impl Default for HierarchyBuilder {
 }
 
 /// Build relationships between document items
-/// 
+///
 /// This creates a graph of relationships like:
 /// - Section contains paragraphs
 /// - Caption references figure
@@ -266,7 +269,7 @@ impl RelationshipBuilder {
             relationships: HashMap::new(),
         }
     }
-    
+
     /// Add a relationship between two items
     pub fn add_relationship(&mut self, from: String, to: String, rel_type: &str) {
         let key = format!("{}:{}", from, rel_type);
@@ -275,24 +278,21 @@ impl RelationshipBuilder {
             .or_insert_with(Vec::new)
             .push(to);
     }
-    
+
     /// Get relationships for an item
     pub fn get_relationships(&self, item_ref: &str, rel_type: &str) -> Vec<String> {
         let key = format!("{}:{}", item_ref, rel_type);
-        self.relationships
-            .get(&key)
-            .cloned()
-            .unwrap_or_default()
+        self.relationships.get(&key).cloned().unwrap_or_default()
     }
-    
+
     /// Build relationships from document structure
     pub fn build_from_document(&mut self, doc: &DoclingDocument) -> Result<()> {
         let mut current_section: Option<String> = None;
         let mut _current_figure: Option<String> = None;
-        
+
         for (idx, item) in doc.items.iter().enumerate() {
             let item_ref = format!("item_{}", idx);
-            
+
             match item {
                 DocItem::SectionHeader(_) => {
                     current_section = Some(item_ref.clone());
@@ -305,7 +305,7 @@ impl RelationshipBuilder {
                 }
                 DocItem::Table(_) | DocItem::Picture(_) => {
                     _current_figure = Some(item_ref.clone());
-                    
+
                     // Link to current section
                     if let Some(ref section) = current_section {
                         self.add_relationship(section.clone(), item_ref.clone(), "contains");
@@ -314,7 +314,7 @@ impl RelationshipBuilder {
                 _ => {}
             }
         }
-        
+
         Ok(())
     }
 }
@@ -328,20 +328,24 @@ impl Default for RelationshipBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::document::types::{TextItem, DocItemLabel, Formatting};
-    
+    use crate::document::types::{DocItemLabel, Formatting, TextItem};
+
     #[test]
     fn test_is_likely_caption() {
-        assert!(HierarchyBuilder::is_likely_caption("Figure 1: This is a test"));
+        assert!(HierarchyBuilder::is_likely_caption(
+            "Figure 1: This is a test"
+        ));
         assert!(HierarchyBuilder::is_likely_caption("Table 2: Results"));
         assert!(HierarchyBuilder::is_likely_caption("Fig. 3: Sample data"));
-        assert!(!HierarchyBuilder::is_likely_caption("This is a regular paragraph with no caption markers."));
+        assert!(!HierarchyBuilder::is_likely_caption(
+            "This is a regular paragraph with no caption markers."
+        ));
     }
-    
+
     #[test]
     fn test_section_tree_validation() {
         let builder = HierarchyBuilder::new();
-        
+
         let items = vec![
             DocItem::Title(TextItem {
                 text: "Title".to_string(),
@@ -359,20 +363,20 @@ mod tests {
                 formatting: None,
             }),
         ];
-        
+
         let result = builder.build_section_tree(items).unwrap();
-        
+
         if let DocItem::SectionHeader(header) = &result[2] {
             assert_eq!(header.level, 2); // Should be corrected from 5 to 2
         } else {
             panic!("Expected SectionHeader");
         }
     }
-    
+
     #[test]
     fn test_caption_pairing() {
         let builder = HierarchyBuilder::new();
-        
+
         let items = vec![
             DocItem::Paragraph(TextItem {
                 text: "Figure 1: A beautiful chart".to_string(),
@@ -384,17 +388,19 @@ mod tests {
                 placeholder: "image".to_string(),
             }),
         ];
-        
+
         let result = builder.pair_captions(items).unwrap();
-        
+
         assert_eq!(result.len(), 1); // Caption should be merged
-        
+
         if let DocItem::Picture(picture) = &result[0] {
             assert!(picture.caption.is_some());
-            assert_eq!(picture.caption.as_ref().unwrap(), "Figure 1: A beautiful chart");
+            assert_eq!(
+                picture.caption.as_ref().unwrap(),
+                "Figure 1: A beautiful chart"
+            );
         } else {
             panic!("Expected Picture");
         }
     }
 }
-

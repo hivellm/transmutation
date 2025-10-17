@@ -68,7 +68,7 @@ impl TableDetector {
     fn detect_pipe_delimited_tables(&self, text: &str) -> Vec<DetectedTable> {
         let mut tables = Vec::new();
         let lines: Vec<&str> = text.lines().collect();
-        
+
         let mut i = 0;
         while i < lines.len() {
             if let Some(table_end) = self.find_pipe_table_end(&lines[i..]) {
@@ -91,7 +91,7 @@ impl TableDetector {
 
         for (i, line) in lines.iter().enumerate() {
             let pipe_count = line.matches('|').count();
-            
+
             // Check for separator line (| --- | --- |)
             if line.contains("---") && pipe_count >= 2 {
                 found_separator = true;
@@ -107,11 +107,7 @@ impl TableDetector {
             }
         }
 
-        if end > 0 {
-            Some(end)
-        } else {
-            None
-        }
+        if end > 0 { Some(end) } else { None }
     }
 
     /// Parse a pipe-delimited table
@@ -271,7 +267,7 @@ impl TableDetector {
         for line in lines {
             let mut cells = Vec::new();
             let line_chars: Vec<char> = line.chars().collect();
-            
+
             for i in 0..column_positions.len() {
                 let start = column_positions[i].min(line_chars.len());
                 let end = column_positions
@@ -298,8 +294,7 @@ impl TableDetector {
         // Check if first row looks like a header (shorter cells, capitalized)
         let has_header = rows.get(0).map_or(false, |row| {
             row.iter().all(|cell| {
-                cell.len() < 30
-                    && (cell.is_empty() || cell.chars().next().unwrap().is_uppercase())
+                cell.len() < 30 && (cell.is_empty() || cell.chars().next().unwrap().is_uppercase())
             })
         });
 
@@ -360,11 +355,7 @@ impl TableDetector {
     fn parse_tab_table(&self, lines: &[&str]) -> Option<DetectedTable> {
         let rows: Vec<Vec<String>> = lines
             .iter()
-            .map(|line| {
-                line.split('\t')
-                    .map(|s| s.trim().to_string())
-                    .collect()
-            })
+            .map(|line| line.split('\t').map(|s| s.trim().to_string()).collect())
             .filter(|row: &Vec<String>| !row.is_empty() && row.iter().any(|s| !s.is_empty()))
             .collect();
 
@@ -434,4 +425,3 @@ mod tests {
         assert_eq!(detector.min_confidence, 0.9);
     }
 }
-

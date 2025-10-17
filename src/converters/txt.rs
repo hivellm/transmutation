@@ -2,12 +2,16 @@
 //!
 //! Converts plain text files to Markdown with encoding detection.
 
-use super::traits::{ConverterMetadata, DocumentConverter};
-use crate::types::{ConversionOptions, ConversionResult, ConversionOutput, FileFormat, OutputFormat, OutputMetadata};
-use crate::Result;
-use async_trait::async_trait;
 use std::path::Path;
+
+use async_trait::async_trait;
 use tokio::fs;
+
+use super::traits::{ConverterMetadata, DocumentConverter};
+use crate::Result;
+use crate::types::{
+    ConversionOptions, ConversionOutput, ConversionResult, FileFormat, OutputFormat, OutputMetadata,
+};
 
 /// Plain text to Markdown converter
 pub struct TxtConverter;
@@ -17,28 +21,34 @@ impl TxtConverter {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Convert plain text to Markdown
     fn txt_to_markdown(&self, text: &str) -> String {
         let mut markdown = String::new();
         markdown.push_str("# Document\n\n");
-        
+
         // Simple paragraph detection based on blank lines
-        let paragraphs: Vec<&str> = text.split("\n\n")
+        let paragraphs: Vec<&str> = text
+            .split("\n\n")
             .filter(|p| !p.trim().is_empty())
             .collect();
-        
+
         for para in paragraphs {
             let trimmed = para.trim();
-            
+
             // Detect if it might be a heading (short line, all caps, or ends with colon)
-            if trimmed.len() < 80 && (trimmed.chars().all(|c| !c.is_lowercase() || !c.is_alphabetic()) || trimmed.ends_with(':')) {
+            if trimmed.len() < 80
+                && (trimmed
+                    .chars()
+                    .all(|c| !c.is_lowercase() || !c.is_alphabetic())
+                    || trimmed.ends_with(':'))
+            {
                 markdown.push_str(&format!("## {}\n\n", trimmed));
             } else {
                 markdown.push_str(&format!("{}\n\n", trimmed));
             }
         }
-        
+
         markdown
     }
 }
@@ -77,17 +87,17 @@ impl DocumentConverter for TxtConverter {
         eprintln!("🔄 TXT Conversion (Pure Rust)");
         eprintln!("   TXT → Encoding Detection → {:?}", output_format);
         eprintln!();
-        
+
         // Read text file with encoding detection
         let text_content = fs::read_to_string(input).await?;
-        
+
         // Convert to requested format
         let output_data = match output_format {
             OutputFormat::Markdown { .. } => {
                 eprintln!("📝 Converting to Markdown...");
                 let markdown = self.txt_to_markdown(&text_content);
                 markdown.into_bytes()
-            },
+            }
             OutputFormat::Json { .. } => {
                 eprintln!("📝 Converting to JSON...");
                 let json = serde_json::json!({
@@ -98,19 +108,20 @@ impl DocumentConverter for TxtConverter {
                     }
                 });
                 serde_json::to_string_pretty(&json)?.into_bytes()
-            },
+            }
             _ => {
-                return Err(crate::TransmutationError::UnsupportedFormat(
-                    format!("Output format {:?} not supported for TXT", output_format)
-                ));
+                return Err(crate::TransmutationError::UnsupportedFormat(format!(
+                    "Output format {:?} not supported for TXT",
+                    output_format
+                )));
             }
         };
-        
+
         let output_size = output_data.len() as u64;
         let input_size = fs::metadata(input).await?.len();
-        
+
         eprintln!("✅ TXT conversion complete!");
-        
+
         Ok(ConversionResult {
             input_path: input.to_path_buf(),
             input_format: FileFormat::Txt,
@@ -154,4 +165,3 @@ impl DocumentConverter for TxtConverter {
         }
     }
 }
-

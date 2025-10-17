@@ -3,12 +3,16 @@
 //! Converts HTML to Markdown using semantic HTML parsing.
 //! Preserves structure, links, images, and formatting.
 
-use super::traits::{ConverterMetadata, DocumentConverter};
-use crate::types::{ConversionOptions, ConversionResult, ConversionOutput, FileFormat, OutputFormat, OutputMetadata};
-use crate::Result;
-use async_trait::async_trait;
 use std::path::Path;
+
+use async_trait::async_trait;
 use tokio::fs;
+
+use super::traits::{ConverterMetadata, DocumentConverter};
+use crate::Result;
+use crate::types::{
+    ConversionOptions, ConversionOutput, ConversionResult, FileFormat, OutputFormat, OutputMetadata,
+};
 
 /// HTML to Markdown converter
 pub struct HtmlConverter;
@@ -18,25 +22,25 @@ impl HtmlConverter {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Convert HTML to Markdown
     fn html_to_markdown(&self, html: &str) -> Result<String> {
         use scraper::{Html, Selector};
-        
+
         let document = Html::parse_document(html);
         let mut markdown = String::new();
-        
+
         // Extract title
         if let Ok(selector) = Selector::parse("title") {
             if let Some(title) = document.select(&selector).next() {
                 markdown.push_str(&format!("# {}\n\n", title.inner_html().trim()));
             }
         }
-        
+
         // Extract main content (try multiple selectors)
         let content_selectors = vec!["main", "article", "body"];
         let mut content_found = false;
-        
+
         for sel_str in content_selectors {
             if let Ok(selector) = Selector::parse(sel_str) {
                 if let Some(main_content) = document.select(&selector).next() {
@@ -46,21 +50,21 @@ impl HtmlConverter {
                 }
             }
         }
-        
+
         if !content_found {
             // Fallback: extract all text
             markdown.push_str(&document.root_element().text().collect::<Vec<_>>().join(" "));
         }
-        
+
         Ok(markdown)
     }
-    
+
     /// Process HTML element recursively
     fn process_element(&self, element: &scraper::ElementRef) -> String {
         use scraper::Node;
-        
+
         let mut result = String::new();
-        
+
         for child in element.children() {
             match child.value() {
                 Node::Text(text) => {
@@ -72,28 +76,51 @@ impl HtmlConverter {
                 }
                 Node::Element(elem) => {
                     let tag_name = elem.name();
-                    
+
                     // Create ElementRef for child
                     if let Some(child_elem) = scraper::ElementRef::wrap(child) {
                         match tag_name {
-                            "h1" => result.push_str(&format!("# {}\n\n", child_elem.inner_html().trim())),
-                            "h2" => result.push_str(&format!("## {}\n\n", child_elem.inner_html().trim())),
-                            "h3" => result.push_str(&format!("### {}\n\n", child_elem.inner_html().trim())),
-                            "h4" => result.push_str(&format!("#### {}\n\n", child_elem.inner_html().trim())),
-                            "h5" => result.push_str(&format!("##### {}\n\n", child_elem.inner_html().trim())),
-                            "h6" => result.push_str(&format!("###### {}\n\n", child_elem.inner_html().trim())),
-                            "p" => result.push_str(&format!("{}\n\n", child_elem.text().collect::<String>().trim())),
+                            "h1" => result
+                                .push_str(&format!("# {}\n\n", child_elem.inner_html().trim())),
+                            "h2" => result
+                                .push_str(&format!("## {}\n\n", child_elem.inner_html().trim())),
+                            "h3" => result
+                                .push_str(&format!("### {}\n\n", child_elem.inner_html().trim())),
+                            "h4" => result
+                                .push_str(&format!("#### {}\n\n", child_elem.inner_html().trim())),
+                            "h5" => result
+                                .push_str(&format!("##### {}\n\n", child_elem.inner_html().trim())),
+                            "h6" => result.push_str(&format!(
+                                "###### {}\n\n",
+                                child_elem.inner_html().trim()
+                            )),
+                            "p" => result.push_str(&format!(
+                                "{}\n\n",
+                                child_elem.text().collect::<String>().trim()
+                            )),
                             "a" => {
                                 if let Some(href) = elem.attr("href") {
-                                    result.push_str(&format!("[{}]({})", child_elem.text().collect::<String>(), href));
+                                    result.push_str(&format!(
+                                        "[{}]({})",
+                                        child_elem.text().collect::<String>(),
+                                        href
+                                    ));
                                 } else {
                                     result.push_str(&child_elem.text().collect::<String>());
                                 }
                             }
-                            "strong" | "b" => result.push_str(&format!("**{}**", child_elem.text().collect::<String>())),
-                            "em" | "i" => result.push_str(&format!("*{}*", child_elem.text().collect::<String>())),
-                            "code" => result.push_str(&format!("`{}`", child_elem.text().collect::<String>())),
-                            "pre" => result.push_str(&format!("\n```\n{}\n```\n\n", child_elem.text().collect::<String>())),
+                            "strong" | "b" => result.push_str(&format!(
+                                "**{}**",
+                                child_elem.text().collect::<String>()
+                            )),
+                            "em" | "i" => result
+                                .push_str(&format!("*{}*", child_elem.text().collect::<String>())),
+                            "code" => result
+                                .push_str(&format!("`{}`", child_elem.text().collect::<String>())),
+                            "pre" => result.push_str(&format!(
+                                "\n```\n{}\n```\n\n",
+                                child_elem.text().collect::<String>()
+                            )),
                             "ul" | "ol" => {
                                 result.push_str(&self.process_list(&child_elem, tag_name == "ol"));
                                 result.push_str("\n");
@@ -108,16 +135,16 @@ impl HtmlConverter {
                 _ => {}
             }
         }
-        
+
         result
     }
-    
+
     /// Process list elements
     fn process_list(&self, element: &scraper::ElementRef, ordered: bool) -> String {
         use scraper::Selector;
-        
+
         let mut result = String::new();
-        
+
         if let Ok(li_selector) = Selector::parse("li") {
             for (idx, li) in element.select(&li_selector).enumerate() {
                 let marker = if ordered {
@@ -125,10 +152,14 @@ impl HtmlConverter {
                 } else {
                     "- ".to_string()
                 };
-                result.push_str(&format!("{}{}\n", marker, li.text().collect::<String>().trim()));
+                result.push_str(&format!(
+                    "{}{}\n",
+                    marker,
+                    li.text().collect::<String>().trim()
+                ));
             }
         }
-        
+
         result
     }
 }
@@ -167,17 +198,17 @@ impl DocumentConverter for HtmlConverter {
         eprintln!("🔄 HTML Conversion (Pure Rust)");
         eprintln!("   HTML → Semantic Parsing → {:?}", output_format);
         eprintln!();
-        
+
         // Read HTML file
         let html_content = fs::read_to_string(input).await?;
-        
+
         // Convert to requested format
         let output_data = match output_format {
             OutputFormat::Markdown { .. } => {
                 eprintln!("📝 Converting to Markdown...");
                 let markdown = self.html_to_markdown(&html_content)?;
                 markdown.into_bytes()
-            },
+            }
             OutputFormat::Json { .. } => {
                 eprintln!("📝 Converting to JSON...");
                 // Simple JSON with raw HTML and extracted text
@@ -190,19 +221,20 @@ impl DocumentConverter for HtmlConverter {
                     }
                 });
                 serde_json::to_string_pretty(&json)?.into_bytes()
-            },
+            }
             _ => {
-                return Err(crate::TransmutationError::UnsupportedFormat(
-                    format!("Output format {:?} not supported for HTML", output_format)
-                ));
+                return Err(crate::TransmutationError::UnsupportedFormat(format!(
+                    "Output format {:?} not supported for HTML",
+                    output_format
+                )));
             }
         };
-        
+
         let output_size = output_data.len() as u64;
         let input_size = fs::metadata(input).await?.len();
-        
+
         eprintln!("✅ HTML conversion complete!");
-        
+
         Ok(ConversionResult {
             input_path: input.to_path_buf(),
             input_format: FileFormat::Html,
@@ -241,9 +273,9 @@ impl DocumentConverter for HtmlConverter {
         ConverterMetadata {
             name: "HTML Converter".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
-            description: "HTML to Markdown converter using semantic parsing (pure Rust)".to_string(),
+            description: "HTML to Markdown converter using semantic parsing (pure Rust)"
+                .to_string(),
             external_deps: vec![],
         }
     }
 }
-

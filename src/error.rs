@@ -69,7 +69,7 @@ pub enum TransmutationError {
     /// Unknown error
     #[error("Unknown error: {0}")]
     Unknown(String),
-    
+
     /// ML/ONNX Runtime error
     #[cfg(feature = "docling-ffi")]
     #[error("ML error: {0}")]
@@ -152,7 +152,7 @@ impl From<zip::result::ZipError> for TransmutationError {
     fn from(err: zip::result::ZipError) -> Self {
         TransmutationError::IoError(std::io::Error::new(
             std::io::ErrorKind::Other,
-            err.to_string()
+            err.to_string(),
         ))
     }
 }
@@ -182,4 +182,3 @@ mod tests {
         assert!(!err.is_recoverable());
     }
 }
-

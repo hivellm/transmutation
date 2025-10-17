@@ -2,8 +2,8 @@
 //!
 //! This module converts extracted text to clean, LLM-optimized Markdown format.
 
-use crate::types::ConversionOptions;
 use crate::engines::layout_analyzer::{AnalyzedBlock, BlockType};
+use crate::types::ConversionOptions;
 
 /// Markdown generator
 pub struct MarkdownGenerator {
@@ -26,61 +26,76 @@ impl MarkdownGenerator {
         let mut result = String::new();
         let lines: Vec<&str> = text.lines().collect();
         let mut i = 0;
-        
+
         while i < lines.len() {
             let line = lines[i];
             let trimmed = line.trim();
-            
+
             // Check if this is a standalone heading (short line, preceded by empty line or start of document)
-            let is_potential_heading = trimmed.len() > 0 && trimmed.len() < 100 && 
-                (i == 0 || lines.get(i-1).map(|l| l.trim().is_empty()).unwrap_or(false));
-            
+            let is_potential_heading = trimmed.len() > 0
+                && trimmed.len() < 100
+                && (i == 0
+                    || lines
+                        .get(i - 1)
+                        .map(|l| l.trim().is_empty())
+                        .unwrap_or(false));
+
             // Detect main title (e.g., "Attention Is All You Need")
-            if is_potential_heading && i < 10 && trimmed.chars().filter(|c| c.is_uppercase()).count() > 3 {
+            if is_potential_heading
+                && i < 10
+                && trimmed.chars().filter(|c| c.is_uppercase()).count() > 3
+            {
                 result.push_str(&format!("\n## {}\n\n", trimmed));
                 i += 1;
                 continue;
             }
-            
+
             // Detect "Abstract" heading
             if trimmed == "Abstract" && is_potential_heading {
                 result.push_str("\n## Abstract\n\n");
                 i += 1;
                 continue;
             }
-            
+
             // Detect numbered sections (e.g., "1 Introduction", "2 Background", "3.1 Encoder")
-            if trimmed.len() > 2 && (trimmed.chars().next().unwrap().is_numeric() || trimmed.starts_with("0")) {
+            if trimmed.len() > 2
+                && (trimmed.chars().next().unwrap().is_numeric() || trimmed.starts_with("0"))
+            {
                 let parts: Vec<&str> = trimmed.split_whitespace().collect();
                 if parts.len() >= 2 && parts[0].chars().all(|c| c.is_numeric() || c == '.') {
                     // Check if the next word starts with uppercase (likely a section title)
-                    if parts[1].chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
+                    if parts[1]
+                        .chars()
+                        .next()
+                        .map(|c| c.is_uppercase())
+                        .unwrap_or(false)
+                    {
                         result.push_str(&format!("\n## {}\n\n", trimmed));
                         i += 1;
                         continue;
                     }
                 }
             }
-            
+
             // Regular line
             result.push_str(line);
             result.push('\n');
             i += 1;
         }
-        
+
         generator.buffer = result;
-        
+
         if generator.options.optimize_for_llm {
             generator.optimize_for_llm();
         }
-        
+
         generator.buffer
     }
 
     /// Generate Markdown from analyzed blocks (semantic layout)
     pub fn from_analyzed_blocks(blocks: &[AnalyzedBlock], options: ConversionOptions) -> String {
         let mut generator = Self::new(options);
-        
+
         for block in blocks {
             match &block.block_type {
                 BlockType::Title => {
@@ -109,7 +124,9 @@ impl MarkdownGenerator {
                     }
                 }
                 BlockType::Formula => {
-                    generator.buffer.push_str("<!-- formula-not-decoded -->\n\n");
+                    generator
+                        .buffer
+                        .push_str("<!-- formula-not-decoded -->\n\n");
                 }
                 BlockType::Table => {
                     // Tables are handled separately by TableDetector
@@ -122,11 +139,11 @@ impl MarkdownGenerator {
                 }
             }
         }
-        
+
         if generator.options.optimize_for_llm {
             generator.optimize_for_llm();
         }
-        
+
         generator.buffer
     }
 
@@ -140,18 +157,18 @@ impl MarkdownGenerator {
                     let mut generator = Self::new(options.clone());
                     generator.add_heading(1, &format!("Page {}", page_num + 1));
                     generator.add_text(text);
-                    
+
                     if options.optimize_for_llm {
                         generator.optimize_for_llm();
                     }
-                    
+
                     generator.buffer
                 })
                 .collect()
         } else {
             // Combined document with page breaks
             let mut generator = Self::new(options.clone());
-            
+
             for (i, (page_num, text)) in pages.iter().enumerate() {
                 if i > 0 {
                     generator.add_page_break();
@@ -159,11 +176,11 @@ impl MarkdownGenerator {
                 generator.add_heading(2, &format!("Page {}", page_num + 1));
                 generator.add_text(text);
             }
-            
+
             if generator.options.optimize_for_llm {
                 generator.optimize_for_llm();
             }
-            
+
             vec![generator.buffer]
         }
     }
@@ -304,7 +321,7 @@ mod tests {
             vec!["Bob".to_string(), "25".to_string()],
         ];
         md.add_table(&table);
-        
+
         assert!(md.buffer.contains("| Name |"));
         assert!(md.buffer.contains("| --- |"));
         assert!(md.buffer.contains("| Alice |"));
@@ -325,10 +342,10 @@ mod tests {
             optimize_for_llm: true,
             ..Default::default()
         };
-        
+
         let text = "Hello    world\n\n\n\nTest";
         let result = MarkdownGenerator::from_text(text, opts);
-        
+
         assert!(!result.contains("    ")); // No multiple spaces
         assert!(!result.contains("\n\n\n")); // No triple newlines
     }
@@ -339,12 +356,12 @@ mod tests {
             (0, "Page 1 content".to_string()),
             (1, "Page 2 content".to_string()),
         ];
-        
+
         let opts = ConversionOptions {
             split_pages: true,
             ..Default::default()
         };
-        
+
         let result = MarkdownGenerator::from_pages(&pages, opts);
         assert_eq!(result.len(), 2);
         assert!(result[0].contains("Page 1"));
@@ -357,12 +374,12 @@ mod tests {
             (0, "Page 1 content".to_string()),
             (1, "Page 2 content".to_string()),
         ];
-        
+
         let opts = ConversionOptions {
             split_pages: false,
             ..Default::default()
         };
-        
+
         let result = MarkdownGenerator::from_pages(&pages, opts);
         assert_eq!(result.len(), 1);
         assert!(result[0].contains("Page 1"));
@@ -370,4 +387,3 @@ mod tests {
         assert!(result[0].contains("---")); // Page break
     }
 }
-

@@ -3,10 +3,10 @@
 pub mod traits;
 
 // Core converters (always enabled)
-pub mod pdf;
-pub mod html;
-pub mod xml;
 pub mod archive;
+pub mod html;
+pub mod pdf;
+pub mod xml;
 
 // Office formats (optional)
 #[cfg(feature = "office")]
@@ -19,10 +19,10 @@ pub mod xlsx;
 pub mod pptx;
 
 // Text formats (always enabled)
-pub mod txt;
 pub mod csv;
-pub mod rtf;
 pub mod odt;
+pub mod rtf;
+pub mod txt;
 
 // Advanced features (optional)
 #[cfg(feature = "image-ocr")]
@@ -35,4 +35,3 @@ pub mod audio;
 pub mod video;
 
 pub use traits::{ConverterMetadata, DocumentConverter};
-

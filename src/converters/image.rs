@@ -2,12 +2,16 @@
 //!
 //! Converts image files to text using Tesseract OCR.
 
-use super::traits::{ConverterMetadata, DocumentConverter};
-use crate::types::{ConversionOptions, ConversionResult, ConversionOutput, FileFormat, OutputFormat, OutputMetadata};
-use crate::Result;
-use async_trait::async_trait;
 use std::path::Path;
+
+use async_trait::async_trait;
 use tokio::fs;
+
+use super::traits::{ConverterMetadata, DocumentConverter};
+use crate::Result;
+use crate::types::{
+    ConversionOptions, ConversionOutput, ConversionResult, FileFormat, OutputFormat, OutputMetadata,
+};
 
 /// Image to text converter (OCR)
 pub struct ImageConverter {
@@ -23,36 +27,42 @@ impl ImageConverter {
             ocr_engine: Some("tesseract".to_string()),
         }
     }
-    
+
     /// Perform OCR on an image
     #[cfg(feature = "tesseract")]
     async fn ocr_image(&self, image_path: &Path, language: &str) -> Result<String> {
         use leptess::{LepTess, Variable};
-        
+
         // Initialize Tesseract
-        let mut tesseract = LepTess::new(None, language)
-            .map_err(|e| crate::TransmutationError::conversion_failed(&format!("Failed to initialize Tesseract: {}", e)))?;
-        
+        let mut tesseract = LepTess::new(None, language).map_err(|e| {
+            crate::TransmutationError::conversion_failed(&format!(
+                "Failed to initialize Tesseract: {}",
+                e
+            ))
+        })?;
+
         // Set image
-        tesseract.set_image(image_path)
-            .map_err(|e| crate::TransmutationError::conversion_failed(&format!("Failed to set image: {}", e)))?;
-        
+        tesseract.set_image(image_path).map_err(|e| {
+            crate::TransmutationError::conversion_failed(&format!("Failed to set image: {}", e))
+        })?;
+
         // Get text
-        let text = tesseract.get_utf8_text()
-            .map_err(|e| crate::TransmutationError::conversion_failed(&format!("OCR failed: {}", e)))?;
-        
+        let text = tesseract.get_utf8_text().map_err(|e| {
+            crate::TransmutationError::conversion_failed(&format!("OCR failed: {}", e))
+        })?;
+
         Ok(text)
     }
-    
+
     /// Convert image to Markdown
     async fn image_to_markdown(&self, image_path: &Path, language: &str) -> Result<String> {
         #[cfg(feature = "tesseract")]
         {
             let text = self.ocr_image(image_path, language).await?;
-            
+
             let mut markdown = String::new();
             markdown.push_str("# OCR Result\n\n");
-            
+
             // Add paragraphs
             for para in text.split("\n\n") {
                 let trimmed = para.trim();
@@ -60,14 +70,14 @@ impl ImageConverter {
                     markdown.push_str(&format!("{}\n\n", trimmed));
                 }
             }
-            
+
             Ok(markdown)
         }
-        
+
         #[cfg(not(feature = "tesseract"))]
         {
             Err(crate::TransmutationError::conversion_failed(
-                "OCR feature not enabled. Compile with --features tesseract"
+                "OCR feature not enabled. Compile with --features tesseract",
             ))
         }
     }
@@ -114,22 +124,22 @@ impl DocumentConverter for ImageConverter {
         eprintln!("🔄 Image OCR (Tesseract)");
         eprintln!("   Image → OCR → {:?}", output_format);
         eprintln!();
-        
-        let language = "eng";  // Default to English (can be made configurable later)
-        
+
+        let language = "eng"; // Default to English (can be made configurable later)
+
         #[cfg(feature = "tesseract")]
         {
             eprintln!("📸 Running OCR (language: {})...", language);
-            
+
             // Convert image to text
             let markdown = self.image_to_markdown(input, language).await?;
-            
+
             // Convert to requested format
             let output_data = match output_format {
                 OutputFormat::Markdown { .. } => {
                     eprintln!("📝 Markdown generated!");
                     markdown.into_bytes()
-                },
+                }
                 OutputFormat::Json { .. } => {
                     eprintln!("📝 Converting to JSON...");
                     let json = serde_json::json!({
@@ -139,19 +149,20 @@ impl DocumentConverter for ImageConverter {
                         }
                     });
                     serde_json::to_string_pretty(&json)?.into_bytes()
-                },
+                }
                 _ => {
-                    return Err(crate::TransmutationError::UnsupportedFormat(
-                        format!("Output format {:?} not supported for images", output_format)
-                    ));
+                    return Err(crate::TransmutationError::UnsupportedFormat(format!(
+                        "Output format {:?} not supported for images",
+                        output_format
+                    )));
                 }
             };
-            
+
             let output_size = output_data.len() as u64;
             let input_size = fs::metadata(input).await?.len();
-            
+
             eprintln!("✅ OCR complete!");
-            
+
             Ok(ConversionResult {
                 input_path: input.to_path_buf(),
                 input_format: crate::utils::file_detect::detect_format(input).await?,
@@ -185,11 +196,11 @@ impl DocumentConverter for ImageConverter {
                 },
             })
         }
-        
+
         #[cfg(not(feature = "tesseract"))]
         {
             Err(crate::TransmutationError::conversion_failed(
-                "OCR feature not enabled. Compile with --features image-ocr"
+                "OCR feature not enabled. Compile with --features image-ocr",
             ))
         }
     }

@@ -2,8 +2,9 @@
 //!
 //! This example demonstrates how to convert multiple PDF files in parallel.
 
-use futures::future::join_all;
 use std::path::PathBuf;
+
+use futures::future::join_all;
 use transmutation::{ConversionOptions, Converter, OutputFormat};
 
 #[tokio::main]
@@ -18,7 +19,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Add more files as needed
     ];
 
-    println!("Starting batch conversion of {} files...\n", input_files.len());
+    println!(
+        "Starting batch conversion of {} files...\n",
+        input_files.len()
+    );
 
     // Create conversion tasks
     let tasks: Vec<_> = input_files
@@ -95,5 +99,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
-

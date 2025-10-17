@@ -1,18 +1,17 @@
-/// ONNX model session caching for performance optimization
-/// 
-/// This module provides lazy loading and caching of ONNX Runtime sessions
-/// to avoid reloading models for every conversion.
-
-use crate::error::{Result, TransmutationError};
-use crate::ml::{LayoutModel, TableStructureModel};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+
 use once_cell::sync::Lazy;
 
+/// ONNX model session caching for performance optimization
+///
+/// This module provides lazy loading and caching of ONNX Runtime sessions
+/// to avoid reloading models for every conversion.
+use crate::error::{Result, TransmutationError};
+use crate::ml::{LayoutModel, TableStructureModel};
+
 /// Global model cache (lazy initialized)
-static MODEL_CACHE: Lazy<Mutex<ModelCache>> = Lazy::new(|| {
-    Mutex::new(ModelCache::new())
-});
+static MODEL_CACHE: Lazy<Mutex<ModelCache>> = Lazy::new(|| Mutex::new(ModelCache::new()));
 
 /// Cache for loaded ML models
 pub struct ModelCache {
@@ -32,9 +31,9 @@ impl ModelCache {
             table_model_path: None,
         }
     }
-    
+
     /// Get or load layout model
-    /// 
+    ///
     /// Uses cached model if available, otherwise loads from disk.
     /// Returns None if model file doesn't exist (graceful fallback).
     fn get_or_load_layout_model(&mut self, model_path: PathBuf) -> Option<Arc<Mutex<LayoutModel>>> {
@@ -47,7 +46,7 @@ impl ModelCache {
                 }
             }
         }
-        
+
         // Load new model
         eprintln!("🔄 Loading LayoutModel from {}", model_path.display());
         match LayoutModel::new(&model_path) {
@@ -64,9 +63,12 @@ impl ModelCache {
             }
         }
     }
-    
+
     /// Get or load table structure model
-    fn get_or_load_table_model(&mut self, model_path: PathBuf) -> Option<Arc<Mutex<TableStructureModel>>> {
+    fn get_or_load_table_model(
+        &mut self,
+        model_path: PathBuf,
+    ) -> Option<Arc<Mutex<TableStructureModel>>> {
         // Check if already cached and path matches
         if let Some(ref cached_path) = self.table_model_path {
             if *cached_path == model_path {
@@ -76,9 +78,12 @@ impl ModelCache {
                 }
             }
         }
-        
+
         // Load new model
-        eprintln!("🔄 Loading TableStructureModel from {}", model_path.display());
+        eprintln!(
+            "🔄 Loading TableStructureModel from {}",
+            model_path.display()
+        );
         match TableStructureModel::new(&model_path, 1.0) {
             Ok(model) => {
                 let arc_model = Arc::new(Mutex::new(model));
@@ -93,7 +98,7 @@ impl ModelCache {
             }
         }
     }
-    
+
     /// Clear all cached models (free memory)
     fn clear(&mut self) {
         self.layout_model = None;
@@ -114,10 +119,7 @@ pub fn get_layout_model(model_path: PathBuf) -> Option<Arc<Mutex<LayoutModel>>> 
 
 /// Get cached table structure model or load from path
 pub fn get_table_model(model_path: PathBuf) -> Option<Arc<Mutex<TableStructureModel>>> {
-    MODEL_CACHE
-        .lock()
-        .ok()?
-        .get_or_load_table_model(model_path)
+    MODEL_CACHE.lock().ok()?.get_or_load_table_model(model_path)
 }
 
 /// Clear all cached models (useful for testing or memory management)
@@ -148,14 +150,14 @@ pub fn has_cached_table_model() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_cache_creation() {
         let cache = ModelCache::new();
         assert!(cache.layout_model.is_none());
         assert!(cache.table_model.is_none());
     }
-    
+
     #[test]
     fn test_cache_clear() {
         clear_model_cache();
@@ -163,4 +165,3 @@ mod tests {
         assert!(!has_cached_table_model());
     }
 }
-

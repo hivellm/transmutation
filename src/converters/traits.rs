@@ -1,9 +1,11 @@
 //! Converter trait definitions
 
-use crate::types::{ConversionOptions, ConversionResult, FileFormat, OutputFormat};
-use crate::Result;
-use async_trait::async_trait;
 use std::path::Path;
+
+use async_trait::async_trait;
+
+use crate::Result;
+use crate::types::{ConversionOptions, ConversionResult, FileFormat, OutputFormat};
 
 /// Main trait for document converters
 #[async_trait]
@@ -66,4 +68,3 @@ mod tests {
         assert!(meta.external_deps.is_empty());
     }
 }
-

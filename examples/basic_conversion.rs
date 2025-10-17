@@ -26,7 +26,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n✅ Conversion complete!");
     println!("📄 Input file: {:?}", result.input_path);
     println!("📝 Pages processed: {}", result.statistics.pages_processed);
-    println!("📊 Tables extracted: {}", result.statistics.tables_extracted);
+    println!(
+        "📊 Tables extracted: {}",
+        result.statistics.tables_extracted
+    );
     println!("⏱️  Duration: {:?}", result.statistics.duration);
     println!(
         "📏 Input size: {} bytes",
@@ -43,5 +46,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
-

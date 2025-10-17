@@ -1,8 +1,9 @@
 //! File type detection utilities
 
+use std::path::Path;
+
 use crate::types::FileFormat;
 use crate::{Result, TransmutationError};
-use std::path::Path;
 
 /// Detect file format from path
 pub async fn detect_format<P: AsRef<Path>>(path: P) -> Result<FileFormat> {
@@ -19,31 +20,32 @@ pub async fn detect_format<P: AsRef<Path>>(path: P) -> Result<FileFormat> {
 
 /// Detect if a ZIP file is actually an Office document (DOCX/PPTX/XLSX)
 async fn detect_office_format_from_zip(path: &Path) -> Result<FileFormat> {
-    use zip::ZipArchive;
     use std::fs::File;
     use std::io::BufReader;
-    
+
+    use zip::ZipArchive;
+
     // Open ZIP and check for Office-specific files
     let file = File::open(path)?;
     let reader = BufReader::new(file);
-    
+
     if let Ok(mut archive) = ZipArchive::new(reader) {
         // Check for Word document marker
         if archive.by_name("word/document.xml").is_ok() {
             return Ok(FileFormat::Docx);
         }
-        
+
         // Check for PowerPoint marker
         if archive.by_name("ppt/presentation.xml").is_ok() {
             return Ok(FileFormat::Pptx);
         }
-        
+
         // Check for Excel marker
         if archive.by_name("xl/workbook.xml").is_ok() {
             return Ok(FileFormat::Xlsx);
         }
     }
-    
+
     // If none found, it's a regular ZIP
     Ok(FileFormat::Zip)
 }
@@ -147,10 +149,21 @@ fn detect_by_extension(path: &Path) -> Result<FileFormat> {
         "mov" => FileFormat::Mov,
         "zip" => FileFormat::Zip,
         "tar" => FileFormat::Tar,
-        "gz" if path.file_name().and_then(|s| s.to_str()).map(|s| s.ends_with(".tar.gz")).unwrap_or(false) => {
+        "gz" if path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .map(|s| s.ends_with(".tar.gz"))
+            .unwrap_or(false) =>
+        {
             FileFormat::TarGz
         }
-        "bz2" if path.file_name().and_then(|s| s.to_str()).map(|s| s.ends_with(".tar.bz2")).unwrap_or(false) => {
+        "bz2"
+            if path
+                .file_name()
+                .and_then(|s| s.to_str())
+                .map(|s| s.ends_with(".tar.bz2"))
+                .unwrap_or(false) =>
+        {
             FileFormat::TarBz2
         }
         "7z" => FileFormat::SevenZ,
@@ -169,8 +182,9 @@ fn detect_by_extension(path: &Path) -> Result<FileFormat> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
+    use super::*;
 
     #[test]
     fn test_detect_by_extension_pdf() {
@@ -207,4 +221,3 @@ mod tests {
         assert!(result.is_err());
     }
 }
-

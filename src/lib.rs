@@ -30,6 +30,7 @@
 #![deny(unsafe_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+pub mod batch;
 pub mod converters;
 #[cfg(all(feature = "pdf", feature = "docling-ffi"))]
 pub mod document;
@@ -40,15 +41,14 @@ pub mod integration;
 pub mod ml;
 pub mod optimization;
 pub mod output;
-pub mod pipeline;  // Docling-style flexible export pipeline
+pub mod pipeline; // Docling-style flexible export pipeline
 pub mod types;
-pub mod utils;
-pub mod batch;  // Batch processing
+pub mod utils; // Batch processing
 
+pub use batch::{BatchProcessor, BatchResult};
 pub use converters::{ConverterMetadata, DocumentConverter};
 pub use error::{Result, TransmutationError};
 pub use types::*;
-pub use batch::{BatchProcessor, BatchResult};
 
 /// Current version of the Transmutation library
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -151,35 +151,43 @@ impl ConversionBuilder {
         });
 
         // Select appropriate converter
-        
+
         // Core formats (always enabled)
         if input_format == FileFormat::Pdf {
             use crate::converters::pdf::PdfConverter;
             let converter = PdfConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         if input_format == FileFormat::Html {
             use crate::converters::html::HtmlConverter;
             let converter = HtmlConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         if input_format == FileFormat::Xml {
             use crate::converters::xml::XmlConverter;
             let converter = XmlConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
-        if input_format == FileFormat::Zip 
-            || input_format == FileFormat::Tar 
-            || input_format == FileFormat::TarGz 
-            || input_format == FileFormat::TarBz2 
-            || input_format == FileFormat::SevenZ 
+        if input_format == FileFormat::Zip
+            || input_format == FileFormat::Tar
+            || input_format == FileFormat::TarGz
+            || input_format == FileFormat::TarBz2
+            || input_format == FileFormat::SevenZ
         {
             use crate::converters::archive::ArchiveConverter;
             let converter = ArchiveConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         // Office formats (optional feature)
@@ -187,52 +195,68 @@ impl ConversionBuilder {
         if input_format == FileFormat::Docx {
             use crate::converters::docx::DocxConverter;
             let converter = DocxConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         #[cfg(feature = "office")]
         if input_format == FileFormat::Xlsx {
             use crate::converters::xlsx::XlsxConverter;
             let converter = XlsxConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         #[cfg(feature = "office")]
         if input_format == FileFormat::Pptx {
             use crate::converters::pptx::PptxConverter;
             let converter = PptxConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         // Text formats (always enabled)
         if input_format == FileFormat::Txt {
             use crate::converters::txt::TxtConverter;
             let converter = TxtConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         if input_format == FileFormat::Csv {
             use crate::converters::csv::CsvConverter;
             let converter = CsvConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         if input_format == FileFormat::Tsv {
             use crate::converters::csv::CsvConverter;
             let converter = CsvConverter::new_tsv();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         if input_format == FileFormat::Rtf {
             use crate::converters::rtf::RtfConverter;
             let converter = RtfConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         if input_format == FileFormat::Odt {
             use crate::converters::odt::OdtConverter;
             let converter = OdtConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         // Image formats (with OCR if feature enabled)
@@ -240,7 +264,9 @@ impl ConversionBuilder {
         if input_format.is_image() {
             use crate::converters::image::ImageConverter;
             let converter = ImageConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         // Audio formats (with Whisper if feature enabled)
@@ -248,7 +274,9 @@ impl ConversionBuilder {
         if input_format.is_audio() {
             use crate::converters::audio::AudioConverter;
             let converter = AudioConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         // Video formats (with FFmpeg + Whisper if feature enabled)
@@ -256,7 +284,9 @@ impl ConversionBuilder {
         if input_format.is_video() {
             use crate::converters::video::VideoConverter;
             let converter = VideoConverter::new();
-            return converter.convert(&self.input, output_format, self.options).await;
+            return converter
+                .convert(&self.input, output_format, self.options)
+                .await;
         }
 
         // Format not supported or feature not enabled
@@ -284,4 +314,3 @@ mod tests {
         assert!(config.max_parallel > 0);
     }
 }
-

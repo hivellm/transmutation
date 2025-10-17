@@ -2,16 +2,20 @@
 //!
 //! Converts ODT files to Markdown by extracting content from the content.xml file.
 
-use super::traits::{ConverterMetadata, DocumentConverter};
-use crate::types::{ConversionOptions, ConversionResult, ConversionOutput, FileFormat, OutputFormat, OutputMetadata};
-use crate::Result;
-use async_trait::async_trait;
+use std::io::{Cursor, Read};
 use std::path::Path;
+
+use async_trait::async_trait;
+use quick_xml::Reader;
+use quick_xml::events::Event;
 use tokio::fs;
 use zip::ZipArchive;
-use std::io::{Cursor, Read};
-use quick_xml::events::Event;
-use quick_xml::Reader;
+
+use super::traits::{ConverterMetadata, DocumentConverter};
+use crate::Result;
+use crate::types::{
+    ConversionOptions, ConversionOutput, ConversionResult, FileFormat, OutputFormat, OutputMetadata,
+};
 
 /// ODT to Markdown converter
 pub struct OdtConverter;
@@ -21,26 +25,26 @@ impl OdtConverter {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Extract text from ODT content.xml
     fn extract_text_from_xml(&self, xml: &str) -> String {
         let mut markdown = String::new();
         markdown.push_str("# Document\n\n");
-        
+
         let mut reader = Reader::from_str(xml);
         reader.config_mut().trim_text(true);
-        
+
         let mut buf = Vec::new();
         let mut in_paragraph = false;
         let mut in_heading = false;
         let mut heading_level = 1;
         let mut current_text = String::new();
-        
+
         loop {
             match reader.read_event_into(&mut buf) {
                 Ok(Event::Start(e)) => {
                     let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
-                    
+
                     if name == "text:p" {
                         in_paragraph = true;
                         current_text.clear();
@@ -49,7 +53,9 @@ impl OdtConverter {
                         // Try to get outline-level attribute
                         for attr in e.attributes() {
                             if let Ok(attr) = attr {
-                                if String::from_utf8_lossy(attr.key.as_ref()) == "text:outline-level" {
+                                if String::from_utf8_lossy(attr.key.as_ref())
+                                    == "text:outline-level"
+                                {
                                     if let Ok(value) = String::from_utf8(attr.value.into_owned()) {
                                         heading_level = value.parse().unwrap_or(1);
                                     }
@@ -58,15 +64,15 @@ impl OdtConverter {
                         }
                         current_text.clear();
                     }
-                },
+                }
                 Ok(Event::Text(e)) => {
                     if in_paragraph || in_heading {
                         current_text.push_str(&e.unescape().unwrap_or_default());
                     }
-                },
+                }
                 Ok(Event::End(e)) => {
                     let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
-                    
+
                     if name == "text:p" {
                         in_paragraph = false;
                         if !current_text.trim().is_empty() {
@@ -79,42 +85,46 @@ impl OdtConverter {
                             markdown.push_str(&format!("{} {}\n\n", hashes, current_text.trim()));
                         }
                     }
-                },
+                }
                 Ok(Event::Eof) => break,
                 Err(e) => {
-                    eprintln!("Warning: XML parse error at position {}: {}", reader.buffer_position(), e);
+                    eprintln!(
+                        "Warning: XML parse error at position {}: {}",
+                        reader.buffer_position(),
+                        e
+                    );
                     break;
-                },
+                }
                 _ => {}
             }
             buf.clear();
         }
-        
+
         if markdown.trim() == "# Document" {
             markdown.push_str("*No text content found in ODT*\n");
         }
-        
+
         markdown
     }
-    
+
     /// Convert ODT to Markdown
     async fn odt_to_markdown(&self, odt_path: &Path) -> Result<String> {
         // Read ODT file (it's a ZIP)
         let data = fs::read(odt_path).await?;
         let cursor = Cursor::new(data);
         let mut archive = ZipArchive::new(cursor)?;
-        
+
         // Extract content.xml
         let mut content_xml = String::new();
         match archive.by_name("content.xml") {
             Ok(mut file) => {
                 file.read_to_string(&mut content_xml)?;
-            },
+            }
             Err(_) => {
                 return Ok("# Error\n\n*Could not find content.xml in ODT file*\n".to_string());
             }
         }
-        
+
         Ok(self.extract_text_from_xml(&content_xml))
     }
 }
@@ -153,16 +163,16 @@ impl DocumentConverter for OdtConverter {
         eprintln!("🔄 ODT Conversion (Pure Rust)");
         eprintln!("   ODT → ZIP → XML → {:?}", output_format);
         eprintln!();
-        
+
         // Convert ODT to Markdown
         let markdown = self.odt_to_markdown(input).await?;
-        
+
         // Convert to requested format
         let output_data = match output_format {
             OutputFormat::Markdown { .. } => {
                 eprintln!("📝 Markdown extracted!");
                 markdown.into_bytes()
-            },
+            }
             OutputFormat::Json { .. } => {
                 eprintln!("📝 Converting to JSON...");
                 let json = serde_json::json!({
@@ -172,19 +182,20 @@ impl DocumentConverter for OdtConverter {
                     }
                 });
                 serde_json::to_string_pretty(&json)?.into_bytes()
-            },
+            }
             _ => {
-                return Err(crate::TransmutationError::UnsupportedFormat(
-                    format!("Output format {:?} not supported for ODT", output_format)
-                ));
+                return Err(crate::TransmutationError::UnsupportedFormat(format!(
+                    "Output format {:?} not supported for ODT",
+                    output_format
+                )));
             }
         };
-        
+
         let output_size = output_data.len() as u64;
         let input_size = fs::metadata(input).await?.len();
-        
+
         eprintln!("✅ ODT conversion complete!");
-        
+
         Ok(ConversionResult {
             input_path: input.to_path_buf(),
             input_format: FileFormat::Odt,
@@ -228,4 +239,3 @@ impl DocumentConverter for OdtConverter {
         }
     }
 }
-

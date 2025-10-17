@@ -7,4 +7,3 @@ pub mod file_detect;
 // pub mod cache;
 
 pub use file_detect::detect_format;
-

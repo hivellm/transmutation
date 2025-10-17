@@ -3,12 +3,16 @@
 //! Converts XML to JSON (structured) and Markdown (text content).
 //! Uses quick-xml for fast, memory-efficient parsing.
 
-use super::traits::{ConverterMetadata, DocumentConverter};
-use crate::types::{ConversionOptions, ConversionResult, ConversionOutput, FileFormat, OutputFormat, OutputMetadata};
-use crate::Result;
-use async_trait::async_trait;
 use std::path::Path;
+
+use async_trait::async_trait;
 use tokio::fs;
+
+use super::traits::{ConverterMetadata, DocumentConverter};
+use crate::Result;
+use crate::types::{
+    ConversionOptions, ConversionOutput, ConversionResult, FileFormat, OutputFormat, OutputMetadata,
+};
 
 /// XML to Markdown/JSON converter
 pub struct XmlConverter;
@@ -18,36 +22,39 @@ impl XmlConverter {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Convert XML to JSON using quick-xml
     fn xml_to_json(&self, xml: &str) -> Result<String> {
         use quick_xml::de::from_str;
         use serde_json::Value;
-        
+
         // Parse XML to generic Value
         let value: Value = from_str(xml).map_err(|e| {
-            crate::TransmutationError::engine_error("xml-parser", format!("Failed to parse XML: {}", e))
+            crate::TransmutationError::engine_error(
+                "xml-parser",
+                format!("Failed to parse XML: {}", e),
+            )
         })?;
-        
+
         // Convert to pretty JSON
         Ok(serde_json::to_string_pretty(&value)?)
     }
-    
+
     /// Convert XML to Markdown (extract text content)
     fn xml_to_markdown(&self, xml: &str) -> Result<String> {
         use quick_xml::Reader;
         use quick_xml::events::Event;
-        
+
         let mut reader = Reader::from_str(xml);
         reader.config_mut().trim_text(true);
-        
+
         let mut markdown = String::new();
         markdown.push_str("# XML Document\n\n");
-        
+
         let mut current_element = String::new();
         let mut text_parts = Vec::new();
         let mut buf = Vec::new();
-        
+
         loop {
             match reader.read_event_into(&mut buf) {
                 Ok(Event::Start(e)) => {
@@ -65,17 +72,17 @@ impl XmlConverter {
                 Err(e) => {
                     return Err(crate::TransmutationError::engine_error(
                         "xml-parser",
-                        format!("XML parse error: {}", e)
+                        format!("XML parse error: {}", e),
                     ));
                 }
                 _ => {}
             }
             buf.clear();
         }
-        
+
         markdown.push_str(&text_parts.join("\n\n"));
         markdown.push_str("\n");
-        
+
         Ok(markdown)
     }
 }
@@ -114,34 +121,35 @@ impl DocumentConverter for XmlConverter {
         eprintln!("🔄 XML Conversion (Pure Rust)");
         eprintln!("   XML → Parsing → {:?}", output_format);
         eprintln!();
-        
+
         // Read XML file
         let xml_content = fs::read_to_string(input).await?;
-        
+
         // Convert to requested format
         let output_data = match output_format {
             OutputFormat::Markdown { .. } => {
                 eprintln!("📝 Converting to Markdown...");
                 let markdown = self.xml_to_markdown(&xml_content)?;
                 markdown.into_bytes()
-            },
+            }
             OutputFormat::Json { .. } => {
                 eprintln!("📝 Converting to JSON...");
                 let json = self.xml_to_json(&xml_content)?;
                 json.into_bytes()
-            },
+            }
             _ => {
-                return Err(crate::TransmutationError::UnsupportedFormat(
-                    format!("Output format {:?} not supported for XML", output_format)
-                ));
+                return Err(crate::TransmutationError::UnsupportedFormat(format!(
+                    "Output format {:?} not supported for XML",
+                    output_format
+                )));
             }
         };
-        
+
         let output_size = output_data.len() as u64;
         let input_size = fs::metadata(input).await?.len();
-        
+
         eprintln!("✅ XML conversion complete!");
-        
+
         Ok(ConversionResult {
             input_path: input.to_path_buf(),
             input_format: FileFormat::Xml,
@@ -185,5 +193,3 @@ impl DocumentConverter for XmlConverter {
         }
     }
 }
-
-

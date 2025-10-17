@@ -1,24 +1,25 @@
+use std::path::Path;
+
+use serde::{Deserialize, Serialize};
+
 /// Intermediate document representation (format-agnostic)
-/// 
+///
 /// This structure is inspired by Docling's DocumentModel
 /// It represents the parsed document independent of input/output formats
-
 use crate::error::Result;
-use std::path::Path;
-use serde::{Serialize, Deserialize};
 
 /// Universal document structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentStructure {
     /// Document title
     pub title: Option<String>,
-    
+
     /// Author information
     pub author: Option<String>,
-    
+
     /// Pages
     pub pages: Vec<PageStructure>,
-    
+
     /// Document-level metadata
     pub metadata: DocumentMetadata,
 }
@@ -28,14 +29,14 @@ pub struct DocumentStructure {
 pub struct PageStructure {
     /// Page number (1-indexed)
     pub number: usize,
-    
+
     /// Page dimensions (points)
     pub width: f32,
     pub height: f32,
-    
+
     /// Content blocks
     pub blocks: Vec<ContentBlock>,
-    
+
     /// Raw text for this page
     pub raw_text: String,
 }
@@ -107,7 +108,7 @@ impl DocumentStructure {
         // TODO: Implement PDF parsing to DocumentStructure
         todo!("PDF parsing to DocumentStructure not yet implemented")
     }
-    
+
     /// Get total text content
     pub fn full_text(&self) -> String {
         self.pages
@@ -116,10 +117,9 @@ impl DocumentStructure {
             .collect::<Vec<_>>()
             .join("\n\n")
     }
-    
+
     /// Get page by number (1-indexed)
     pub fn get_page(&self, number: usize) -> Option<&PageStructure> {
         self.pages.iter().find(|p| p.number == number)
     }
 }
-
