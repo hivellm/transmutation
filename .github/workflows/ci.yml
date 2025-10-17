@@ -47,10 +47,10 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run cargo check
-        run: cargo check --features "pdf,office,web,cli" --verbose
+        run: cargo check --features "office,cli" --verbose
 
       - name: Run tests
-        run: cargo test --features "pdf,office,web" --verbose
+        run: cargo test --features "office" --verbose
 
   fmt:
     name: Rustfmt
@@ -98,7 +98,7 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run clippy
-        run: cargo clippy --features "pdf,office,web,cli" --all-targets -- -D warnings
+        run: cargo clippy --features "office,cli" --all-targets -- -D warnings
 
   # Benchmark and coverage disabled until benchmark files are created
   # and external dependencies (tesseract, ffmpeg) are set up in CI

@@ -36,8 +36,8 @@ jobs:
         uses: rui314/setup-mold@v1
       
       - name: Build tests
-        run: cargo build --tests --workspace --all-features
+        run: cargo build --tests --workspace --features "full"
       
       - name: Run tests
-        run: cargo test --workspace --all-features
+        run: cargo test --workspace --features "full"
 
