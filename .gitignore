@@ -25,6 +25,27 @@ libs/*.lib
 *.o
 *.a
 
+# Release artifacts
+*.tar.gz
+*.zip
+*.deb
+*.msi
+*.AppImage
+*.rpm
+release/
+artifacts/
+AppDir/
+linuxdeploy-*.AppImage
+transmutation.spdx.json
+.buildx-cache/
+*.wixobj
+*.wixpdb
+debian/.debhelper/
+debian/transmutation/
+debian/files
+debian/*.log
+debian/*.substvars
+
 # Python
 __pycache__/
 *.py[cod]
@@ -65,3 +86,6 @@ debug_*.rs
 # Cache
 .cache/
 data/
+
+# Docling parse script/link
+docling_parse

@@ -1,0 +1,43 @@
+name: Rust
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: windows-latest
+          - os: macos-latest
+    
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+      
+      - uses: Swatinem/rust-cache@v2
+      
+      - name: Install mold linker (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: rui314/setup-mold@v1
+      
+      - name: Build tests
+        run: cargo build --tests --workspace --all-features
+      
+      - name: Run tests
+        run: cargo test --workspace --all-features
+

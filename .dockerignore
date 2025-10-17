@@ -1,0 +1,77 @@
+# Docker build context optimization
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# Build artifacts - MUST be excluded
+target/
+**/target/
+
+# Test files and benchmarks
+tests/
+**/tests/
+benchmark/
+benchmarks/
+
+# Documentation and examples
+docs/
+**/docs/
+examples/
+*.md
+!README.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Development files
+.env
+.env.*
+*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Package files and artifacts
+*.tar.gz
+*.zip
+*.deb
+*.msi
+*.AppImage
+*.rpm
+artifacts/
+release/
+AppDir/
+wix/
+debian/
+pkg/
+
+# Large files
+data/
+**/data/
+logs/
+**/logs/
+models/
+**/models/
+libs/
+**/libs/
+*.pdf
+*.mp3
+*.mp4
+*.onnx
+node_modules/
+**/node_modules/
+
+# Temporary files
+tmp/
+temp/
+

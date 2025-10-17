@@ -1,0 +1,24 @@
+name: Codespell
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  codespell:
+    name: Check Spelling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Install codespell
+        run: pip install 'codespell[toml]'
+      
+      - name: Run codespell
+        run: codespell \
+          --skip=".git,target,Cargo.lock,*.pdf,*.mp3,*.mp4,*.onnx" \
+          --ignore-words-list="crate,ser,pres,nd,te,ba,unexpect" \
+          --quiet-level=2
+

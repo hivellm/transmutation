@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+# Pre-removal script for transmutation
+# This script runs before the package is removed
+
+exit 0
+

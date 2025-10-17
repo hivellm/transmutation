@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+# Post-removal script for transmutation
+# This script runs after the package is removed
+
+if [ "$1" = "purge" ]; then
+    echo "Transmutation removed."
+fi
+
+exit 0
+

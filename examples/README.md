@@ -42,3 +42,9 @@ cargo run --example pdf_conversion --features full file.pdf
 ```
 
 
+
+
+
+
+
+

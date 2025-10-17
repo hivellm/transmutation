@@ -1,0 +1,181 @@
+name: Build and publish release packages
+permissions:
+  contents: write
+on:
+  release:
+    # 'published' is triggered when publishing draft release, 'created' is not
+    types: [published]
+
+jobs:
+  # Separated Linux builds - each runs independently
+  # If one fails, others continue
+  
+  build-linux-x86_64-gnu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib clang cmake
+          rustup default stable
+          rustup update
+      - name: Build and publish transmutation
+        uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: transmutation
+          target: x86_64-unknown-linux-gnu
+          token: ${{ secrets.GITHUB_TOKEN }}
+          features: cli
+  
+  build-linux-x86_64-musl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib clang cmake
+          rustup default stable
+          rustup update
+      - name: Install cross-compilation tools
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: x86_64-unknown-linux-musl
+      - name: Build musl binary
+        run: |
+          cargo build --release --target x86_64-unknown-linux-musl --features cli
+          mkdir -p dist
+          cp target/x86_64-unknown-linux-musl/release/transmutation dist/transmutation-x86_64-unknown-linux-musl
+      - name: Upload musl binary
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+      - name: Build Debian Package
+        run: |
+          cargo install cargo-deb
+          cargo deb --no-strip --target x86_64-unknown-linux-musl
+      - name: Upload Debian package
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/x86_64-unknown-linux-musl/debian/*.deb
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+  
+  build-linux-aarch64-musl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib clang cmake
+          rustup default stable
+          rustup update
+      - name: Install cross-compilation tools
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: aarch64-unknown-linux-musl
+      - name: Build musl binary
+        run: |
+          cargo build --release --target aarch64-unknown-linux-musl --features cli
+          mkdir -p dist
+          cp target/aarch64-unknown-linux-musl/release/transmutation dist/transmutation-aarch64-unknown-linux-musl
+      - name: Upload musl binary
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+
+  build-mac-binaries:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install dependencies
+        run: |
+          brew update-reset
+          brew install gcc cmake
+          rustup default stable
+          rustup update
+          rustup show
+          cargo -Vv
+      - uses: actions/checkout@v5
+      - name: Build and publish
+        uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: transmutation
+          target: ${{ matrix.target }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          features: cli
+
+  build-windows-binaries:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install minimal stable
+        uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@v5
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --features cli
+
+      - name: Build and publish transmutation
+        uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: transmutation
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # MSI build disabled temporarily - needs WiX Toolset configuration
+  # build-windows-msi:
+  #   runs-on: windows-latest
+  #   steps:
+  #     - name: Install minimal stable
+  #       uses: dtolnay/rust-toolchain@stable
+  #     - uses: actions/checkout@v5
+  #     - uses: Swatinem/rust-cache@v2
+  #
+  #     - name: Build release binaries
+  #       run: cargo build --release --features cli
+  #
+  #     - name: Install WiX Toolset
+  #       run: |
+  #         dotnet tool install --global wix --version 5.0.2
+  #         wix extension add -g WixToolset.UI.wixext
+  #         wix extension list
+  #         wix --version
+  #
+  #     - name: Build MSI installer
+  #       shell: pwsh
+  #       env:
+  #         CargoTargetBinDir: ${{ github.workspace }}\target\release
+  #       run: |
+  #         wix build -arch x64 -ext WixToolset.UI.wixext wix\main.wxs -o transmutation.msi
+  #
+  #     - name: Upload MSI
+  #       uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #         file: transmutation.msi
+  #         asset_name: transmutation-x86_64.msi
+  #         tag: ${{ github.ref }}
+  #         overwrite: true
+

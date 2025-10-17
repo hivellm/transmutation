@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+# Post-installation script for transmutation
+# This script runs after the package is installed
+
+echo "Transmutation installed successfully!"
+echo "Run 'transmutation --help' to get started."
+
+exit 0
+

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Transmutation
+Comment=High-Performance Document Conversion Engine
+Exec=transmutation
+Icon=transmutation
+Categories=Utility;Development;
+Terminal=true
+StartupNotify=true
+
