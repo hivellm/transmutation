@@ -222,8 +222,72 @@ cargo build --features "pdf-to-image"
 
 See [`install/README.md`](install/README.md) for detailed instructions.
 
-### Basic Usage
+## 📖 Usage Guide
 
+### CLI Usage
+
+**Basic Conversion:**
+```bash
+# Convert PDF to Markdown
+transmutation convert document.pdf -o output.md
+
+# Convert DOCX to Markdown with images
+transmutation convert report.docx -o output.md --extract-images
+
+# Convert with precision mode (77% similarity)
+transmutation convert paper.pdf -o output.md --precision
+
+# Convert multiple files
+transmutation batch *.pdf -o output/ --parallel 4
+```
+
+**Format-Specific Examples:**
+```bash
+# PDF → Markdown (split by pages)
+transmutation convert document.pdf -o output/ --split-pages
+
+# DOCX → Markdown + Images
+transmutation convert report.docx -o output.md --images
+
+# XLSX → CSV
+transmutation convert data.xlsx -o output.csv --format csv
+
+# PPTX → Markdown (one file per slide)
+transmutation convert slides.pptx -o output/ --split-slides
+
+# Image OCR → Markdown
+transmutation convert scan.jpg -o output.md --ocr --lang eng
+
+# ZIP → Extract and convert all
+transmutation convert archive.zip -o output/ --recursive
+```
+
+**Advanced Options:**
+```bash
+# Optimize for LLM embeddings
+transmutation convert document.pdf \
+  --optimize-llm \
+  --max-chunk-size 512 \
+  --remove-headers \
+  --normalize-whitespace
+
+# High-quality image extraction
+transmutation convert document.pdf \
+  --extract-images \
+  --dpi 300 \
+  --image-quality high
+
+# Batch processing with progress
+transmutation batch papers/*.pdf \
+  -o converted/ \
+  --parallel 8 \
+  --progress \
+  --format markdown
+```
+
+### Library Usage (Rust)
+
+**Basic Conversion:**
 ```rust
 use transmutation::{Converter, OutputFormat, ConversionOptions};
 
@@ -300,6 +364,203 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Embedded {} chunks", result.chunk_count());
     Ok(())
 }
+```
+
+### Python Usage (PyO3 Bindings - Future)
+
+```python
+from transmutation import Converter, OutputFormat
+
+# Initialize converter
+converter = Converter()
+
+# Convert PDF to Markdown
+result = converter.convert(
+    "document.pdf",
+    output_format=OutputFormat.Markdown,
+    split_pages=True,
+    optimize_for_llm=True
+)
+
+result.save("output/document.md")
+print(f"Converted {result.page_count()} pages")
+
+# Batch processing
+from transmutation import BatchProcessor
+
+batch = BatchProcessor(converter)
+results = batch.add_files([
+    "doc1.pdf",
+    "doc2.docx",
+    "doc3.pptx"
+]).to(OutputFormat.Markdown).parallel(4).execute()
+
+for file, result in results:
+    print(f"{file}: {result.input_size()} -> {result.output_size()}")
+```
+
+### JavaScript/TypeScript (Neon Bindings - Future)
+
+```typescript
+import { Converter, OutputFormat, ConversionOptions } from 'transmutation';
+
+// Initialize converter
+const converter = new Converter();
+
+// Convert PDF to Markdown
+const result = await converter
+  .convert('document.pdf')
+  .to(OutputFormat.Markdown)
+  .withOptions({
+    splitPages: true,
+    optimizeForLlm: true,
+    extractImages: false
+  })
+  .execute();
+
+await result.save('output/document.md');
+console.log(`Converted ${result.pageCount()} pages`);
+
+// Batch processing
+import { BatchProcessor } from 'transmutation';
+
+const batch = new BatchProcessor(converter);
+const results = await batch
+  .addFiles(['doc1.pdf', 'doc2.docx', 'doc3.pptx'])
+  .to(OutputFormat.Markdown)
+  .parallel(4)
+  .execute();
+
+results.forEach(([file, result]) => {
+  console.log(`${file}: ${result.inputSize()} -> ${result.outputSize()}`);
+});
+```
+
+## 🎯 Common Use Cases
+
+### 1. RAG System Document Ingestion
+
+```bash
+# Convert research papers for semantic search
+transmutation batch papers/*.pdf \
+  -o embeddings/ \
+  --optimize-llm \
+  --split-pages \
+  --max-chunk-size 512 \
+  --parallel 8
+
+# Then index with Vectorizer
+vectorizer insert --collection research_papers embeddings/*.md
+```
+
+### 2. Document Archive Migration
+
+```bash
+# Convert legacy documents to Markdown
+transmutation batch archive/ \
+  -o markdown/ \
+  --recursive \
+  --format markdown \
+  --parallel 16 \
+  --progress
+
+# Supported: PDF, DOCX, XLSX, PPTX, RTF, ODT, HTML, XML
+```
+
+### 3. OCR for Scanned Documents
+
+```bash
+# Batch OCR with Tesseract
+transmutation batch scans/*.jpg \
+  -o text/ \
+  --ocr \
+  --lang eng \
+  --dpi 300 \
+  --parallel 4
+
+# Multi-language support
+transmutation convert document_pt.jpg \
+  -o output.md \
+  --ocr \
+  --lang por
+```
+
+### 4. Legal Document Processing
+
+```bash
+# Convert legal PDFs with high precision
+transmutation convert contract.pdf \
+  -o contract.md \
+  --precision \
+  --preserve-layout \
+  --extract-tables \
+  --include-metadata
+
+# Batch process court documents
+transmutation batch cases/*.pdf \
+  -o processed/ \
+  --precision \
+  --parallel 4
+```
+
+### 5. Academic Paper Analysis
+
+```bash
+# Extract text from arXiv papers
+transmutation batch papers/*.pdf \
+  -o markdown/ \
+  --split-pages \
+  --extract-tables \
+  --normalize-whitespace
+
+# Create embeddings for similarity search
+vectorizer insert --collection arxiv markdown/*.md
+```
+
+### 6. Data Extraction from Spreadsheets
+
+```bash
+# Convert Excel to Markdown tables
+transmutation convert data.xlsx -o tables.md --format markdown
+
+# Convert to CSV for analysis
+transmutation convert data.xlsx -o data.csv --format csv
+
+# Convert to JSON
+transmutation convert data.xlsx -o data.json --format json
+```
+
+### 7. Presentation Content Extraction
+
+```bash
+# Extract text from PowerPoint slides
+transmutation convert presentation.pptx \
+  -o slides/ \
+  --split-slides \
+  --extract-images \
+  --format markdown
+
+# Batch process training materials
+transmutation batch trainings/*.pptx \
+  -o content/ \
+  --split-slides \
+  --parallel 8
+```
+
+### 8. Web Content Archiving
+
+```bash
+# Convert saved HTML pages
+transmutation batch pages/*.html \
+  -o markdown/ \
+  --format markdown \
+  --normalize-whitespace
+
+# Process downloaded documentation
+transmutation batch docs/*.html \
+  -o processed/ \
+  --extract-images \
+  --parallel 4
 ```
 
 ## 🔧 Configuration
