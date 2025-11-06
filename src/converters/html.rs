@@ -178,6 +178,36 @@ impl Default for HtmlConverter {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_html_converter_creation() {
+        let converter = HtmlConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Html]);
+    }
+
+    #[test]
+    fn test_html_to_markdown_basic() {
+        let converter = HtmlConverter::new();
+        let html = "<h1>Title</h1><p>Paragraph</p>";
+        let result = converter.html_to_markdown(html);
+        assert!(result.is_ok());
+        let markdown = result.unwrap();
+        assert!(markdown.contains("# Title"));
+        assert!(markdown.contains("Paragraph"));
+    }
+
+    #[test]
+    fn test_html_converter_metadata() {
+        let converter = HtmlConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "HTML Converter");
+        assert!(meta.supported_outputs.contains(&OutputFormat::Markdown { split_pages: false, optimize_for_llm: false }));
+    }
+}
+
 #[async_trait]
 impl DocumentConverter for HtmlConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {

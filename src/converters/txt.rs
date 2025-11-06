@@ -62,6 +62,32 @@ impl Default for TxtConverter {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_txt_converter_creation() {
+        let converter = TxtConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Txt]);
+    }
+
+    #[test]
+    fn test_txt_to_markdown_basic() {
+        let converter = TxtConverter::new();
+        let text = "This is a test\nSecond line";
+        let result = converter.txt_to_markdown(text);
+        assert!(result.contains("This is a test"));
+    }
+
+    #[test]
+    fn test_txt_converter_metadata() {
+        let converter = TxtConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "Text Converter");
+    }
+}
+
 #[async_trait]
 impl DocumentConverter for TxtConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {

@@ -130,3 +130,81 @@ pub enum DocItemLabel {
     CheckboxSelected,
     CheckboxUnselected,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_docling_document_creation() {
+        let doc = DoclingDocument::new("test.pdf".to_string());
+        assert_eq!(doc.name, "test.pdf");
+        assert!(doc.items.is_empty());
+    }
+
+    #[test]
+    fn test_add_item() {
+        let mut doc = DoclingDocument::new("test".to_string());
+        let item = DocItem::Paragraph(TextItem {
+            text: "Test".to_string(),
+            formatting: None,
+            label: DocItemLabel::Paragraph,
+        });
+        let item_ref = doc.add_item(item);
+        assert_eq!(doc.items.len(), 1);
+        assert_eq!(item_ref, "item_0");
+    }
+
+    #[test]
+    fn test_formatting_default() {
+        let formatting = Formatting::default();
+        assert!(!formatting.bold);
+        assert!(!formatting.italic);
+        assert!(!formatting.underline);
+    }
+
+    #[test]
+    fn test_table_cell_creation() {
+        let cell = TableCell {
+            text: "Cell".to_string(),
+            row_span: 1,
+            col_span: 1,
+        };
+        assert_eq!(cell.text, "Cell");
+        assert_eq!(cell.row_span, 1);
+    }
+
+    #[test]
+    fn test_section_header_item() {
+        let header = SectionHeaderItem {
+            text: "Section 1".to_string(),
+            level: 1,
+            formatting: None,
+        };
+        assert_eq!(header.text, "Section 1");
+        assert_eq!(header.level, 1);
+    }
+
+    #[test]
+    fn test_list_item_data() {
+        let list_item = ListItemData {
+            text: "Item 1".to_string(),
+            marker: "-".to_string(),
+            enumerated: false,
+            level: 0,
+        };
+        assert_eq!(list_item.text, "Item 1");
+        assert!(!list_item.enumerated);
+    }
+
+    #[test]
+    fn test_table_data_creation() {
+        let table = TableData {
+            num_rows: 2,
+            num_cols: 3,
+            grid: vec![],
+        };
+        assert_eq!(table.num_rows, 2);
+        assert_eq!(table.num_cols, 3);
+    }
+}

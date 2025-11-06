@@ -147,6 +147,32 @@ impl Default for RtfConverter {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_rtf_converter_creation() {
+        let converter = RtfConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Rtf]);
+    }
+
+    #[test]
+    fn test_rtf_to_markdown_basic() {
+        let converter = RtfConverter::new();
+        let rtf = r"{\rtf1 Hello World}";
+        let result = converter.rtf_to_markdown(rtf);
+        assert!(result.contains("Hello World"));
+    }
+
+    #[test]
+    fn test_rtf_converter_metadata() {
+        let converter = RtfConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "RTF Converter");
+    }
+}
+
 #[async_trait]
 impl DocumentConverter for RtfConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {

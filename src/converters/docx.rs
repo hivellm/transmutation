@@ -332,6 +332,25 @@ impl Default for DocxConverter {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_docx_converter_creation() {
+        let converter = DocxConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Docx]);
+    }
+
+    #[test]
+    fn test_docx_converter_metadata() {
+        let converter = DocxConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "DOCX Converter");
+        assert!(meta.requires_external.contains(&"LibreOffice (optional)"));
+    }
+}
+
 #[async_trait]
 impl DocumentConverter for DocxConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {
@@ -371,13 +390,13 @@ impl DocumentConverter for DocxConverter {
                 }
             }
             OutputFormat::Image {
-                format,
-                quality,
-                dpi,
+                format: _format,
+                quality: _quality,
+                dpi: _dpi,
             } => {
                 #[cfg(feature = "pdf-to-image")]
                 {
-                    self.convert_to_images(input, format, quality, dpi, &options)
+                    self.convert_to_images(input, _format, _quality, _dpi, &options)
                         .await?
                 }
                 #[cfg(not(feature = "pdf-to-image"))]

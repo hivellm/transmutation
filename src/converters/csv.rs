@@ -122,6 +122,34 @@ impl Default for CsvConverter {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_csv_converter_creation() {
+        let converter = CsvConverter::new();
+        let formats = converter.supported_formats();
+        assert!(formats.contains(&FileFormat::Csv));
+        assert!(formats.contains(&FileFormat::Tsv));
+    }
+
+    #[test]
+    fn test_csv_to_markdown_basic() {
+        let csv = "Name,Age\nAlice,30\nBob,25";
+        let result = CsvConverter::csv_to_markdown(csv, ',');
+        assert!(result.contains("Name"));
+        assert!(result.contains("Alice"));
+    }
+
+    #[test]
+    fn test_csv_converter_metadata() {
+        let converter = CsvConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "CSV/TSV Converter");
+    }
+}
+
 #[async_trait]
 impl DocumentConverter for CsvConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {

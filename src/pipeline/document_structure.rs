@@ -126,3 +126,111 @@ impl DocumentStructure {
         self.pages.iter().find(|p| p.number == number)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_document_structure_creation() {
+        let doc = DocumentStructure {
+            title: Some("Test Doc".to_string()),
+            author: Some("Test Author".to_string()),
+            pages: vec![],
+            metadata: DocumentMetadata::default(),
+        };
+        assert_eq!(doc.title, Some("Test Doc".to_string()));
+        assert_eq!(doc.author, Some("Test Author".to_string()));
+    }
+
+    #[test]
+    fn test_page_structure_creation() {
+        let page = PageStructure {
+            number: 1,
+            width: 612.0,
+            height: 792.0,
+            blocks: vec![],
+            raw_text: "Test text".to_string(),
+        };
+        assert_eq!(page.number, 1);
+        assert_eq!(page.raw_text, "Test text");
+    }
+
+    #[test]
+    fn test_full_text() {
+        let page1 = PageStructure {
+            number: 1,
+            width: 612.0,
+            height: 792.0,
+            blocks: vec![],
+            raw_text: "Page 1".to_string(),
+        };
+        let page2 = PageStructure {
+            number: 2,
+            width: 612.0,
+            height: 792.0,
+            blocks: vec![],
+            raw_text: "Page 2".to_string(),
+        };
+        let doc = DocumentStructure {
+            title: None,
+            author: None,
+            pages: vec![page1, page2],
+            metadata: DocumentMetadata::default(),
+        };
+        let full = doc.full_text();
+        assert!(full.contains("Page 1"));
+        assert!(full.contains("Page 2"));
+    }
+
+    #[test]
+    fn test_get_page() {
+        let page1 = PageStructure {
+            number: 1,
+            width: 612.0,
+            height: 792.0,
+            blocks: vec![],
+            raw_text: "Page 1".to_string(),
+        };
+        let doc = DocumentStructure {
+            title: None,
+            author: None,
+            pages: vec![page1],
+            metadata: DocumentMetadata::default(),
+        };
+        assert!(doc.get_page(1).is_some());
+        assert!(doc.get_page(2).is_none());
+    }
+
+    #[test]
+    fn test_text_style_default() {
+        let style = TextStyle::default();
+        assert!(!style.bold);
+        assert!(!style.italic);
+    }
+
+    #[test]
+    fn test_bounding_box_creation() {
+        let bbox = BoundingBox {
+            x: 0.0,
+            y: 0.0,
+            width: 100.0,
+            height: 50.0,
+        };
+        assert_eq!(bbox.width, 100.0);
+        assert_eq!(bbox.height, 50.0);
+    }
+
+    #[test]
+    fn test_content_block_text() {
+        let block = ContentBlock::Text {
+            text: "Test".to_string(),
+            style: TextStyle::default(),
+            bbox: None,
+        };
+        match block {
+            ContentBlock::Text { text, .. } => assert_eq!(text, "Test"),
+            _ => panic!("Expected Text block"),
+        }
+    }
+}

@@ -1309,13 +1309,13 @@ impl DocumentConverter for PdfConverter {
             }
             OutputFormat::Json { .. } => self.convert_to_json(&parser, &options).await?,
             OutputFormat::Image {
-                format,
-                quality,
-                dpi,
+                format: _format,
+                quality: _quality,
+                dpi: _dpi,
             } => {
                 #[cfg(feature = "pdf-to-image")]
                 {
-                    self.convert_to_images(input, format, quality, dpi, &options)
+                    self.convert_to_images(input, _format, _quality, _dpi, &options)
                         .await?
                 }
                 #[cfg(not(feature = "pdf-to-image"))]
