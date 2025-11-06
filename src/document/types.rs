@@ -104,7 +104,7 @@ pub struct FormulaItem {
     pub is_inline: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Formatting {
     pub bold: bool,
     pub italic: bool,
