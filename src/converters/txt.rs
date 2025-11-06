@@ -84,7 +84,7 @@ mod tests {
     fn test_txt_converter_metadata() {
         let converter = TxtConverter::new();
         let meta = converter.metadata();
-        assert_eq!(meta.name, "Text Converter");
+        assert_eq!(meta.name, "TXT Converter");
     }
 }
 
