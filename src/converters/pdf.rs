@@ -19,6 +19,7 @@ use crate::types::{
 };
 
 /// PDF to Markdown/Image/JSON converter
+#[derive(Debug)]
 pub struct PdfConverter {
     text_optimizer: TextOptimizer,
 }
