@@ -31,7 +31,7 @@ impl ImageConverter {
     /// Perform OCR on an image
     #[cfg(feature = "tesseract")]
     async fn ocr_image(&self, image_path: &Path, language: &str) -> Result<String> {
-        use leptess::{LepTess, Variable};
+        use leptess::LepTess;
 
         // Initialize Tesseract
         let mut tesseract = LepTess::new(None, language).map_err(|e| {
@@ -119,7 +119,7 @@ impl DocumentConverter for ImageConverter {
         &self,
         input: &Path,
         output_format: OutputFormat,
-        options: ConversionOptions,
+        _options: ConversionOptions,
     ) -> Result<ConversionResult> {
         eprintln!("🔄 Image OCR (Tesseract)");
         eprintln!("   Image → OCR → {:?}", output_format);

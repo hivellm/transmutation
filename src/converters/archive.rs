@@ -3,8 +3,8 @@
 //! Extracts and converts documents from archives (ZIP, TAR, 7Z, etc.).
 
 use std::collections::HashMap;
-use std::io::{Cursor, Read};
-use std::path::{Path, PathBuf};
+use std::io::Cursor;
+use std::path::Path;
 
 use async_trait::async_trait;
 #[cfg(feature = "archives-extended")]

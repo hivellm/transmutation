@@ -3,10 +3,7 @@
 //! Provides parallel processing capabilities using Rayon.
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::time::Instant;
-
-use rayon::prelude::*;
 
 use crate::{
     ConversionOptions, ConversionResult, Converter, OutputFormat, Result, TransmutationError,

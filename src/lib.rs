@@ -32,7 +32,7 @@
 
 pub mod batch;
 pub mod converters;
-#[cfg(all(feature = "pdf", feature = "docling-ffi"))]
+#[cfg(feature = "docling-ffi")]
 pub mod document;
 pub mod engines;
 pub mod error;

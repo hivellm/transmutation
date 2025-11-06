@@ -6,7 +6,6 @@
 use std::path::Path;
 
 use lopdf::Document;
-#[cfg(feature = "pdf")]
 use pdf_extract::*;
 
 use crate::engines::table_detector::{DetectedTable, TableDetector};
@@ -350,96 +349,80 @@ impl PdfParser {
     }
 
     /// Extract text blocks with positioning and font information
-    fn extract_text_blocks(&self, page_num: usize) -> Result<Vec<TextBlock>> {
-        #[cfg(feature = "pdf")]
-        {
-            let page_ids = self.get_page_ids();
-            if page_num >= page_ids.len() {
-                return Ok(Vec::new());
-            }
-
-            let page_id = page_ids[page_num];
-
-            // Get page content
-            let pages = self.document.get_pages();
-            let page_ref = match pages.get(&page_id) {
-                Some(r) => r,
-                None => return Ok(Vec::new()),
-            };
-
-            // Parse content stream
-            let content = match self.document.get_and_decode_page_content(*page_ref) {
-                Ok(c) => c,
-                Err(_) => return Ok(Vec::new()),
-            };
-
-            self.parse_content_operations(&content)
+    fn extract_text_blocks(&self, _page_num: usize) -> Result<Vec<TextBlock>> {
+        let page_ids = self.get_page_ids();
+        if _page_num >= page_ids.len() {
+            return Ok(Vec::new());
         }
 
-        #[cfg(not(feature = "pdf"))]
-        Ok(Vec::new())
+        let page_id = page_ids[_page_num];
+
+        // Get page content
+        let pages = self.document.get_pages();
+        let page_ref = match pages.get(&page_id) {
+            Some(r) => r,
+            None => return Ok(Vec::new()),
+        };
+
+        // Parse content stream
+        let content = match self.document.get_and_decode_page_content(*page_ref) {
+            Ok(c) => c,
+            Err(_) => return Ok(Vec::new()),
+        };
+
+        self.parse_content_operations(&content)
     }
 
     /// OLD UNUSED CODE - keeping for reference
-    fn extract_text_blocks_OLD(&self, page_num: usize) -> Result<Vec<TextBlock>> {
-        #[cfg(feature = "pdf")]
-        {
-            use lopdf::Object;
+    fn extract_text_blocks_OLD(&self, _page_num: usize) -> Result<Vec<TextBlock>> {
+        let page_ids = self.get_page_ids();
+        if _page_num >= page_ids.len() {
+            return Ok(Vec::new());
+        }
 
-            let page_ids = self.get_page_ids();
-            if page_num >= page_ids.len() {
-                return Ok(Vec::new());
-            }
+        let page_id = page_ids[_page_num];
+        let blocks = Vec::new();
 
-            let page_id = page_ids[page_num];
-            let blocks = Vec::new();
+        // Get page content
+        let pages = self.document.get_pages();
+        let page_ref = match pages.get(&page_id) {
+            Some(r) => r,
+            None => return Ok(blocks),
+        };
 
-            // Get page content
-            let pages = self.document.get_pages();
-            let page_ref = match pages.get(&page_id) {
-                Some(r) => r,
-                None => return Ok(blocks),
-            };
+        let page_obj = match self.document.get_object(*page_ref) {
+            Ok(obj) => obj,
+            Err(_) => return Ok(blocks),
+        };
 
-            let page_obj = match self.document.get_object(*page_ref) {
-                Ok(obj) => obj,
-                Err(_) => return Ok(blocks),
-            };
+        let page_dict = match page_obj.as_dict() {
+            Ok(dict) => dict,
+            Err(_) => return Ok(blocks),
+        };
 
-            let page_dict = match page_obj.as_dict() {
-                Ok(dict) => dict,
-                Err(_) => return Ok(blocks),
-            };
+        // Get page content stream(s)
+        let contents = match page_dict.get(b"Contents") {
+            Ok(c) => c,
+            Err(_) => return Ok(blocks),
+        };
 
-            // Get page content stream(s)
-            let contents = match page_dict.get(b"Contents") {
-                Ok(c) => c,
-                Err(_) => return Ok(blocks),
-            };
-
-            // Decode content stream
-            let content_data = match contents {
-                Object::Reference(r) => match self.document.get_object(*r) {
-                    Ok(obj) => match obj.as_stream() {
-                        Ok(stream) => match stream.decode_content() {
-                            Ok(data) => data,
-                            Err(_) => return Ok(blocks),
-                        },
+        // Decode content stream
+        let content_data = match contents {
+            lopdf::Object::Reference(r) => match self.document.get_object(*r) {
+                Ok(obj) => match obj.as_stream() {
+                    Ok(stream) => match stream.decode_content() {
+                        Ok(data) => data,
                         Err(_) => return Ok(blocks),
                     },
                     Err(_) => return Ok(blocks),
                 },
-                _ => return Ok(blocks),
-            };
+                Err(_) => return Ok(blocks),
+            },
+            _ => return Ok(blocks),
+        };
 
-            // Parse content stream operations
-            self.parse_content_operations(&content_data)
-        }
-
-        #[cfg(not(feature = "pdf"))]
-        {
-            Ok(Vec::new())
-        }
+        // Parse content stream operations
+        self.parse_content_operations(&content_data)
     }
 
     /// Parse PDF content operations to extract text blocks

@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use super::traits::{ConverterMetadata, DocumentConverter};
 use crate::Result;
 use crate::engines::layout_analyzer::LayoutAnalyzer;
-use crate::engines::pdf_parser::{PdfPage, PdfParser};
+use crate::engines::pdf_parser::PdfParser;
 use crate::optimization::text::TextOptimizer;
 use crate::output::{Chunker, MarkdownGenerator};
 use crate::types::{
@@ -441,7 +441,6 @@ impl PdfConverter {
 
     /// Convert PDF to Markdown using Docling-style text processing (high-precision mode)
     /// Uses docling-parse C++ FFI when available for 95%+ similarity
-    #[cfg(feature = "pdf")]
     async fn convert_with_docling_style(
         &self,
         path: &Path,
@@ -619,7 +618,6 @@ impl PdfConverter {
 
     /// Convert PDF pages individually with precision mode quality
     /// Each page is processed separately and returned as individual ConversionOutput
-    #[cfg(feature = "pdf")]
     async fn convert_pages_individually(
         &self,
         path: &Path,
@@ -685,7 +683,7 @@ impl PdfConverter {
     }
 
     /// Convert PDF using docling-parse C++ FFI (95%+ similarity target)
-    #[cfg(all(feature = "pdf", feature = "docling-ffi"))]
+    #[cfg(feature = "docling-ffi")]
     async fn convert_with_docling_ffi(&self, path: &Path) -> Result<Vec<ConversionOutput>> {
         use crate::document::{
             DoclingJsonParser, HierarchyBuilder, MarkdownSerializer, PageAssembler,
@@ -999,7 +997,6 @@ impl PdfConverter {
     }
 
     /// Convert PDF to Markdown using pdf-extract (high quality)
-    #[cfg(feature = "pdf")]
     async fn convert_to_markdown_pdf_extract(
         &self,
         path: &Path,
@@ -1289,22 +1286,15 @@ impl DocumentConverter for PdfConverter {
         // Convert based on output format
         let content = match output_format {
             OutputFormat::Markdown { .. } => {
-                // Use pdf-extract for best quality (if available)
-                #[cfg(feature = "pdf")]
-                {
-                    if options.use_precision_mode || options.use_ffi {
-                        // High-precision mode: Docling-style layout analysis for ~95% similarity
-                        // Also used for FFI mode which tries docling-parse C++ first
-                        self.convert_with_docling_style(input, &options).await?
-                    } else {
-                        // Fast mode: Pure Rust heuristics, ~81% similarity, much faster
-                        self.convert_to_markdown_pdf_extract(input, &options)
-                            .await?
-                    }
-                }
-                #[cfg(not(feature = "pdf"))]
-                {
-                    self.convert_to_markdown(&parser, &options).await?
+                // Use pdf-extract for best quality
+                if options.use_precision_mode || options.use_ffi {
+                    // High-precision mode: Docling-style layout analysis for ~95% similarity
+                    // Also used for FFI mode which tries docling-parse C++ first
+                    self.convert_with_docling_style(input, &options).await?
+                } else {
+                    // Fast mode: Pure Rust heuristics, ~81% similarity, much faster
+                    self.convert_to_markdown_pdf_extract(input, &options)
+                        .await?
                 }
             }
             OutputFormat::Json { .. } => self.convert_to_json(&parser, &options).await?,
