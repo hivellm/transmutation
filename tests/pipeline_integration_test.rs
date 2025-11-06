@@ -2,9 +2,8 @@
 ///
 /// Tests the full flow: FFI → Parser → Assembler → Hierarchy → Serializer
 
-#![allow(unexpected_cfgs)]
-
 #[cfg(all(test, feature = "docling-ffi", feature = "pdf"))]
+#[allow(unexpected_cfgs)]
 mod pipeline_tests {
     use transmutation::document::{
         DocItem, DocItemLabel, DoclingDocument, HierarchyBuilder, MarkdownSerializer,
