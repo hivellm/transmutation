@@ -129,5 +129,3 @@ mod pdf_tests {
 // Note: To run these tests, create tests/fixtures/ directory
 // and add sample PDF files, then run:
 // cargo test --features pdf -- --ignored
-
-
