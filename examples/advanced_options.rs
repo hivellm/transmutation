@@ -33,6 +33,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         remove_headers_footers: true,
         remove_watermarks: false,
         normalize_whitespace: true,
+        
+        // Feature flags
+        use_ffi: false,
+        use_precision_mode: false,
     };
 
     println!("Converting with advanced options...");
