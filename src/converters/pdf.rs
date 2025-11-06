@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use super::traits::{ConverterMetadata, DocumentConverter};
 use crate::Result;
 use crate::engines::layout_analyzer::LayoutAnalyzer;
-use crate::engines::pdf_parser::PdfParser;
+use crate::engines::pdf_parser::{PdfPage, PdfParser};
 use crate::optimization::text::TextOptimizer;
 use crate::output::{Chunker, MarkdownGenerator};
 use crate::types::{

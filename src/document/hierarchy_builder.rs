@@ -4,7 +4,7 @@ use std::collections::HashMap;
 ///
 /// Based on docling-core document structure
 use crate::document::types::{DocItem, DoclingDocument, ListItemData, SectionHeaderItem};
-use crate::error::{Result, TransmutationError};
+use crate::error::Result;
 
 /// Hierarchy builder for document structure
 pub struct HierarchyBuilder {
@@ -328,7 +328,7 @@ impl Default for RelationshipBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::document::types::{DocItemLabel, Formatting, TextItem};
+    use crate::document::types::{DocItemLabel, TextItem};
 
     #[test]
     fn test_is_likely_caption() {

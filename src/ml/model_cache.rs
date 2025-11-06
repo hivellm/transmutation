@@ -7,7 +7,7 @@ use once_cell::sync::Lazy;
 ///
 /// This module provides lazy loading and caching of ONNX Runtime sessions
 /// to avoid reloading models for every conversion.
-use crate::error::{Result, TransmutationError};
+//
 use crate::ml::{LayoutModel, TableStructureModel};
 
 /// Global model cache (lazy initialized)

@@ -5,7 +5,7 @@ use ndarray::Array4;
 #[cfg(feature = "docling-ffi")]
 use ort::{
     session::{Session, builder::SessionBuilder},
-    value::{Tensor, Value},
+    value::Tensor,
 };
 
 /// Layout detection model using ONNX
@@ -398,7 +398,7 @@ mod tests {
     #[test]
     #[ignore] // Requires actual ONNX model file
     fn test_load_model() {
-        let result = LayoutModel::new("models/layout_model.onnx");
+        let _result = LayoutModel::new("models/layout_model.onnx");
         // Will fail if model doesn't exist, which is expected
     }
 }

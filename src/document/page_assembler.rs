@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::document::text_utils::{
     TextSanitizer, calculate_section_level, extract_section_number, is_likely_heading,
 };
@@ -8,7 +6,7 @@ use crate::document::text_utils::{
 /// Based on docling's page_assemble_model.py
 use crate::document::types::*;
 use crate::document::types_extended::*;
-use crate::error::{Result, TransmutationError};
+use crate::error::Result;
 
 /// Page assembler options
 pub struct PageAssemblerOptions {
@@ -79,7 +77,6 @@ impl PageAssembler {
             DocItemLabel::CheckboxSelected | DocItemLabel::CheckboxUnselected => {
                 self.process_checkbox(cluster)
             }
-            _ => Ok(Vec::new()), // Skip unknown types
         }
     }
 
@@ -115,10 +112,8 @@ impl PageAssembler {
             }
             // Add space if horizontal gap is significant (word boundary)
             // Use character width as reference: gap > 50% of char width = word boundary
-            else if prev_x_end > 0.0 && gap_x > (cell_width * 0.3) {
-                if !text.ends_with(' ') && !text.ends_with('\n') {
-                    text.push(' ');
-                }
+            else if prev_x_end > 0.0 && gap_x > (cell_width * 0.3) && !text.ends_with(' ') && !text.ends_with('\n') {
+                text.push(' ');
             }
 
             text.push_str(&cell.text);
@@ -434,7 +429,7 @@ mod tests {
         assert_eq!(marker, Some("1.".to_string()));
         assert!(enumerated);
 
-        let (marker, enumerated) = assembler.detect_list_marker("• Bullet");
+        let (_marker, enumerated) = assembler.detect_list_marker("• Bullet");
         assert!(!enumerated);
     }
 

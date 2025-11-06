@@ -7,8 +7,6 @@ use crate::document::types_extended::{BoundingBox, Cluster, CoordOrigin, TextCel
 /// This provides good quality layout detection using geometric analysis
 /// and heuristics, achieving ~80% of ML-based quality without dependencies.
 use crate::error::Result;
-#[cfg(feature = "docling-ffi")]
-use crate::ml::layout_model::LayoutModel;
 
 /// Detect layout regions from PDF cells using ML model or geometric rules
 ///
@@ -59,7 +57,7 @@ fn detect_layout_with_ml(json_str: &str) -> Result<Vec<Cluster>> {
     }
 
     eprintln!("      🔧 Loading ONNX model...");
-    let model = LayoutModel::new(model_path)?;
+    let _model = LayoutModel::new(model_path)?;
 
     // Parse JSON to get page info
     let json: Value = serde_json::from_str(json_str)?;
@@ -397,7 +395,7 @@ fn detect_layout_with_rules(json_str: &str) -> Result<Vec<Cluster>> {
 
 fn detect_page_layout(
     page: &Value,
-    page_idx: usize,
+    _page_idx: usize,
     cluster_id: &mut usize,
 ) -> Result<Vec<Cluster>> {
     let mut clusters = Vec::new();
@@ -410,7 +408,7 @@ fn detect_page_layout(
     }
 
     // Get page dimensions
-    let (page_width, page_height) = get_page_dimensions(page);
+    let (_page_width, _page_height) = get_page_dimensions(page);
 
     // Detect different regions using geometric rules
 
@@ -516,7 +514,7 @@ fn get_page_dimensions(page: &Value) -> (f64, f64) {
     (width, height)
 }
 
-fn detect_tables(cells: &[TextCell], start_id: usize) -> Vec<Cluster> {
+fn detect_tables(_cells: &[TextCell], _start_id: usize) -> Vec<Cluster> {
     // Tables have:
     // - Aligned columns (similar x positions)
     // - Aligned rows (similar y positions)
@@ -559,7 +557,7 @@ fn detect_titles(cells: &[TextCell], page_height: f64, start_id: usize) -> Vec<C
     titles
 }
 
-fn detect_headers(cells: &[TextCell], start_id: usize) -> Vec<Cluster> {
+fn detect_headers(_cells: &[TextCell], _start_id: usize) -> Vec<Cluster> {
     // Section headers:
     // - Larger font than body text
     // - At left margin or slightly indented
@@ -568,7 +566,7 @@ fn detect_headers(cells: &[TextCell], start_id: usize) -> Vec<Cluster> {
     Vec::new() // TODO: Implement header detection
 }
 
-fn detect_lists(cells: &[TextCell], start_id: usize) -> Vec<Cluster> {
+fn detect_lists(_cells: &[TextCell], _start_id: usize) -> Vec<Cluster> {
     // Lists have:
     // - Bullets (•, -, *, etc.)
     // - Numbers (1., 2., etc.)

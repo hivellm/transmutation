@@ -1,10 +1,10 @@
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb};
-use ndarray::{Array4, s};
+use ndarray::Array4;
 
 /// Image preprocessing for ML models
 ///
 /// Based on docling's layout_model.py preprocessing
-use crate::error::{Result, TransmutationError};
+use crate::error::Result;
 
 /// ImageNet normalization parameters (used by most vision models)
 pub const IMAGENET_MEAN: [f32; 3] = [0.485, 0.456, 0.406];
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_normalization_range() {
-        let mut image = DynamicImage::new_rgb8(100, 100);
+        let image = DynamicImage::new_rgb8(100, 100);
         let tensor = preprocess_for_layout(&image).unwrap();
 
         // Values should be roughly in range [-3, 3] after normalization

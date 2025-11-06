@@ -4,7 +4,7 @@ use ndarray::Array4;
 #[cfg(feature = "docling-ffi")]
 use ort::{
     session::{Session, builder::SessionBuilder},
-    value::{Tensor, Value},
+    value::Tensor,
 };
 
 /// Table structure recognition model using ONNX
@@ -331,7 +331,7 @@ mod tests {
     #[test]
     #[ignore] // Requires actual ONNX model file
     fn test_load_model() {
-        let result = TableStructureModel::new("models/tableformer_fast.onnx", 2.0);
+        let _result = TableStructureModel::new("models/tableformer_fast.onnx", 2.0);
         // Will fail if model doesn't exist, which is expected
     }
 }

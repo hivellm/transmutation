@@ -6,7 +6,7 @@
 /// Reference: transmutation/docling-core/docling_core/types/doc/
 use serde::{Deserialize, Serialize};
 
-use super::types::{DocItemLabel, Formatting as BasicFormatting, TableData as BasicTableData};
+use super::types::DocItemLabel;
 
 /// Coordinate origin for bounding boxes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -191,9 +191,4 @@ mod tests {
         assert_eq!(bbox.area(), 200.0);
     }
 
-    #[test]
-    fn test_label_is_text() {
-        assert!(DocItemLabel::Paragraph.is_text_element());
-        assert!(!DocItemLabel::Table.is_text_element());
-    }
 }

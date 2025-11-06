@@ -4,7 +4,7 @@ use serde_json::Value;
 
 /// Parser for docling-parse JSON output to DoclingDocument
 use super::types::*;
-use crate::error::{Result, TransmutationError};
+use crate::error::Result;
 
 pub struct DoclingJsonParser;
 

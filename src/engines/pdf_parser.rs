@@ -6,7 +6,6 @@
 use std::path::Path;
 
 use lopdf::Document;
-use pdf_extract::*;
 
 use crate::engines::table_detector::{DetectedTable, TableDetector};
 use crate::{Result, TransmutationError};
