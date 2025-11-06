@@ -14,6 +14,7 @@ use crate::types::{
 };
 
 /// Image to text converter (OCR)
+#[derive(Debug)]
 pub struct ImageConverter {
     #[cfg(feature = "tesseract")]
     ocr_engine: Option<String>,

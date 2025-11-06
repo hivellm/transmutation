@@ -20,6 +20,7 @@ use crate::types::{
 /// XLSX to multiple formats converter
 ///
 /// Uses umya-spreadsheet for direct parsing (pure Rust, no LibreOffice)
+#[derive(Debug)]
 pub struct XlsxConverter;
 
 impl XlsxConverter {

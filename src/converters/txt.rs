@@ -14,6 +14,7 @@ use crate::types::{
 };
 
 /// Plain text to Markdown converter
+#[derive(Debug)]
 pub struct TxtConverter;
 
 impl TxtConverter {

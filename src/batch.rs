@@ -10,6 +10,7 @@ use crate::{
 };
 
 /// Batch processor for multiple documents
+#[derive(Debug)]
 pub struct BatchProcessor {
     files: Vec<PathBuf>,
     output_format: OutputFormat,
@@ -146,6 +147,7 @@ impl Default for BatchProcessor {
 }
 
 /// Result of batch processing
+#[derive(Debug)]
 pub struct BatchResult {
     /// Successfully converted files
     pub successes: Vec<(PathBuf, ConversionResult)>,

@@ -21,6 +21,7 @@ use crate::types::{
 /// PPTX to Markdown converter
 ///
 /// Uses LibreOffice to convert PPTX → PDF (one slide = one page), then processes as PDF
+#[derive(Debug)]
 pub struct PptxConverter {
     pdf_converter: PdfConverter,
 }

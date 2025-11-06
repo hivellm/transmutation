@@ -15,6 +15,7 @@ use crate::types::{
 };
 
 /// Audio to text converter (Whisper ASR)
+#[derive(Debug)]
 pub struct AudioConverter;
 
 impl AudioConverter {

@@ -14,6 +14,7 @@ use crate::types::{
 };
 
 /// RTF to Markdown converter
+#[derive(Debug)]
 pub struct RtfConverter;
 
 impl RtfConverter {

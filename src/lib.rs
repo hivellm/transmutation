@@ -33,6 +33,7 @@
 pub mod batch;
 pub mod converters;
 #[cfg(feature = "docling-ffi")]
+#[doc = "Document types and processing (docling-core compatible)"]
 pub mod document;
 pub mod engines;
 pub mod error;
@@ -54,6 +55,7 @@ pub use types::*;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Main converter interface
+#[derive(Debug)]
 pub struct Converter {
     config: ConverterConfig,
 }
@@ -109,6 +111,7 @@ impl Default for Converter {
 }
 
 /// Builder for conversions with fluent API
+#[derive(Debug)]
 pub struct ConversionBuilder {
     input: std::path::PathBuf,
     output_format: Option<OutputFormat>,
@@ -291,8 +294,7 @@ impl ConversionBuilder {
 
         // Format not supported or feature not enabled
         Err(TransmutationError::UnsupportedFormat(format!(
-            "Format {:?} is not supported or feature not enabled",
-            input_format
+            "Format {input_format:?} is not supported or feature not enabled"
         )))
     }
 }

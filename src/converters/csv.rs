@@ -14,6 +14,7 @@ use crate::types::{
 };
 
 /// CSV/TSV to Markdown converter
+#[derive(Debug)]
 pub struct CsvConverter {
     delimiter: char,
 }

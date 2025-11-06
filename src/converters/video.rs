@@ -16,6 +16,7 @@ use crate::types::{
 };
 
 /// Video to text converter (FFmpeg + Whisper)
+#[derive(Debug)]
 pub struct VideoConverter;
 
 impl VideoConverter {

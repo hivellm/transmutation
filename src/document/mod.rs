@@ -1,3 +1,6 @@
+//! Document types and processing (docling-core compatible)
+#![allow(missing_docs)]
+
 pub mod hierarchy_builder;
 pub mod page_assembler;
 pub mod parser;

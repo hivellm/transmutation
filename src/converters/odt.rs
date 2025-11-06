@@ -18,6 +18,7 @@ use crate::types::{
 };
 
 /// ODT to Markdown converter
+#[derive(Debug)]
 pub struct OdtConverter;
 
 impl OdtConverter {

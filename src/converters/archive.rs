@@ -22,6 +22,7 @@ use crate::types::{
 use crate::utils::file_detect;
 
 /// Archive to document converter
+#[derive(Debug)]
 pub struct ArchiveConverter;
 
 impl ArchiveConverter {
