@@ -130,4 +130,3 @@ pub enum DocItemLabel {
     CheckboxSelected,
     CheckboxUnselected,
 }
-
