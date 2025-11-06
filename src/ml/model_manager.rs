@@ -1,9 +1,10 @@
+//! Model download and caching management
+
 #![allow(missing_docs)]
 
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-/// Model download and caching management
 use crate::error::{Result, TransmutationError};
 
 /// Known model names

@@ -1,8 +1,9 @@
+//! Export layer - convert DocumentStructure to various output formats
+//!
+//! This follows Docling's architecture: parse once, export many ways
+
 #![allow(missing_docs)]
 
-/// Export layer - convert DocumentStructure to various output formats
-///
-/// This follows Docling's architecture: parse once, export many ways
 use super::document_structure::DocumentStructure;
 use crate::error::Result;
 

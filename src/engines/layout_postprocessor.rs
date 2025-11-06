@@ -1,12 +1,13 @@
+//! Layout postprocessing - merge, deduplicate, and order detected regions
+//!
+//! Based on docling/utils/layout_postprocessor.py
+
 #![allow(missing_docs)]
 
 use std::collections::{HashMap, HashSet};
 
 use rstar::{AABB, RTree};
 
-/// Layout postprocessing - merge, deduplicate, and order detected regions
-///
-/// Based on docling/utils/layout_postprocessor.py
 use crate::document::types::DocItemLabel;
 use crate::document::types_extended::{BoundingBox, Cluster};
 use crate::error::{Result, TransmutationError};

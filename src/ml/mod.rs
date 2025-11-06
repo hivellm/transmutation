@@ -1,10 +1,11 @@
-/// Machine Learning module for document layout analysis
-///
-/// This module provides ONNX-based ML models for:
-/// - Layout detection (LayoutModel)
-/// - Table structure recognition (TableStructureModel)
-///
-/// All models are optional and only compiled when `docling-ffi` feature is enabled.
+//! Machine Learning module for document layout analysis
+//!
+//! This module provides ONNX-based ML models for:
+//! - Layout detection (LayoutModel)
+//! - Table structure recognition (TableStructureModel)
+//!
+//! All models are optional and only compiled when `docling-ffi` feature is enabled.
+
 #![allow(missing_docs)]
 
 #[cfg(feature = "docling-ffi")]

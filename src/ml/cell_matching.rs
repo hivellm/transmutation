@@ -1,6 +1,7 @@
-/// Cell matching algorithm for table structure
-///
-/// Matches predicted table cells with extracted text cells using IoU
+//! Cell matching algorithm for table structure
+//!
+//! Matches predicted table cells with extracted text cells using IoU
+
 #![allow(missing_docs)]
 
 use crate::document::types_extended::{BoundingBox, TextCell};

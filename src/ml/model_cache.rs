@@ -1,3 +1,8 @@
+//! ONNX model session caching for performance optimization
+//!
+//! This module provides lazy loading and caching of ONNX Runtime sessions
+//! to avoid reloading models for every conversion.
+
 #![allow(missing_docs)]
 
 use std::path::PathBuf;
@@ -5,11 +10,6 @@ use std::sync::{Arc, Mutex};
 
 use once_cell::sync::Lazy;
 
-/// ONNX model session caching for performance optimization
-///
-/// This module provides lazy loading and caching of ONNX Runtime sessions
-/// to avoid reloading models for every conversion.
-//
 use crate::ml::{LayoutModel, TableStructureModel};
 
 /// Global model cache (lazy initialized)

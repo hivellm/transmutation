@@ -1,7 +1,8 @@
-/// Document processing pipeline (inspired by Docling architecture)
-///
-/// Separates extraction from export for maximum flexibility:
-/// Input → Parser → DocumentStructure → Exporter → Output(s)
+//! Document processing pipeline (inspired by Docling architecture)
+//!
+//! Separates extraction from export for maximum flexibility:
+//! Input → Parser → DocumentStructure → Exporter → Output(s)
+
 #![allow(missing_docs)]
 
 pub mod document_structure;

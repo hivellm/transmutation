@@ -1,13 +1,14 @@
+//! Intermediate document representation (format-agnostic)
+//!
+//! This structure is inspired by Docling's DocumentModel
+//! It represents the parsed document independent of input/output formats
+
 #![allow(missing_docs)]
 
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-/// Intermediate document representation (format-agnostic)
-///
-/// This structure is inspired by Docling's DocumentModel
-/// It represents the parsed document independent of input/output formats
 use crate::error::Result;
 
 /// Universal document structure
