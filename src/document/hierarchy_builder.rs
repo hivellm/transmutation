@@ -1,3 +1,12 @@
+#![allow(
+    clippy::unused_self,
+    clippy::unnecessary_wraps,
+    clippy::match_ref_pats,
+    clippy::needless_borrowed_reference,
+    clippy::doc_lazy_continuation,
+    clippy::uninlined_format_args
+)]
+
 use std::collections::HashMap;
 
 /// Document hierarchy builder - creates section trees and relationships

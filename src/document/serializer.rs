@@ -1,7 +1,7 @@
 //! Markdown serializer for DoclingDocument
 //! Reimplementation of docling-core's markdown serializer in Rust
 
-#![allow(missing_docs, clippy::unused_self, clippy::unnecessary_wraps)]
+#![allow(missing_docs, clippy::unused_self, clippy::unnecessary_wraps, clippy::uninlined_format_args)]
 
 use once_cell::sync::Lazy;
 use regex::Regex;

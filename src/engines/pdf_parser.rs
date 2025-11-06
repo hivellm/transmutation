@@ -8,7 +8,8 @@
     clippy::unnecessary_wraps,
     clippy::used_underscore_binding,
     clippy::manual_let_else,
-    clippy::len_zero
+    clippy::len_zero,
+    clippy::uninlined_format_args
 )]
 
 use std::path::Path;
