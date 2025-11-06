@@ -216,25 +216,6 @@ impl Default for ArchiveConverter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_archive_converter_creation() {
-        let converter = ArchiveConverter::new();
-        let formats = converter.supported_formats();
-        assert!(formats.contains(&FileFormat::Zip));
-    }
-
-    #[test]
-    fn test_archive_converter_metadata() {
-        let converter = ArchiveConverter::new();
-        let meta = converter.metadata();
-        assert_eq!(meta.name, "Archive Converter");
-    }
-}
-
 #[async_trait]
 impl DocumentConverter for ArchiveConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {
@@ -349,5 +330,24 @@ impl DocumentConverter for ArchiveConverter {
             description: "Archive to document index converter (ZIP, TAR, 7Z)".to_string(),
             external_deps: vec![],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_archive_converter_creation() {
+        let converter = ArchiveConverter::new();
+        let formats = converter.supported_formats();
+        assert!(formats.contains(&FileFormat::Zip));
+    }
+
+    #[test]
+    fn test_archive_converter_metadata() {
+        let converter = ArchiveConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "Archive Converter");
     }
 }

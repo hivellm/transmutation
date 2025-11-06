@@ -142,24 +142,6 @@ impl Default for OdtConverter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_odt_converter_creation() {
-        let converter = OdtConverter::new();
-        assert_eq!(converter.supported_formats(), vec![FileFormat::Odt]);
-    }
-
-    #[test]
-    fn test_odt_converter_metadata() {
-        let converter = OdtConverter::new();
-        let meta = converter.metadata();
-        assert_eq!(meta.name, "ODT Converter");
-    }
-}
-
 #[async_trait]
 impl DocumentConverter for OdtConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {
@@ -262,5 +244,23 @@ impl DocumentConverter for OdtConverter {
             description: "ODT to Markdown converter (pure Rust, ZIP + XML parsing)".to_string(),
             external_deps: vec![],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_odt_converter_creation() {
+        let converter = OdtConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Odt]);
+    }
+
+    #[test]
+    fn test_odt_converter_metadata() {
+        let converter = OdtConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "ODT Converter");
     }
 }

@@ -100,32 +100,6 @@ impl Default for XmlConverter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_xml_converter_creation() {
-        let converter = XmlConverter::new();
-        assert_eq!(converter.supported_formats(), vec![FileFormat::Xml]);
-    }
-
-    #[test]
-    fn test_xml_to_json_basic() {
-        let converter = XmlConverter::new();
-        let xml = "<root><item>test</item></root>";
-        let result = converter.xml_to_json(xml);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_xml_converter_metadata() {
-        let converter = XmlConverter::new();
-        let meta = converter.metadata();
-        assert_eq!(meta.name, "XML Converter");
-    }
-}
-
 #[async_trait]
 impl DocumentConverter for XmlConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {
@@ -224,5 +198,31 @@ impl DocumentConverter for XmlConverter {
             description: "XML to Markdown/JSON converter (pure Rust)".to_string(),
             external_deps: vec![],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_xml_converter_creation() {
+        let converter = XmlConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Xml]);
+    }
+
+    #[test]
+    fn test_xml_to_json_basic() {
+        let converter = XmlConverter::new();
+        let xml = "<root><item>test</item></root>";
+        let result = converter.xml_to_json(xml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_xml_converter_metadata() {
+        let converter = XmlConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "XML Converter");
     }
 }

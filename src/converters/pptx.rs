@@ -193,32 +193,6 @@ impl Default for PptxConverter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_pptx_converter_creation() {
-        let converter = PptxConverter::new();
-        assert_eq!(converter.supported_formats(), vec![FileFormat::Pptx]);
-    }
-
-    #[test]
-    fn test_pptx_converter_metadata() {
-        let converter = PptxConverter::new();
-        let meta = converter.metadata();
-        assert_eq!(meta.name, "PPTX Converter");
-    }
-
-    #[test]
-    fn test_extract_text_from_xml() {
-        let converter = PptxConverter::new();
-        let xml = "<a:t>Test Text</a:t>";
-        let result = converter.extract_text_from_xml(xml);
-        assert!(result.contains("Test Text"));
-    }
-}
-
 #[async_trait]
 impl DocumentConverter for PptxConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {
@@ -382,5 +356,31 @@ impl DocumentConverter for PptxConverter {
                     .to_string(),
             external_deps: vec!["LibreOffice (images only)".to_string()],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pptx_converter_creation() {
+        let converter = PptxConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Pptx]);
+    }
+
+    #[test]
+    fn test_pptx_converter_metadata() {
+        let converter = PptxConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "PPTX Converter");
+    }
+
+    #[test]
+    fn test_extract_text_from_xml() {
+        let converter = PptxConverter::new();
+        let xml = "<a:t>Test Text</a:t>";
+        let result = converter.extract_text_from_xml(xml);
+        assert!(result.contains("Test Text"));
     }
 }

@@ -147,36 +147,6 @@ impl Default for RtfConverter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_rtf_converter_creation() {
-        let converter = RtfConverter::new();
-        assert_eq!(converter.supported_formats(), vec![FileFormat::Rtf]);
-    }
-
-    #[test]
-    fn test_rtf_to_markdown_basic() {
-        let converter = RtfConverter::new();
-        // RTF with actual text commands
-        let rtf = r"{\rtf1\ansi\deff0 {\fonttbl {\f0 Times New Roman;}}
-\f0\fs24 Hello World\par
-}";
-        let result = converter.rtf_to_markdown(rtf);
-        // Simplified parser may not extract perfectly, just check it doesn't crash
-        assert!(!result.is_empty());
-    }
-
-    #[test]
-    fn test_rtf_converter_metadata() {
-        let converter = RtfConverter::new();
-        let meta = converter.metadata();
-        assert_eq!(meta.name, "RTF Converter");
-    }
-}
-
 #[async_trait]
 impl DocumentConverter for RtfConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {
@@ -281,5 +251,35 @@ impl DocumentConverter for RtfConverter {
             description: "RTF to Markdown converter (pure Rust, simplified parser)".to_string(),
             external_deps: vec![],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_rtf_converter_creation() {
+        let converter = RtfConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Rtf]);
+    }
+
+    #[test]
+    fn test_rtf_to_markdown_basic() {
+        let converter = RtfConverter::new();
+        // RTF with actual text commands
+        let rtf = r"{\rtf1\ansi\deff0 {\fonttbl {\f0 Times New Roman;}}
+\f0\fs24 Hello World\par
+}";
+        let result = converter.rtf_to_markdown(rtf);
+        // Simplified parser may not extract perfectly, just check it doesn't crash
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn test_rtf_converter_metadata() {
+        let converter = RtfConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "RTF Converter");
     }
 }

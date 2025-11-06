@@ -178,24 +178,6 @@ impl Default for XlsxConverter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_xlsx_converter_creation() {
-        let converter = XlsxConverter::new();
-        assert_eq!(converter.supported_formats(), vec![FileFormat::Xlsx]);
-    }
-
-    #[test]
-    fn test_xlsx_converter_metadata() {
-        let converter = XlsxConverter::new();
-        let meta = converter.metadata();
-        assert_eq!(meta.name, "XLSX Converter");
-    }
-}
-
 #[async_trait]
 impl DocumentConverter for XlsxConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {
@@ -299,5 +281,23 @@ impl DocumentConverter for XlsxConverter {
                     .to_string(),
             external_deps: vec![],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_xlsx_converter_creation() {
+        let converter = XlsxConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Xlsx]);
+    }
+
+    #[test]
+    fn test_xlsx_converter_metadata() {
+        let converter = XlsxConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "XLSX Converter");
     }
 }

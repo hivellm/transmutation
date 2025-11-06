@@ -332,25 +332,6 @@ impl Default for DocxConverter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_docx_converter_creation() {
-        let converter = DocxConverter::new();
-        assert_eq!(converter.supported_formats(), vec![FileFormat::Docx]);
-    }
-
-    #[test]
-    fn test_docx_converter_metadata() {
-        let converter = DocxConverter::new();
-        let meta = converter.metadata();
-        assert_eq!(meta.name, "DOCX Converter");
-        assert!(meta.external_deps.contains(&"docx-rs".to_string()));
-    }
-}
-
 #[async_trait]
 impl DocumentConverter for DocxConverter {
     fn supported_formats(&self) -> Vec<FileFormat> {
@@ -458,5 +439,24 @@ impl DocumentConverter for DocxConverter {
             description: "Pure Rust DOCX to Markdown converter".to_string(),
             external_deps: vec!["docx-rs".to_string()],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_docx_converter_creation() {
+        let converter = DocxConverter::new();
+        assert_eq!(converter.supported_formats(), vec![FileFormat::Docx]);
+    }
+
+    #[test]
+    fn test_docx_converter_metadata() {
+        let converter = DocxConverter::new();
+        let meta = converter.metadata();
+        assert_eq!(meta.name, "DOCX Converter");
+        assert!(meta.external_deps.contains(&"docx-rs".to_string()));
     }
 }
