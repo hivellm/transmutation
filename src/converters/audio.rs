@@ -2,6 +2,12 @@
 //!
 //! Converts audio files to text using Whisper ASR.
 
+#![allow(
+    clippy::uninlined_format_args,
+    clippy::needless_borrows_for_generic_args,
+    clippy::unnecessary_literal_unwrap
+)]
+
 use std::path::Path;
 use std::process::Command;
 
