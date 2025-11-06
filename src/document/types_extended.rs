@@ -190,5 +190,4 @@ mod tests {
         let bbox = BoundingBox::new(0.0, 0.0, 10.0, 20.0, CoordOrigin::TopLeft);
         assert_eq!(bbox.area(), 200.0);
     }
-
 }

@@ -112,7 +112,11 @@ impl PageAssembler {
             }
             // Add space if horizontal gap is significant (word boundary)
             // Use character width as reference: gap > 50% of char width = word boundary
-            else if prev_x_end > 0.0 && gap_x > (cell_width * 0.3) && !text.ends_with(' ') && !text.ends_with('\n') {
+            else if prev_x_end > 0.0
+                && gap_x > (cell_width * 0.3)
+                && !text.ends_with(' ')
+                && !text.ends_with('\n')
+            {
                 text.push(' ');
             }
 
