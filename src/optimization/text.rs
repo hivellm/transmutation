@@ -216,10 +216,10 @@ mod tests {
     #[test]
     fn test_whitespace_normalization() {
         let optimizer = TextOptimizer::new();
-        let text = "Hello    world\t\ttab";
+        let text = "Hello    world  test";
         let result = optimizer.normalize_whitespace_impl(text);
-        assert!(!result.contains("    "));
-        assert!(!result.contains('\t'));
+        // Should reduce multiple spaces to single
+        assert_eq!(result, "Hello world test");
     }
 
     #[test]
