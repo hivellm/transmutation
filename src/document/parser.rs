@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-
 #![allow(clippy::nonminimal_bool, clippy::get_first, clippy::unnecessary_wraps)]
+
+use std::collections::HashMap;
 
 use serde_json::Value;
 
