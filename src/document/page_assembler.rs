@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_wraps, clippy::unused_self, clippy::manual_pattern_char_comparison)]
+
 use crate::document::text_utils::{
     TextSanitizer, calculate_section_level, extract_section_number, is_likely_heading,
 };

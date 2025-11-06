@@ -6,7 +6,9 @@
 #![allow(
     clippy::unused_self,
     clippy::unnecessary_wraps,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    clippy::manual_let_else,
+    clippy::len_zero
 )]
 
 use std::path::Path;

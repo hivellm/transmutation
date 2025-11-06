@@ -131,12 +131,3 @@ pub enum DocItemLabel {
     CheckboxUnselected,
 }
 
-impl Default for Formatting {
-    fn default() -> Self {
-        Self {
-            bold: false,
-            italic: false,
-            underline: false,
-        }
-    }
-}

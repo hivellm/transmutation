@@ -3,7 +3,7 @@
 //! This module analyzes text blocks to detect semantic document structure
 //! like headings, paragraphs, lists, formulas, and images.
 
-#![allow(clippy::unused_self)]
+#![allow(clippy::unused_self, clippy::uninlined_format_args)]
 
 use crate::engines::pdf_parser::TextBlock;
 

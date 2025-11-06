@@ -1,7 +1,7 @@
 //! Markdown serializer for DoclingDocument
 //! Reimplementation of docling-core's markdown serializer in Rust
 
-#![allow(missing_docs)]
+#![allow(missing_docs, clippy::unused_self, clippy::unnecessary_wraps)]
 
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -11,7 +11,7 @@ use crate::error::Result;
 
 /// Pattern for detecting markdown special characters
 static MD_ESCAPE_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"([\\`*_{}[\]()#+\-.!|])").unwrap());
+    Lazy::new(|| Regex::new(r"([\\`*_\{\}\[\]()#+\-.!|])").unwrap());
 
 /// Pattern for detecting URLs
 static URL_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://[^\s]+").unwrap());

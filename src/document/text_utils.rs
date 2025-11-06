@@ -2,7 +2,7 @@
 //!
 //! Based on docling's page_assemble_model.py text processing
 
-#![allow(missing_docs)]
+#![allow(missing_docs, clippy::unused_self)]
 
 use once_cell::sync::Lazy;
 use regex::Regex;

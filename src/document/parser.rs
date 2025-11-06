@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+#![allow(clippy::nonminimal_bool, clippy::get_first, clippy::unnecessary_wraps)]
+
 use serde_json::Value;
 
 /// Parser for docling-parse JSON output to DoclingDocument
