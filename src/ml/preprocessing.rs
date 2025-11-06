@@ -63,7 +63,12 @@ fn resize_with_padding(
     let x_offset = (target_width - new_width) / 2;
     let y_offset = (target_height - new_height) / 2;
 
-    image::imageops::overlay(&mut canvas, &resized, i64::from(x_offset), i64::from(y_offset));
+    image::imageops::overlay(
+        &mut canvas,
+        &resized,
+        i64::from(x_offset),
+        i64::from(y_offset),
+    );
 
     Ok(canvas)
 }
