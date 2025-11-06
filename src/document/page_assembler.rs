@@ -117,7 +117,7 @@ impl PageAssembler {
                 && !text.ends_with(' ')
                 && !text.ends_with('\n')
             {
-                text.push(' ');
+                    text.push(' ');
             }
 
             text.push_str(&cell.text);

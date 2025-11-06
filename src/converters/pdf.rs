@@ -475,12 +475,12 @@ impl PdfConverter {
         // Collect all text blocks from all pages
         let mut all_blocks = Vec::new();
         let mut total_width: f32 = 0.0;
-        let mut total_height: f32 = 0.0;
+        let mut _total_height: f32 = 0.0;
 
         for page in &pages {
             all_blocks.extend(page.text_blocks.clone());
             total_width = total_width.max(page.width);
-            total_height += page.height;
+            _total_height += page.height;
         }
 
         // TEMPORARY: Disable layout analysis, it's worse than pdf-extract
@@ -1287,14 +1287,14 @@ impl DocumentConverter for PdfConverter {
         let content = match output_format {
             OutputFormat::Markdown { .. } => {
                 // Use pdf-extract for best quality
-                if options.use_precision_mode || options.use_ffi {
-                    // High-precision mode: Docling-style layout analysis for ~95% similarity
-                    // Also used for FFI mode which tries docling-parse C++ first
-                    self.convert_with_docling_style(input, &options).await?
-                } else {
-                    // Fast mode: Pure Rust heuristics, ~81% similarity, much faster
-                    self.convert_to_markdown_pdf_extract(input, &options)
-                        .await?
+                    if options.use_precision_mode || options.use_ffi {
+                        // High-precision mode: Docling-style layout analysis for ~95% similarity
+                        // Also used for FFI mode which tries docling-parse C++ first
+                        self.convert_with_docling_style(input, &options).await?
+                    } else {
+                        // Fast mode: Pure Rust heuristics, ~81% similarity, much faster
+                        self.convert_to_markdown_pdf_extract(input, &options)
+                            .await?
                 }
             }
             OutputFormat::Json { .. } => self.convert_to_json(&parser, &options).await?,

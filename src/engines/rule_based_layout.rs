@@ -47,7 +47,7 @@ pub fn detect_layout_from_cells(json_str: &str) -> Result<Vec<Cluster>> {
 fn detect_layout_with_ml(json_str: &str) -> Result<Vec<Cluster>> {
     use std::path::Path;
 
-    use crate::ml::layout_model::{DetectedRegion, LayoutLabel, LayoutModel};
+    use crate::ml::layout_model::LayoutModel;
 
     let model_path = Path::new("models/layout_model.onnx");
 
@@ -181,9 +181,8 @@ fn cluster_cells_geometrically(
     cells: &[TextCell],
     cluster_id: &mut usize,
     page_width: u32,
-    page_height: u32,
+    _page_height: u32,
 ) -> Result<Vec<Cluster>> {
-    use std::collections::HashMap;
 
     let mut clusters = Vec::new();
 
@@ -294,7 +293,7 @@ fn classify_row(
     font_size: f32,
     avg_font_size: f32,
     row_idx: usize,
-    page_width: u32,
+    _page_width: u32,
     cells: &[&TextCell],
 ) -> DocItemLabel {
     let text_lower = text.to_lowercase();
@@ -408,7 +407,7 @@ fn detect_page_layout(
     }
 
     // Get page dimensions
-    let (_page_width, _page_height) = get_page_dimensions(page);
+    let (_page_width, page_height) = get_page_dimensions(page);
 
     // Detect different regions using geometric rules
 
