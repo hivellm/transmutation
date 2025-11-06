@@ -124,6 +124,7 @@ impl SpatialIndex {
 }
 
 /// Options for layout postprocessing
+#[derive(Debug, Clone)]
 pub struct LayoutPostprocessorOptions {
     pub merge_overlap_threshold: f64,
     pub merge_containment_threshold: f64,
@@ -143,6 +144,7 @@ impl Default for LayoutPostprocessorOptions {
 }
 
 /// Layout postprocessor
+#[derive(Debug)]
 pub struct LayoutPostprocessor {
     options: LayoutPostprocessorOptions,
 }

@@ -6,6 +6,8 @@ use serde_json::Value;
 use super::types::*;
 use crate::error::Result;
 
+/// Parser for docling-parse JSON output
+#[derive(Debug)]
 pub struct DoclingJsonParser;
 
 impl DoclingJsonParser {

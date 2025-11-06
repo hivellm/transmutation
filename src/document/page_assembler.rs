@@ -9,6 +9,7 @@ use crate::document::types_extended::*;
 use crate::error::Result;
 
 /// Page assembler options
+#[derive(Debug)]
 pub struct PageAssemblerOptions {
     pub enable_text_sanitization: bool,
     pub enable_heading_detection: bool,
@@ -28,6 +29,7 @@ impl Default for PageAssemblerOptions {
 }
 
 /// Page assembler - converts layout clusters to document items
+#[derive(Debug)]
 pub struct PageAssembler {
     options: PageAssemblerOptions,
     sanitizer: TextSanitizer,

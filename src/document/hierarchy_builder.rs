@@ -7,6 +7,7 @@ use crate::document::types::{DocItem, DoclingDocument, ListItemData, SectionHead
 use crate::error::Result;
 
 /// Hierarchy builder for document structure
+#[derive(Debug)]
 pub struct HierarchyBuilder {
     enable_section_tree: bool,
     enable_list_grouping: bool,
@@ -259,6 +260,8 @@ impl Default for HierarchyBuilder {
 /// - Section contains paragraphs
 /// - Caption references figure
 /// - Footnote references paragraph
+/// Builds relationships between document items
+#[derive(Debug)]
 pub struct RelationshipBuilder {
     relationships: HashMap<String, Vec<String>>,
 }

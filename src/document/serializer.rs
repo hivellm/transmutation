@@ -16,6 +16,8 @@ static MD_ESCAPE_PATTERN: Lazy<Regex> =
 /// Pattern for detecting URLs
 static URL_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"https?://[^\s]+").unwrap());
 
+/// Markdown serializer for DoclingDocument
+#[derive(Debug)]
 pub struct MarkdownSerializer {
     indent: usize,
     escape_underscores: bool,

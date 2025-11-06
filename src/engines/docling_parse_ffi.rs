@@ -27,6 +27,7 @@ pub struct DoclingTextCell {
 
 /// Page structure
 #[repr(C)]
+#[derive(Debug)]
 pub struct DoclingPage {
     pub page_number: c_int,
     pub width: c_double,
@@ -74,6 +75,7 @@ unsafe extern "C" {
 }
 
 /// Rust wrapper for docling-parse
+#[derive(Debug)]
 pub struct DoclingParseEngine {
     #[cfg(feature = "docling-ffi")]
     handle: DoclingDocumentHandle,
