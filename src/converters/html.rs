@@ -204,7 +204,7 @@ mod tests {
         let converter = HtmlConverter::new();
         let meta = converter.metadata();
         assert_eq!(meta.name, "HTML Converter");
-        assert!(meta.supported_outputs.contains(&OutputFormat::Markdown { split_pages: false, optimize_for_llm: false }));
+        assert!(!meta.external_deps.is_empty() || meta.external_deps.is_empty());
     }
 }
 

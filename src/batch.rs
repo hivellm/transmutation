@@ -155,26 +155,20 @@ mod tests {
     #[test]
     fn test_batch_processor_creation() {
         let processor = BatchProcessor::new();
-        assert_eq!(processor.concurrency, num_cpus::get());
-    }
-
-    #[test]
-    fn test_batch_processor_with_concurrency() {
-        let processor = BatchProcessor::with_concurrency(4);
-        assert_eq!(processor.concurrency, 4);
+        assert_eq!(processor.parallel_jobs, num_cpus::get());
     }
 
     #[test]
     fn test_batch_result_creation() {
         let result = BatchResult {
             total_files: 10,
-            successful: 8,
-            failed: 2,
-            results: vec![],
+            successes: vec![],
+            failures: vec![],
+            total_time: std::time::Duration::from_secs(1),
         };
         assert_eq!(result.total_files, 10);
-        assert_eq!(result.successful, 8);
-        assert_eq!(result.failed, 2);
+        assert_eq!(result.successes.len(), 0);
+        assert_eq!(result.failures.len(), 0);
     }
 }
 

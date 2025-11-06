@@ -347,7 +347,7 @@ mod tests {
         let converter = DocxConverter::new();
         let meta = converter.metadata();
         assert_eq!(meta.name, "DOCX Converter");
-        assert!(meta.requires_external.contains(&"LibreOffice (optional)"));
+        assert!(meta.external_deps.contains(&"docx-rs".to_string()));
     }
 }
 

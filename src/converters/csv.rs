@@ -136,8 +136,9 @@ mod tests {
 
     #[test]
     fn test_csv_to_markdown_basic() {
+        let converter = CsvConverter::new();
         let csv = "Name,Age\nAlice,30\nBob,25";
-        let result = CsvConverter::csv_to_markdown(csv, ',');
+        let result = converter.csv_to_markdown(csv);
         assert!(result.contains("Name"));
         assert!(result.contains("Alice"));
     }
