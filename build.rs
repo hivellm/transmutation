@@ -43,9 +43,9 @@ fn main() {
             } else {
                 "ARM"
             };
-            let build_dir = format!("build_windows_{}", arch);
-            let lib_path = Path::new(&format!("{}/Release/docling_ffi.lib", build_dir));
-            let libs_path = Path::new(&format!("libs/docling-ffi-windows_{}.lib", arch));
+            let build_dir = format!("build_windows_{arch}");
+            let lib_path = Path::new(&format!("{build_dir}/Release/docling_ffi.lib"));
+            let libs_path = Path::new(&format!("libs/docling-ffi-windows_{arch}.lib"));
 
             // Check if library exists in either location
             if !lib_path.exists() && !libs_path.exists() {
@@ -63,18 +63,15 @@ fn main() {
             }
 
             println!("cargo:rustc-link-search=native=libs");
-            println!("cargo:rustc-link-search=native={}/Release", build_dir);
-            println!(
-                "cargo:rustc-link-search=native=docling-parse/build_windows_{}_docling/Release",
-                arch
-            );
+            println!("cargo:rustc-link-search=native={build_dir}/Release");
+            println!("cargo:rustc-link-search=native=docling-parse/build_windows_{arch}_docling/Release");
             println!("cargo:rustc-link-lib=dylib=docling_ffi");
 
             // Copy DLL to target directory for runtime
-            let dll_src = if Path::new(&format!("libs/docling-ffi-windows_{}.dll", arch)).exists() {
-                Path::new(&format!("libs/docling-ffi-windows_{}.dll", arch))
+            let dll_src = if Path::new(&format!("libs/docling-ffi-windows_{arch}.dll")).exists() {
+                Path::new(&format!("libs/docling-ffi-windows_{arch}.dll"))
             } else {
-                Path::new(&format!("{}/Release/docling_ffi.dll", build_dir))
+                Path::new(&format!("{build_dir}/Release/docling_ffi.dll"))
             };
 
             let target_dir = std::env::var("OUT_DIR").unwrap();
@@ -94,22 +91,19 @@ fn main() {
             } else {
                 "x86"
             };
-            let build_dir = format!("build_linux_{}", arch);
+            let build_dir = format!("build_linux_{arch}");
 
             // Try multiple locations for the library
             println!("cargo:rustc-link-search=native=libs"); // Pre-built library location
-            println!("cargo:rustc-link-search=native={}", build_dir);
+            println!("cargo:rustc-link-search=native={build_dir}");
             println!("cargo:rustc-link-search=native=cpp/build"); // Legacy location
-            println!(
-                "cargo:rustc-link-search=native=docling-parse/build_linux_{}_docling",
-                arch
-            );
+            println!("cargo:rustc-link-search=native=docling-parse/build_linux_{arch}_docling");
             println!("cargo:rustc-link-lib=dylib=docling_ffi");
 
             // Add rpath for runtime library loading
             println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN");
             println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/../libs");
-            println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/../{}", build_dir);
+            println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/../{build_dir}");
         }
 
         #[cfg(target_os = "macos")]
@@ -122,24 +116,18 @@ fn main() {
             } else {
                 "ARM"
             }; // Default to ARM for Apple Silicon
-            let build_dir = format!("build_macos_{}", arch);
+            let build_dir = format!("build_macos_{arch}");
 
             println!("cargo:rustc-link-search=native=libs");
-            println!("cargo:rustc-link-search=native={}", build_dir);
+            println!("cargo:rustc-link-search=native={build_dir}");
             println!("cargo:rustc-link-search=native=cpp/build"); // Legacy location
-            println!(
-                "cargo:rustc-link-search=native=docling-parse/build_macos_{}_docling",
-                arch
-            );
+            println!("cargo:rustc-link-search=native=docling-parse/build_macos_{arch}_docling");
             println!("cargo:rustc-link-lib=dylib=docling_ffi");
 
             // Add rpath for runtime library loading on macOS
             println!("cargo:rustc-link-arg=-Wl,-rpath,@loader_path");
             println!("cargo:rustc-link-arg=-Wl,-rpath,@loader_path/../libs");
-            println!(
-                "cargo:rustc-link-arg=-Wl,-rpath,@loader_path/../{}",
-                build_dir
-            );
+            println!("cargo:rustc-link-arg=-Wl,-rpath,@loader_path/../{build_dir}");
         }
 
         // Link against standard C++ library
