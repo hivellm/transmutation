@@ -64,7 +64,9 @@ fn main() {
 
             println!("cargo:rustc-link-search=native=libs");
             println!("cargo:rustc-link-search=native={build_dir}/Release");
-            println!("cargo:rustc-link-search=native=docling-parse/build_windows_{arch}_docling/Release");
+            println!(
+                "cargo:rustc-link-search=native=docling-parse/build_windows_{arch}_docling/Release"
+            );
             println!("cargo:rustc-link-lib=dylib=docling_ffi");
 
             // Copy DLL to target directory for runtime
