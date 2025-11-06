@@ -2,7 +2,7 @@
 //!
 //! Based on docling/utils/layout_postprocessor.py
 
-#![allow(missing_docs)]
+#![allow(missing_docs, clippy::unused_self, clippy::unnecessary_wraps, clippy::comparison_chain)]
 
 use std::collections::{HashMap, HashSet};
 

@@ -7,6 +7,8 @@ use ort::{
     value::Tensor,
 };
 
+#![allow(clippy::unused_self, clippy::unnecessary_wraps)]
+
 /// Table structure recognition model using ONNX
 ///
 /// Recognizes internal structure of tables (rows, columns, cells)

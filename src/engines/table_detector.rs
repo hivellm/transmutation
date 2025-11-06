@@ -3,6 +3,8 @@
 //! This module provides algorithms to detect tables in extracted text based on
 //! alignment patterns, spacing, and structural cues.
 
+#![allow(clippy::unused_self)]
+
 /// Detected table structure
 #[derive(Debug, Clone)]
 pub struct DetectedTable {

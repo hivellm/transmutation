@@ -2,7 +2,7 @@
 //!
 //! Matches predicted table cells with extracted text cells using IoU
 
-#![allow(missing_docs)]
+#![allow(missing_docs, clippy::unused_self)]
 
 use crate::document::types_extended::{BoundingBox, TextCell};
 use crate::error::Result;

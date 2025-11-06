@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_wraps)]
+
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb};
 use ndarray::Array4;
 

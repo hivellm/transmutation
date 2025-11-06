@@ -8,6 +8,8 @@ use ort::{
     value::Tensor,
 };
 
+#![allow(clippy::unused_self, clippy::unnecessary_wraps, clippy::ptr_arg)]
+
 /// Layout detection model using ONNX
 ///
 /// Detects document regions: text, tables, figures, headers, etc.

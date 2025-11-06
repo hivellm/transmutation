@@ -3,6 +3,8 @@
 //! This module provides strategies for splitting text into chunks suitable for
 //! embedding generation and LLM processing.
 
+#![allow(clippy::unused_self)]
+
 use crate::types::ConversionOptions;
 
 /// Text chunking strategy

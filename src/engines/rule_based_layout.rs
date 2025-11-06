@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_wraps)]
+
 use serde_json::Value;
 
 use crate::document::types::DocItemLabel;

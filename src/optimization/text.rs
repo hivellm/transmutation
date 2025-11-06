@@ -3,6 +3,8 @@
 //! This module provides text processing utilities for cleaning and optimizing
 //! extracted text for LLM consumption.
 
+#![allow(clippy::unused_self)]
+
 use regex::Regex;
 
 /// Text optimizer for cleaning and normalizing extracted text
