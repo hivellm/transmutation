@@ -2,6 +2,8 @@
 //!
 //! This example demonstrates advanced configuration options for document conversion.
 
+#![allow(clippy::uninlined_format_args)]
+
 use transmutation::{ConversionOptions, Converter, ImageQuality, OutputFormat};
 
 #[tokio::main]

@@ -2,6 +2,8 @@
 //!
 //! These tests require actual PDF files in tests/fixtures/
 
+#![allow(unexpected_cfgs)]
+
 #[cfg(feature = "pdf")]
 mod pdf_tests {
     use transmutation::{ConversionOptions, Converter, OutputFormat};

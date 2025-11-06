@@ -1,6 +1,9 @@
 /// Integration tests for complete document processing pipeline
 ///
 /// Tests the full flow: FFI → Parser → Assembler → Hierarchy → Serializer
+
+#![allow(unexpected_cfgs)]
+
 #[cfg(all(test, feature = "docling-ffi", feature = "pdf"))]
 mod pipeline_tests {
     use transmutation::document::{

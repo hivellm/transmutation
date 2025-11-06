@@ -2,6 +2,8 @@
 //!
 //! Demonstrates parallel conversion of multiple documents
 
+#![allow(unused_variables, unused_imports, clippy::uninlined_format_args)]
+
 use transmutation::{BatchProcessor, ConversionOptions, OutputFormat};
 
 #[tokio::main]

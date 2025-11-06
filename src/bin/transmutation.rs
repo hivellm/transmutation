@@ -3,6 +3,13 @@
 //! This binary provides a command-line interface to the Transmutation library,
 //! allowing users to convert documents from the terminal on Windows, Mac, and Linux.
 
+#![allow(
+    unused_imports,
+    unexpected_cfgs,
+    clippy::uninlined_format_args,
+    clippy::vec_init_then_push
+)]
+
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
