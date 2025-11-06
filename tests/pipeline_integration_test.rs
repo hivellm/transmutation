@@ -2,7 +2,7 @@
 ///
 /// Tests the full flow: FFI → Parser → Assembler → Hierarchy → Serializer
 
-#[cfg(all(test, feature = "docling-ffi", feature = "pdf"))]
+#[cfg(all(test, feature = "docling-ffi"))]
 #[allow(unexpected_cfgs)]
 mod pipeline_tests {
     use transmutation::document::{
