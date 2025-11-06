@@ -429,7 +429,6 @@ impl PdfParser {
         &self,
         content: &lopdf::content::Content,
     ) -> Result<Vec<TextBlock>> {
-
         let mut blocks = Vec::new();
         let mut current_x = 0.0;
         let mut current_y = 0.0;

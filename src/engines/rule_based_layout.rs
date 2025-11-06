@@ -183,7 +183,6 @@ fn cluster_cells_geometrically(
     page_width: u32,
     _page_height: u32,
 ) -> Result<Vec<Cluster>> {
-
     let mut clusters = Vec::new();
 
     if cells.is_empty() {
