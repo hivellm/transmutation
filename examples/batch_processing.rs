@@ -2,6 +2,8 @@
 //!
 //! This example demonstrates how to convert multiple PDF files in parallel.
 
+#![allow(unused_variables, clippy::uninlined_format_args)]
+
 use std::path::PathBuf;
 
 use futures::future::join_all;

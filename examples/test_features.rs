@@ -1,4 +1,7 @@
 // Test split_pages and JSON export features
+
+#![allow(clippy::uninlined_format_args)]
+
 use std::path::PathBuf;
 
 use transmutation::{ConversionOptions, Converter, OutputFormat};

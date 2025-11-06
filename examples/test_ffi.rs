@@ -2,6 +2,8 @@
 //!
 //! This example tests the full FFI pipeline with ML models
 
+#![allow(clippy::uninlined_format_args, clippy::field_reassign_with_default)]
+
 use std::path::Path;
 
 use transmutation::converters::DocumentConverter;

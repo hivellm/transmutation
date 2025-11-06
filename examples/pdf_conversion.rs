@@ -7,6 +7,8 @@
 //! cargo run --example pdf_conversion --features pdf path/to/document.pdf
 //! ```
 
+#![allow(clippy::uninlined_format_args)]
+
 use transmutation::{ConversionOptions, Converter, OutputFormat};
 
 #[tokio::main]

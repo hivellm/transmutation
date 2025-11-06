@@ -1,4 +1,7 @@
 // Simple test to convert PDF to Markdown
+
+#![allow(clippy::uninlined_format_args)]
+
 use std::path::PathBuf;
 
 use transmutation::{ConversionOptions, Converter, OutputFormat};

@@ -1,3 +1,5 @@
+#![allow(clippy::uninlined_format_args)]
+
 use transmutation::engines::pdf_parser::PdfParser;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
