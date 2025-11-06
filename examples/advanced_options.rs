@@ -41,6 +41,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Converting with advanced options...");
 
+    let split_pages = options.split_pages;
+
     // Convert with custom options
     let result = converter
         .convert("document.pdf")
@@ -68,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Chunks: {}", result.chunk_count());
 
     // Save each page separately if split_pages is enabled
-    if options.split_pages {
+    if split_pages {
         result.save("data/output").await?;
         println!(
             "\n💾 Saved {} pages to data/output_page_*.md",

@@ -1,7 +1,6 @@
 /// Integration tests for complete document processing pipeline
 ///
 /// Tests the full flow: FFI → Parser → Assembler → Hierarchy → Serializer
-
 #[cfg(all(test, feature = "docling-ffi"))]
 #[allow(unexpected_cfgs)]
 mod pipeline_tests {
