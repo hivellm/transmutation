@@ -1,6 +1,9 @@
+//! Document types inspired by docling-core
+
+#![allow(missing_docs)]
+
 use std::collections::HashMap;
 
-/// Document types inspired by docling-core
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

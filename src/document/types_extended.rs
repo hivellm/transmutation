@@ -1,9 +1,12 @@
-/// Extended document types based on docling-core
-///
-/// This module provides complete type definitions for document structure,
-/// matching the docling-core Python implementation.
-///
-/// Reference: transmutation/docling-core/docling_core/types/doc/
+//! Extended document types based on docling-core
+//!
+//! This module provides complete type definitions for document structure,
+//! matching the docling-core Python implementation.
+//!
+//! Reference: transmutation/docling-core/docling_core/types/doc/
+
+#![allow(missing_docs)]
+
 use serde::{Deserialize, Serialize};
 
 use super::types::DocItemLabel;

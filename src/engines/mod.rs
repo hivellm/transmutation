@@ -1,5 +1,7 @@
 //! Engine abstractions for document processing
 
+#![allow(missing_docs)]
+
 // Core engines (always enabled for PDF support)
 pub mod layout_analyzer;
 pub mod pdf_parser;

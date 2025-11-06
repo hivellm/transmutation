@@ -1,7 +1,10 @@
+//! Text sanitization and normalization utilities
+//!
+//! Based on docling's page_assemble_model.py text processing
+
+#![allow(missing_docs)]
+
 use once_cell::sync::Lazy;
-/// Text sanitization and normalization utilities
-///
-/// Based on docling's page_assemble_model.py text processing
 use regex::Regex;
 
 /// Hyphen patterns for joining across line breaks
@@ -193,6 +196,7 @@ const CHAR_NORMALIZATION_MAP: &[(&str, &str)] = &[
 ];
 
 /// Text sanitizer for document text
+#[derive(Debug)]
 pub struct TextSanitizer {
     join_hyphens: bool,
     join_lines: bool,

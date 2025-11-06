@@ -11,6 +11,7 @@ use crate::engines::table_detector::{DetectedTable, TableDetector};
 use crate::{Result, TransmutationError};
 
 /// PDF parser for text extraction
+#[derive(Debug)]
 pub struct PdfParser {
     document: Document,
     table_detector: TableDetector,
@@ -373,6 +374,7 @@ impl PdfParser {
     }
 
     /// OLD UNUSED CODE - keeping for reference
+    #[allow(non_snake_case)]
     fn extract_text_blocks_OLD(&self, _page_num: usize) -> Result<Vec<TextBlock>> {
         let page_ids = self.get_page_ids();
         if _page_num >= page_ids.len() {

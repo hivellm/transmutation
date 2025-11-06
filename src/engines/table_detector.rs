@@ -17,6 +17,7 @@ pub struct DetectedTable {
 }
 
 /// Table detector using heuristic algorithms
+#[derive(Debug)]
 pub struct TableDetector {
     /// Minimum confidence threshold
     min_confidence: f32,

@@ -1,8 +1,11 @@
+//! Markdown serializer for DoclingDocument
+//! Reimplementation of docling-core's markdown serializer in Rust
+
+#![allow(missing_docs)]
+
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-/// Markdown serializer for DoclingDocument
-/// Reimplementation of docling-core's markdown serializer in Rust
 use super::types::*;
 use crate::error::Result;
 
