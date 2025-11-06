@@ -1,0 +1,44 @@
+{
+  "version": "1.0.0",
+  "installedAt": "2025-10-27T02:20:56.425Z",
+  "updatedAt": "2025-11-06T18:35:03.218Z",
+  "projectId": "transmutation",
+  "mode": "full",
+  "features": {
+    "openspec": true,
+    "watcher": false,
+    "agent": false,
+    "logging": true,
+    "telemetry": false,
+    "notifications": false,
+    "dryRun": false,
+    "gitHooks": true,
+    "repl": false,
+    "templates": true,
+    "context": true,
+    "health": true,
+    "plugins": false,
+    "parallel": true,
+    "smartContinue": true
+  },
+  "coverageThreshold": 95,
+  "language": "en",
+  "outputLanguage": "en",
+  "cliTools": [],
+  "maxParallelTasks": 5,
+  "timeouts": {
+    "taskExecution": 3600000,
+    "cliResponse": 180000,
+    "testRun": 600000
+  },
+  "languages": [
+    "rust"
+  ],
+  "frameworks": [],
+  "modules": [
+    "openspec",
+    "context7"
+  ],
+  "modular": true,
+  "rulebookDir": "rulebook"
+}

@@ -1,0 +1,55 @@
+name: Rust Tests
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ '**' ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+
+    steps:
+    - name: Install minimal stable
+      uses: dtolnay/rust-toolchain@stable
+    
+    - uses: actions/checkout@v5
+    
+    - uses: Swatinem/rust-cache@v2
+    
+    - name: Install mold (Linux only)
+      if: runner.os == 'Linux'
+      uses: rui314/setup-mold@v1
+    
+    - name: Configure mold linker (Linux only)
+      if: runner.os == 'Linux'
+      run: |
+        mkdir -p .cargo
+        echo "[target.x86_64-unknown-linux-gnu]" >> .cargo/config.toml
+        echo "linker = \"clang\"" >> .cargo/config.toml
+        echo "rustflags = [\"-C\", \"link-arg=-fuse-ld=/usr/local/bin/mold\"]" >> .cargo/config.toml
+    
+    - name: Install nextest
+      uses: taiki-e/install-action@nextest
+    
+    - name: Build
+      run: cargo build --tests --workspace
+    
+    - name: Run tests
+      run: cargo nextest run --workspace
+    
+    - name: Upload test report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: junit-${{ matrix.os }}.xml
+        path: target/nextest/default/junit.xml
+        if-no-files-found: ignore
+

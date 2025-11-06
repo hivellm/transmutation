@@ -36,7 +36,7 @@ fn main() {
         #[cfg(target_os = "windows")]
         {
             use std::path::Path;
-            
+
             // Detect architecture
             let arch = if cfg!(target_arch = "x86_64") {
                 "x86"
