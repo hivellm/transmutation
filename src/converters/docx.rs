@@ -15,6 +15,7 @@ use crate::types::{
 };
 
 /// DOCX to Markdown converter
+#[derive(Debug)]
 pub struct DocxConverter;
 
 impl DocxConverter {

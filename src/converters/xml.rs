@@ -15,6 +15,7 @@ use crate::types::{
 };
 
 /// XML to Markdown/JSON converter
+#[derive(Debug)]
 pub struct XmlConverter;
 
 impl XmlConverter {

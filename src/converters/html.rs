@@ -15,6 +15,7 @@ use crate::types::{
 };
 
 /// HTML to Markdown converter
+#[derive(Debug)]
 pub struct HtmlConverter;
 
 impl HtmlConverter {
