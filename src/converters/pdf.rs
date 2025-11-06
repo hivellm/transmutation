@@ -1287,14 +1287,14 @@ impl DocumentConverter for PdfConverter {
         let content = match output_format {
             OutputFormat::Markdown { .. } => {
                 // Use pdf-extract for best quality
-                    if options.use_precision_mode || options.use_ffi {
-                        // High-precision mode: Docling-style layout analysis for ~95% similarity
-                        // Also used for FFI mode which tries docling-parse C++ first
-                        self.convert_with_docling_style(input, &options).await?
-                    } else {
-                        // Fast mode: Pure Rust heuristics, ~81% similarity, much faster
-                        self.convert_to_markdown_pdf_extract(input, &options)
-                            .await?
+                if options.use_precision_mode || options.use_ffi {
+                    // High-precision mode: Docling-style layout analysis for ~95% similarity
+                    // Also used for FFI mode which tries docling-parse C++ first
+                    self.convert_with_docling_style(input, &options).await?
+                } else {
+                    // Fast mode: Pure Rust heuristics, ~81% similarity, much faster
+                    self.convert_to_markdown_pdf_extract(input, &options)
+                        .await?
                 }
             }
             OutputFormat::Json { .. } => self.convert_to_json(&parser, &options).await?,
