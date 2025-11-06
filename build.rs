@@ -1,7 +1,6 @@
 // Build script for transmutation
 // Handles C++ compilation and linking for docling-parse FFI
 
-use std::path::Path;
 use std::process::Command;
 
 fn main() {
@@ -36,6 +35,8 @@ fn main() {
         // Platform-specific library paths and names
         #[cfg(target_os = "windows")]
         {
+            use std::path::Path;
+            
             // Detect architecture
             let arch = if cfg!(target_arch = "x86_64") {
                 "x86"
@@ -151,6 +152,7 @@ fn main() {
 
 /// Check for optional external dependencies and provide helpful messages
 fn check_external_dependencies() {
+    #[allow(unused_mut)]
     let mut warnings: Vec<(&str, &str, String)> = Vec::new();
 
     // Check pdf-to-image feature dependencies
@@ -212,8 +214,8 @@ fn check_external_dependencies() {
         println!("cargo:warning=");
 
         for (tool, feature, install_cmd) in &warnings {
-            println!("cargo:warning=  ❌ {}: {}", tool, feature);
-            println!("cargo:warning=     Install: {}", install_cmd);
+            println!("cargo:warning=  ❌ {tool}: {feature}");
+            println!("cargo:warning=     Install: {install_cmd}");
         }
 
         println!("cargo:warning=");
@@ -229,6 +231,7 @@ fn check_external_dependencies() {
 }
 
 /// Check if a command exists in PATH
+#[allow(dead_code)]
 fn command_exists(cmd: &str) -> bool {
     Command::new(if cfg!(target_os = "windows") {
         "where"
@@ -242,6 +245,7 @@ fn command_exists(cmd: &str) -> bool {
 }
 
 /// Get platform-specific install command for a tool
+#[allow(dead_code)]
 fn get_install_command(tool: &str) -> String {
     #[cfg(target_os = "linux")]
     {
@@ -250,7 +254,7 @@ fn get_install_command(tool: &str) -> String {
             "libreoffice" => "sudo apt-get install libreoffice".to_string(),
             "tesseract" => "sudo apt-get install tesseract-ocr".to_string(),
             "ffmpeg" => "sudo apt-get install ffmpeg".to_string(),
-            _ => format!("sudo apt-get install {}", tool),
+            _ => format!("sudo apt-get install {tool}"),
         }
     }
 
@@ -261,7 +265,7 @@ fn get_install_command(tool: &str) -> String {
             "libreoffice" => "brew install --cask libreoffice".to_string(),
             "tesseract" => "brew install tesseract".to_string(),
             "ffmpeg" => "brew install ffmpeg".to_string(),
-            _ => format!("brew install {}", tool),
+            _ => format!("brew install {tool}"),
         }
     }
 
@@ -272,7 +276,7 @@ fn get_install_command(tool: &str) -> String {
             "libreoffice" => "choco install libreoffice".to_string(),
             "tesseract" => "choco install tesseract".to_string(),
             "ffmpeg" => "choco install ffmpeg".to_string(),
-            _ => format!("choco install {}", tool),
+            _ => format!("choco install {tool}"),
         }
     }
 }
