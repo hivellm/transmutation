@@ -64,3 +64,67 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --features "full"
 
+  clippy:
+    name: Clippy (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: windows-latest
+          - os: macos-latest
+    
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2025-01-01
+          components: clippy
+      
+      - uses: Swatinem/rust-cache@v2
+      
+      - name: Install system dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libleptonica-dev \
+            libtesseract-dev \
+            tesseract-ocr-eng \
+            libarchive-dev \
+            libcurl4-openssl-dev
+      
+      - name: Install system dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install leptonica tesseract libarchive
+      
+      - name: Install system dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          vcpkg integrate install
+          vcpkg install leptonica:x64-windows tesseract:x64-windows libarchive:x64-windows
+        shell: pwsh
+      
+      - name: Run clippy
+        run: cargo clippy --workspace --all-targets --features "full" -- -D warnings
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2025-01-01
+          components: rustfmt
+      
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
