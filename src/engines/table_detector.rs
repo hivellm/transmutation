@@ -3,8 +3,6 @@
 //! This module provides algorithms to detect tables in extracted text based on
 //! alignment patterns, spacing, and structural cues.
 
-use crate::engines::pdf_parser::TextBlock;
-
 /// Detected table structure
 #[derive(Debug, Clone)]
 pub struct DetectedTable {
@@ -387,12 +385,12 @@ mod tests {
     #[test]
     fn test_pipe_delimited_table() {
         let detector = TableDetector::new();
-        let text = r#"
+        let text = r"
 | Name | Age | City |
 | --- | --- | --- |
 | Alice | 30 | NYC |
 | Bob | 25 | LA |
-"#;
+";
 
         let tables = detector.detect_tables(text);
         assert!(!tables.is_empty());

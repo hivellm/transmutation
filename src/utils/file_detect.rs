@@ -91,7 +91,6 @@ async fn detect_by_magic_bytes(path: &Path) -> Result<FileFormat> {
         "video/x-matroska" => FileFormat::Mkv,
         "video/webm" => FileFormat::Webm,
         "video/quicktime" => FileFormat::Mov,
-        "application/zip" => FileFormat::Zip,
         "application/x-tar" => FileFormat::Tar,
         "application/gzip" => FileFormat::TarGz,
         "application/x-7z-compressed" => FileFormat::SevenZ,
