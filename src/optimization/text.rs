@@ -6,6 +6,7 @@
 use regex::Regex;
 
 /// Text optimizer for cleaning and normalizing extracted text
+#[derive(Debug)]
 pub struct TextOptimizer {
     remove_headers_footers: bool,
     normalize_whitespace: bool,

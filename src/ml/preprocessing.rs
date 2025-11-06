@@ -8,6 +8,7 @@ use crate::error::Result;
 
 /// ImageNet normalization parameters (used by most vision models)
 pub const IMAGENET_MEAN: [f32; 3] = [0.485, 0.456, 0.406];
+/// ImageNet standard deviation for normalization
 pub const IMAGENET_STD: [f32; 3] = [0.229, 0.224, 0.225];
 
 /// Standard input size for layout model

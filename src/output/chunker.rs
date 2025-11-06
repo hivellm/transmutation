@@ -7,6 +7,7 @@ use crate::types::ConversionOptions;
 
 /// Text chunking strategy
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub enum ChunkStrategy {
     /// Fixed token count with overlap
     TokenBased,
@@ -32,6 +33,7 @@ pub struct TextChunk {
 }
 
 /// Text chunker
+#[derive(Debug)]
 pub struct Chunker {
     strategy: ChunkStrategy,
     max_chunk_size: usize,
@@ -252,7 +254,7 @@ mod tests {
     #[test]
     fn test_semantic_chunking() {
         let chunker = Chunker::new(ChunkStrategy::Semantic, 100, 0);
-        let text = vec![
+        let text = [
             "Paragraph 1. This is the first paragraph.",
             "Paragraph 2. This is the second paragraph.",
             "Paragraph 3. This is the third paragraph.",

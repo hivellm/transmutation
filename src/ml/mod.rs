@@ -5,6 +5,7 @@
 /// - Table structure recognition (TableStructureModel)
 ///
 /// All models are optional and only compiled when `docling-ffi` feature is enabled.
+#![allow(missing_docs)]
 
 #[cfg(feature = "docling-ffi")]
 pub mod preprocessing;

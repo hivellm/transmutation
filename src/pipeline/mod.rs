@@ -2,6 +2,8 @@
 ///
 /// Separates extraction from export for maximum flexibility:
 /// Input → Parser → DocumentStructure → Exporter → Output(s)
+#![allow(missing_docs)]
+
 pub mod document_structure;
 pub mod exporters;
 
@@ -25,11 +27,13 @@ use crate::error::Result;
 /// let images = ImageExporter::new().export_pages(&doc)?;
 /// let chunks = ChunkingExporter::new(512).export(&doc)?;
 /// ```
+#[derive(Debug)]
 pub struct DocumentPipeline {
     // Configuration for parsing
 }
 
 impl DocumentPipeline {
+    /// Create a new document pipeline
     pub fn new() -> Self {
         Self {}
     }

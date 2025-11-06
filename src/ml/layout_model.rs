@@ -17,6 +17,7 @@ use crate::ml::{DocumentModel, preprocessing};
 
 /// Document layout regions detected by the model
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub enum LayoutLabel {
     Text,
     Title,
@@ -34,6 +35,7 @@ pub enum LayoutLabel {
 
 /// Bounding box for detected region
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct DetectedRegion {
     pub label: LayoutLabel,
     pub bbox: (f32, f32, f32, f32), // (x0, y0, x1, y1)
@@ -42,6 +44,7 @@ pub struct DetectedRegion {
 
 /// Layout model output
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct LayoutPrediction {
     pub regions: Vec<DetectedRegion>,
     pub page_width: u32,
@@ -49,6 +52,7 @@ pub struct LayoutPrediction {
 }
 
 /// ONNX-based layout detection model
+#[derive(Debug)]
 pub struct LayoutModel {
     #[cfg(feature = "docling-ffi")]
     session: Session,

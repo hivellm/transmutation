@@ -1,11 +1,14 @@
 /// Cell matching algorithm for table structure
 ///
 /// Matches predicted table cells with extracted text cells using IoU
+#![allow(missing_docs)]
+
 use crate::document::types_extended::{BoundingBox, TextCell};
 use crate::error::Result;
 use crate::ml::table_structure_model::TableCell;
 
 /// Cell matcher for associating text with table structure
+#[derive(Debug)]
 pub struct CellMatcher {
     iou_threshold: f64,
 }
@@ -115,6 +118,7 @@ impl Default for CellMatcher {
 
 /// Cell with matched text content
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct MatchedCell {
     pub row: usize,
     pub col: usize,

@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 /// Export layer - convert DocumentStructure to various output formats
 ///
 /// This follows Docling's architecture: parse once, export many ways
@@ -12,6 +14,7 @@ pub trait Exporter {
 }
 
 /// Markdown exporter
+#[derive(Debug)]
 pub struct MarkdownExporter {
     split_pages: bool,
     optimize_for_llm: bool,
@@ -51,6 +54,7 @@ impl Exporter for MarkdownExporter {
 }
 
 /// JSON exporter
+#[derive(Debug)]
 pub struct JsonExporter {
     include_metadata: bool,
     structured: bool,
@@ -74,6 +78,7 @@ impl Exporter for JsonExporter {
 }
 
 /// Image exporter (renders pages to images)
+#[derive(Debug)]
 pub struct ImageExporter {
     dpi: u32,
     format: ImageFormat,
@@ -117,6 +122,7 @@ impl Exporter for ImageExporter {
 }
 
 /// Chunking exporter (splits document into chunks for embeddings)
+#[derive(Debug)]
 pub struct ChunkingExporter {
     chunk_size: usize,
     chunk_overlap: usize,

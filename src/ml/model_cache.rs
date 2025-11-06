@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -14,6 +16,7 @@ use crate::ml::{LayoutModel, TableStructureModel};
 static MODEL_CACHE: Lazy<Mutex<ModelCache>> = Lazy::new(|| Mutex::new(ModelCache::new()));
 
 /// Cache for loaded ML models
+#[derive(Debug)]
 pub struct ModelCache {
     layout_model: Option<Arc<Mutex<LayoutModel>>>,
     table_model: Option<Arc<Mutex<TableStructureModel>>>,

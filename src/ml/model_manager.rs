@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
@@ -9,6 +11,7 @@ pub const LAYOUT_MODEL_NAME: &str = "layout_model.onnx";
 pub const TABLE_STRUCTURE_MODEL_NAME: &str = "table_structure_model.onnx";
 
 /// Manages ML model downloads and caching
+#[derive(Debug)]
 pub struct ModelManager {
     cache_dir: PathBuf,
     /// Search paths for models (in priority order)
@@ -148,6 +151,7 @@ impl ModelManager {
 }
 
 /// Paths to all ML models
+#[derive(Debug)]
 pub struct ModelPaths {
     pub layout_model: PathBuf,
     pub table_model: Option<PathBuf>,

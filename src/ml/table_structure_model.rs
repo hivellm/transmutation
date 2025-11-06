@@ -16,6 +16,7 @@ use crate::ml::{DocumentModel, preprocessing};
 
 /// Table cell in predicted structure
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct TableCell {
     pub row: usize,
     pub col: usize,
@@ -27,6 +28,7 @@ pub struct TableCell {
 
 /// Table structure prediction output
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct TableStructure {
     pub cells: Vec<TableCell>,
     pub num_rows: usize,
@@ -35,12 +37,14 @@ pub struct TableStructure {
 
 /// Input for table structure model
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct TableInput {
     pub image: image::DynamicImage,
     pub table_bbox: (f32, f32, f32, f32),
 }
 
 /// ONNX-based table structure model
+#[derive(Debug)]
 pub struct TableStructureModel {
     #[cfg(feature = "docling-ffi")]
     session: Session,

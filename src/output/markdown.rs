@@ -6,6 +6,7 @@ use crate::engines::layout_analyzer::{AnalyzedBlock, BlockType};
 use crate::types::ConversionOptions;
 
 /// Markdown generator
+#[derive(Debug)]
 pub struct MarkdownGenerator {
     options: ConversionOptions,
     buffer: String,

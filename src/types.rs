@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 /// Supported file formats
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[allow(missing_docs)]
 pub enum FileFormat {
     // Document formats
     Pdf,
