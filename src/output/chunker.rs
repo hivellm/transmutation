@@ -88,6 +88,9 @@ impl Chunker {
                 end_pos
             };
 
+            // Safety: ensure we always advance at least 1 character to prevent infinite loop
+            let chunk_end = chunk_end.max(current_pos + 1);
+
             let content = text[current_pos..chunk_end].to_string();
             let token_count = self.estimate_tokens(&content);
 
@@ -101,11 +104,14 @@ impl Chunker {
 
             // Move forward with overlap
             let overlap_chars = self.overlap * 4;
-            current_pos = if chunk_end > overlap_chars {
+            let next_pos = if chunk_end > overlap_chars {
                 chunk_end - overlap_chars
             } else {
                 chunk_end
             };
+
+            // Safety: ensure we always advance to prevent infinite loop
+            current_pos = next_pos.max(current_pos + 1);
 
             chunk_index += 1;
         }
