@@ -20,7 +20,7 @@ use crate::error::Result;
 /// Example:
 /// ```rust,ignore
 /// use transmutation::pipeline::*;
-/// 
+///
 /// let pipeline = DocumentPipeline::new();
 /// let doc = pipeline.parse("input.pdf").await?;
 ///
