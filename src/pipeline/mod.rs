@@ -18,9 +18,11 @@ use crate::error::Result;
 /// Pipeline for document processing
 ///
 /// Example:
-/// ```rust
+/// ```rust,ignore
+/// use transmutation::pipeline::*;
+/// 
 /// let pipeline = DocumentPipeline::new();
-/// let doc = pipeline.parse_pdf("input.pdf")?;
+/// let doc = pipeline.parse("input.pdf").await?;
 ///
 /// // Export to multiple formats from same document
 /// let md = MarkdownExporter::new().export(&doc)?;
