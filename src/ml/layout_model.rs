@@ -1,3 +1,5 @@
+#![allow(clippy::unused_self, clippy::unnecessary_wraps, clippy::ptr_arg)]
+
 use std::path::Path;
 
 use image::GenericImageView;
@@ -7,8 +9,6 @@ use ort::{
     session::{Session, builder::SessionBuilder},
     value::Tensor,
 };
-
-#![allow(clippy::unused_self, clippy::unnecessary_wraps, clippy::ptr_arg)]
 
 /// Layout detection model using ONNX
 ///

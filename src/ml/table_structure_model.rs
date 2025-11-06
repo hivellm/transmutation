@@ -1,3 +1,5 @@
+#![allow(clippy::unused_self, clippy::unnecessary_wraps)]
+
 use std::path::Path;
 
 use ndarray::Array4;
@@ -6,8 +8,6 @@ use ort::{
     session::{Session, builder::SessionBuilder},
     value::Tensor,
 };
-
-#![allow(clippy::unused_self, clippy::unnecessary_wraps)]
 
 /// Table structure recognition model using ONNX
 ///
