@@ -2,7 +2,10 @@
 //!
 //! Converts image files to text using Tesseract OCR.
 
-#![allow(clippy::uninlined_format_args, clippy::needless_borrows_for_generic_args)]
+#![allow(
+    clippy::uninlined_format_args,
+    clippy::needless_borrows_for_generic_args
+)]
 
 use std::path::Path;
 
