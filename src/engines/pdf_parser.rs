@@ -3,7 +3,11 @@
 //! This module provides text extraction from PDF files using the `lopdf` crate.
 //! It handles various PDF encodings, multi-column layouts, and positional information.
 
-#![allow(clippy::unused_self, clippy::unnecessary_wraps, clippy::used_underscore_binding)]
+#![allow(
+    clippy::unused_self,
+    clippy::unnecessary_wraps,
+    clippy::used_underscore_binding
+)]
 
 use std::path::Path;
 
