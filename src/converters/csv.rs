@@ -2,6 +2,8 @@
 //!
 //! Converts CSV/TSV files to Markdown tables and JSON.
 
+#![allow(clippy::uninlined_format_args)]
+
 use std::path::Path;
 
 use async_trait::async_trait;

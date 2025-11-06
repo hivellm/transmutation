@@ -3,6 +3,8 @@
 //! Converts XML to JSON (structured) and Markdown (text content).
 //! Uses quick-xml for fast, memory-efficient parsing.
 
+#![allow(clippy::unused_self, clippy::uninlined_format_args, clippy::single_char_add_str)]
+
 use std::path::Path;
 
 use async_trait::async_trait;

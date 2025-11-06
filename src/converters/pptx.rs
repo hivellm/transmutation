@@ -4,6 +4,8 @@
 //! 1. **Text extraction**: Direct XML parsing from PPTX (ZIP) for clean text
 //! 2. **Image export**: PPTX → PDF → Images (via LibreOffice) for visual slides
 
+#![allow(clippy::unused_self, clippy::uninlined_format_args)]
+
 use std::io::Read;
 use std::path::Path;
 use std::process::Command;

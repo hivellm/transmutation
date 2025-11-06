@@ -2,6 +2,14 @@
 //!
 //! Pure Rust PDF to Markdown converter using lopdf for parsing.
 
+#![allow(
+    clippy::unused_self,
+    clippy::uninlined_format_args,
+    clippy::used_underscore_binding,
+    clippy::needless_borrow,
+    clippy::redundant_closure
+)]
+
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 

@@ -2,6 +2,8 @@
 //!
 //! Converts RTF files to Markdown by parsing RTF commands and extracting text.
 
+#![allow(clippy::unused_self, clippy::uninlined_format_args)]
+
 use std::path::Path;
 
 use async_trait::async_trait;

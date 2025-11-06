@@ -2,6 +2,8 @@
 //!
 //! Converts ODT files to Markdown by extracting content from the content.xml file.
 
+#![allow(clippy::unused_self, clippy::uninlined_format_args, clippy::manual_flatten)]
+
 use std::io::{Cursor, Read};
 use std::path::Path;
 

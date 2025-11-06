@@ -4,7 +4,8 @@
     clippy::match_ref_pats,
     clippy::needless_borrowed_reference,
     clippy::doc_lazy_continuation,
-    clippy::uninlined_format_args
+    clippy::uninlined_format_args,
+    clippy::unwrap_or_default
 )]
 
 use std::collections::HashMap;

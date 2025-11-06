@@ -2,6 +2,8 @@
 //!
 //! Converts plain text files to Markdown with encoding detection.
 
+#![allow(clippy::unused_self, clippy::uninlined_format_args)]
+
 use std::path::Path;
 
 use async_trait::async_trait;

@@ -2,6 +2,8 @@
 //!
 //! Converts Microsoft Word documents (.docx) to Markdown with precision quality
 
+#![allow(clippy::unused_self, clippy::uninlined_format_args)]
+
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 

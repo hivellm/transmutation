@@ -6,6 +6,8 @@
 //! - JSON (structured data)
 //! - XML (original structure)
 
+#![allow(clippy::unused_self, clippy::uninlined_format_args)]
+
 use std::path::Path;
 
 use async_trait::async_trait;

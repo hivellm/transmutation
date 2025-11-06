@@ -3,6 +3,8 @@
 //! Converts HTML to Markdown using semantic HTML parsing.
 //! Preserves structure, links, images, and formatting.
 
+#![allow(clippy::unused_self, clippy::uninlined_format_args)]
+
 use std::path::Path;
 
 use async_trait::async_trait;
