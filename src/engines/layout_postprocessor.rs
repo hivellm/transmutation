@@ -68,7 +68,7 @@ impl UnionFind {
 
         for elem in keys {
             let root = self.find(elem);
-            groups.entry(root).or_insert_with(Vec::new).push(elem);
+            groups.entry(root).or_default().push(elem);
         }
 
         groups

@@ -291,7 +291,7 @@ impl TableDetector {
         }
 
         // Check if first row looks like a header (shorter cells, capitalized)
-        let has_header = rows.get(0).map_or(false, |row| {
+        let has_header = rows.first().is_some_and(|row| {
             row.iter().all(|cell| {
                 cell.len() < 30 && (cell.is_empty() || cell.chars().next().unwrap().is_uppercase())
             })
@@ -328,7 +328,7 @@ impl TableDetector {
     /// Find end of tab-separated table
     fn find_tab_table_end(&self, lines: &[&str]) -> Option<usize> {
         let mut end = 0;
-        let expected_tabs = lines.get(0)?.matches('\t').count();
+        let expected_tabs = lines.first()?.matches('\t').count();
 
         if expected_tabs < self.min_columns - 1 {
             return None;

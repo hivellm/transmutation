@@ -28,7 +28,7 @@ pub fn detect_layout_from_cells(json_str: &str) -> Result<Vec<Cluster>> {
                 eprintln!("      ⚠️  ML model returned empty, using rule-based");
             }
             Err(e) => {
-                eprintln!("      ⚠️  ML model failed: {}, using rule-based", e);
+                eprintln!("      ⚠️  ML model failed: {e}, using rule-based");
             }
         }
     }
@@ -62,9 +62,8 @@ fn detect_layout_with_ml(json_str: &str) -> Result<Vec<Cluster>> {
     // Parse JSON to get page info
     let json: Value = serde_json::from_str(json_str)?;
 
-    let pages = match json["pages"].as_array() {
-        Some(p) => p,
-        None => return Ok(Vec::new()),
+    let Some(pages) = json["pages"].as_array() else {
+        return Ok(Vec::new());
     };
 
     let mut all_clusters = Vec::new();
@@ -99,7 +98,7 @@ fn detect_layout_with_ml(json_str: &str) -> Result<Vec<Cluster>> {
             page_idx + 1,
             cells.len()
         );
-        if cells.len() > 0 {
+        if !cells.is_empty() {
             eprintln!(
                 "      📝 Sample cell: '{}'",
                 cells[0].text.chars().take(30).collect::<String>()
@@ -136,7 +135,7 @@ fn extract_text_cells_for_ml(page: &Value) -> Result<Vec<TextCell>> {
             for (idx, cell) in cell_data.iter().enumerate() {
                 if let Some(cell_array) = cell.as_array() {
                     if let (Some(x0), Some(y0), Some(x1), Some(y1), Some(text)) = (
-                        cell_array.get(0).and_then(|v| v.as_f64()),
+                        cell_array.first().and_then(|v| v.as_f64()),
                         cell_array.get(1).and_then(|v| v.as_f64()),
                         cell_array.get(2).and_then(|v| v.as_f64()),
                         cell_array.get(3).and_then(|v| v.as_f64()),
@@ -463,7 +462,7 @@ fn extract_text_cells(page: &Value) -> Result<Vec<TextCell>> {
             for (idx, cell) in cell_data.iter().enumerate() {
                 if let Some(cell_array) = cell.as_array() {
                     if let (Some(x0), Some(y0), Some(x1), Some(y1), Some(text)) = (
-                        cell_array.get(0).and_then(|v| v.as_f64()),
+                        cell_array.first().and_then(|v| v.as_f64()),
                         cell_array.get(1).and_then(|v| v.as_f64()),
                         cell_array.get(2).and_then(|v| v.as_f64()),
                         cell_array.get(3).and_then(|v| v.as_f64()),

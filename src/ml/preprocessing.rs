@@ -63,7 +63,7 @@ fn resize_with_padding(
     let x_offset = (target_width - new_width) / 2;
     let y_offset = (target_height - new_height) / 2;
 
-    image::imageops::overlay(&mut canvas, &resized, x_offset as i64, y_offset as i64);
+    image::imageops::overlay(&mut canvas, &resized, i64::from(x_offset), i64::from(y_offset));
 
     Ok(canvas)
 }
@@ -83,7 +83,7 @@ fn image_to_tensor(
             let pixel = image.get_pixel(x, y);
 
             for c in 0..3 {
-                let value = pixel[c] as f32 / 255.0; // [0, 1]
+                let value = f32::from(pixel[c]) / 255.0; // [0, 1]
                 let normalized = (value - mean[c]) / std[c];
                 tensor[[0, c, y as usize, x as usize]] = normalized;
             }

@@ -171,8 +171,7 @@ fn detect_by_extension(path: &Path) -> Result<FileFormat> {
 
     if format == FileFormat::Unknown {
         Err(TransmutationError::UnsupportedFormat(format!(
-            "Unsupported extension: .{}",
-            extension
+            "Unsupported extension: .{extension}"
         )))
     } else {
         Ok(format)

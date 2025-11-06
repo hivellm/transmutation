@@ -87,10 +87,10 @@ impl CellMatcher {
     fn table_cell_to_bbox(&self, cell: &TableCell) -> BoundingBox {
         let (x0, y0, x1, y1) = cell.bbox;
         BoundingBox::new(
-            x0 as f64,
-            y0 as f64,
-            x1 as f64,
-            y1 as f64,
+            f64::from(x0),
+            f64::from(y0),
+            f64::from(x1),
+            f64::from(y1),
             crate::document::types_extended::CoordOrigin::TopLeft,
         )
     }

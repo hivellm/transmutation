@@ -319,6 +319,6 @@ mod tests {
         let text = "This is a test";
         let tokens = chunker.estimate_tokens(text);
         // Rough estimate: 14 chars / 4 ≈ 3-4 tokens
-        assert!(tokens >= 3 && tokens <= 5);
+        assert!((3..=5).contains(&tokens));
     }
 }

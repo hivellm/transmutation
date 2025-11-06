@@ -387,7 +387,7 @@ impl ConversionResult {
 
             let metadata_path = output_dir.join("metadata.json");
             let json_str = serde_json::to_string_pretty(&metadata_json)
-                .map_err(|e| crate::TransmutationError::SerializationError(e))?;
+                .map_err(crate::TransmutationError::SerializationError)?;
             tokio::fs::write(&metadata_path, json_str).await?;
         }
 

@@ -33,7 +33,7 @@ impl MarkdownGenerator {
             let trimmed = line.trim();
 
             // Check if this is a standalone heading (short line, preceded by empty line or start of document)
-            let is_potential_heading = trimmed.len() > 0
+            let is_potential_heading = !trimmed.is_empty()
                 && trimmed.len() < 100
                 && (i == 0
                     || lines
@@ -46,7 +46,7 @@ impl MarkdownGenerator {
                 && i < 10
                 && trimmed.chars().filter(|c| c.is_uppercase()).count() > 3
             {
-                result.push_str(&format!("\n## {}\n\n", trimmed));
+                result.push_str(&format!("\n## {trimmed}\n\n"));
                 i += 1;
                 continue;
             }
@@ -71,7 +71,7 @@ impl MarkdownGenerator {
                         .map(|c| c.is_uppercase())
                         .unwrap_or(false)
                     {
-                        result.push_str(&format!("\n## {}\n\n", trimmed));
+                        result.push_str(&format!("\n## {trimmed}\n\n"));
                         i += 1;
                         continue;
                     }

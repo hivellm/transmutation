@@ -61,7 +61,7 @@ impl ModelCache {
                 Some(arc_model)
             }
             Err(e) => {
-                eprintln!("❌ Failed to load LayoutModel: {}", e);
+                eprintln!("❌ Failed to load LayoutModel: {e}");
                 None
             }
         }
@@ -96,7 +96,7 @@ impl ModelCache {
                 Some(arc_model)
             }
             Err(e) => {
-                eprintln!("❌ Failed to load TableStructureModel: {}", e);
+                eprintln!("❌ Failed to load TableStructureModel: {e}");
                 None
             }
         }

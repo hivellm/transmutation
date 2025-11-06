@@ -93,7 +93,7 @@ impl DoclingParseEngine {
                 .ok_or_else(|| TransmutationError::conversion_failed("Invalid file path"))?;
 
             let c_path = CString::new(path_str).map_err(|e| {
-                TransmutationError::engine_error("docling-parse", format!("Invalid path: {}", e))
+                TransmutationError::engine_error("docling-parse", format!("Invalid path: {e}"))
             })?;
 
             let mut handle: DoclingDocumentHandle = ptr::null_mut();

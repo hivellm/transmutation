@@ -91,7 +91,7 @@ impl ModelManager {
             }
         }
 
-        eprintln!("⚠️  Model {} not found in any search path", model_name);
+        eprintln!("⚠️  Model {model_name} not found in any search path");
         eprintln!("   Searched:");
         for path in &self.search_paths {
             eprintln!("     - {}", path.display());

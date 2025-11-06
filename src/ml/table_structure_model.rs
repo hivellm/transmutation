@@ -66,7 +66,7 @@ impl TableStructureModel {
                 .commit_from_file(&model_path)
                 .map_err(|e| TransmutationError::EngineError {
                     engine: "table-structure-model".to_string(),
-                    message: format!("Failed to load ONNX model: {}", e),
+                    message: format!("Failed to load ONNX model: {e}"),
                     source: None,
                 })?;
 
@@ -147,7 +147,7 @@ impl TableStructureModel {
         )
         .map_err(|e| crate::TransmutationError::EngineError {
             engine: "table-structure-model".to_string(),
-            message: format!("Failed to reshape row tensor: {}", e),
+            message: format!("Failed to reshape row tensor: {e}"),
             source: None,
         })?;
 
@@ -163,7 +163,7 @@ impl TableStructureModel {
         )
         .map_err(|e| crate::TransmutationError::EngineError {
             engine: "table-structure-model".to_string(),
-            message: format!("Failed to reshape col tensor: {}", e),
+            message: format!("Failed to reshape col tensor: {e}"),
             source: None,
         })?;
 
@@ -179,7 +179,7 @@ impl TableStructureModel {
         )
         .map_err(|e| crate::TransmutationError::EngineError {
             engine: "table-structure-model".to_string(),
-            message: format!("Failed to reshape cell tensor: {}", e),
+            message: format!("Failed to reshape cell tensor: {e}"),
             source: None,
         })?;
 

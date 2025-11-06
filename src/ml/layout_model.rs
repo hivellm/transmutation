@@ -71,7 +71,7 @@ impl LayoutModel {
                 .commit_from_file(&model_path)
                 .map_err(|e| TransmutationError::EngineError {
                     engine: "layout-model".to_string(),
-                    message: format!("Failed to load ONNX model: {}", e),
+                    message: format!("Failed to load ONNX model: {e}"),
                     source: None,
                 })?;
 
@@ -137,7 +137,7 @@ impl LayoutModel {
         let masks_array = Array4::from_shape_vec((1, num_classes, height, width), data.to_vec())
             .map_err(|e| crate::TransmutationError::EngineError {
                 engine: "layout-model".to_string(),
-                message: format!("Failed to reshape tensor: {}", e),
+                message: format!("Failed to reshape tensor: {e}"),
                 source: None,
             })?;
 

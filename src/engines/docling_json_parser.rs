@@ -13,7 +13,7 @@ pub fn parse_docling_json_to_markdown(json_str: &str) -> Result<String> {
     );
 
     let json: Value = serde_json::from_str(json_str).map_err(|e| {
-        eprintln!("[JSON Parser] ERROR parsing JSON: {}", e);
+        eprintln!("[JSON Parser] ERROR parsing JSON: {e}");
         e
     })?;
 
@@ -32,7 +32,7 @@ pub fn parse_docling_json_to_markdown(json_str: &str) -> Result<String> {
     if let Some(pages) = json["pages"].as_array() {
         for page in pages {
             if let Some(page_num) = page["page_number"].as_u64() {
-                eprintln!("[JSON Parser] Processing page {}", page_num);
+                eprintln!("[JSON Parser] Processing page {page_num}");
             }
 
             // Extract text from lines
@@ -51,7 +51,7 @@ pub fn parse_docling_json_to_markdown(json_str: &str) -> Result<String> {
                         if let Some(&level) = heading_titles.get(&text_lower) {
                             // Add heading
                             let heading_prefix = "#".repeat(level + 1);
-                            markdown.push_str(&format!("\n{} {}\n\n", heading_prefix, text));
+                            markdown.push_str(&format!("\n{heading_prefix} {text}\n\n"));
                         } else {
                             // Check if should join with previous line
                             if should_join_line(&prev_line, &text) {
