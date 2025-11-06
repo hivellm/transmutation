@@ -51,6 +51,13 @@ jobs:
         run: |
           brew install leptonica tesseract libarchive
       
+      - name: Install system dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          vcpkg integrate install
+          vcpkg install leptonica:x64-windows tesseract:x64-windows libarchive:x64-windows
+        shell: pwsh
+      
       - name: Build tests
         run: cargo build --tests --workspace --features "full"
       
