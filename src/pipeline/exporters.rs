@@ -2,7 +2,7 @@
 //!
 //! This follows Docling's architecture: parse once, export many ways
 
-#![allow(missing_docs)]
+#![allow(dead_code, missing_docs)]
 
 use super::document_structure::DocumentStructure;
 use crate::error::Result;

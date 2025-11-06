@@ -1,4 +1,9 @@
-#![allow(clippy::unused_self, clippy::unnecessary_wraps, clippy::ptr_arg)]
+#![allow(
+    dead_code,
+    clippy::unused_self,
+    clippy::unnecessary_wraps,
+    clippy::ptr_arg
+)]
 
 use std::path::Path;
 

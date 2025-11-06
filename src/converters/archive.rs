@@ -2,6 +2,12 @@
 //!
 //! Extracts and converts documents from archives (ZIP, TAR, 7Z, etc.).
 
+#![allow(
+    clippy::unused_self,
+    clippy::uninlined_format_args,
+    clippy::unwrap_or_default
+)]
+
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::Path;

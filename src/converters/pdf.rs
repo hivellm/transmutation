@@ -3,6 +3,7 @@
 //! Pure Rust PDF to Markdown converter using lopdf for parsing.
 
 #![allow(
+    dead_code,
     clippy::unused_self,
     clippy::uninlined_format_args,
     clippy::used_underscore_binding,

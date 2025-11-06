@@ -2,8 +2,7 @@
 //!
 //! Provides direct access to docling-parse without Python dependency
 
-#![allow(unsafe_code)]
-#![allow(missing_docs)]
+#![allow(dead_code, unsafe_code, missing_docs)]
 
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_double, c_int};

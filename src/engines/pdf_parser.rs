@@ -4,6 +4,7 @@
 //! It handles various PDF encodings, multi-column layouts, and positional information.
 
 #![allow(
+    dead_code,
     clippy::unused_self,
     clippy::unnecessary_wraps,
     clippy::used_underscore_binding,

@@ -3,6 +3,7 @@
 //! Converts image files to text using Tesseract OCR.
 
 #![allow(
+    dead_code,
     clippy::uninlined_format_args,
     clippy::needless_borrows_for_generic_args
 )]

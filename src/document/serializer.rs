@@ -2,6 +2,7 @@
 //! Reimplementation of docling-core's markdown serializer in Rust
 
 #![allow(
+    dead_code,
     missing_docs,
     clippy::unused_self,
     clippy::unnecessary_wraps,

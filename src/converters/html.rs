@@ -3,7 +3,12 @@
 //! Converts HTML to Markdown using semantic HTML parsing.
 //! Preserves structure, links, images, and formatting.
 
-#![allow(clippy::unused_self, clippy::uninlined_format_args)]
+#![allow(
+    clippy::unused_self,
+    clippy::uninlined_format_args,
+    clippy::unnecessary_wraps,
+    clippy::single_char_add_str
+)]
 
 use std::path::Path;
 
