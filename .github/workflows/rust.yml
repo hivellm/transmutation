@@ -40,11 +40,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            pkg-config \
             libleptonica-dev \
             libtesseract-dev \
             tesseract-ocr-eng \
             libarchive-dev \
             libcurl4-openssl-dev
+          # Verify pkg-config can find leptonica
+          pkg-config --exists lept || (echo "lept.pc not found" && find /usr -name "lept.pc" 2>/dev/null || true)
       
       - name: Install system dependencies (macOS)
         if: matrix.os == 'macos-latest'
@@ -93,11 +96,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            pkg-config \
             libleptonica-dev \
             libtesseract-dev \
             tesseract-ocr-eng \
             libarchive-dev \
             libcurl4-openssl-dev
+          # Verify pkg-config can find leptonica
+          pkg-config --exists lept || (echo "lept.pc not found" && find /usr -name "lept.pc" 2>/dev/null || true)
       
       - name: Install system dependencies (macOS)
         if: matrix.os == 'macos-latest'
