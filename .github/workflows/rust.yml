@@ -46,6 +46,7 @@ jobs:
             tesseract-ocr-eng \
             libarchive-dev \
             libcurl4-openssl-dev
+          echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}" >> $GITHUB_ENV
           export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"
           # Verify pkg-config can find leptonica
           pkg-config --exists lept || (echo "lept.pc not found" && find /usr -name "lept.pc" 2>/dev/null || true)
@@ -104,6 +105,7 @@ jobs:
             tesseract-ocr-eng \
             libarchive-dev \
             libcurl4-openssl-dev
+          echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}" >> $GITHUB_ENV
           export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"
           # Verify pkg-config can find leptonica
           pkg-config --exists lept || (echo "lept.pc not found" && find /usr -name "lept.pc" 2>/dev/null || true)
