@@ -46,8 +46,10 @@ jobs:
             tesseract-ocr-eng \
             libarchive-dev \
             libcurl4-openssl-dev
+          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"
           # Verify pkg-config can find leptonica
           pkg-config --exists lept || (echo "lept.pc not found" && find /usr -name "lept.pc" 2>/dev/null || true)
+          pkg-config --libs --cflags lept
       
       - name: Install system dependencies (macOS)
         if: matrix.os == 'macos-latest'
@@ -102,8 +104,10 @@ jobs:
             tesseract-ocr-eng \
             libarchive-dev \
             libcurl4-openssl-dev
+          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"
           # Verify pkg-config can find leptonica
           pkg-config --exists lept || (echo "lept.pc not found" && find /usr -name "lept.pc" 2>/dev/null || true)
+          pkg-config --libs --cflags lept
       
       - name: Install system dependencies (macOS)
         if: matrix.os == 'macos-latest'
