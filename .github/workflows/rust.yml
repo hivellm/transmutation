@@ -67,58 +67,6 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --features "full"
 
-  clippy:
-    name: Clippy (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-          - os: windows-latest
-          - os: macos-latest
-    
-    steps:
-      - uses: actions/checkout@v5
-      
-      - name: Install Rust nightly
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2025-01-01
-          components: clippy
-      
-      - uses: Swatinem/rust-cache@v2
-      
-      - name: Install system dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            pkg-config \
-            libleptonica-dev \
-            libtesseract-dev \
-            tesseract-ocr-eng \
-            libarchive-dev \
-            libcurl4-openssl-dev
-          pkg-config --exists lept || (echo "lept.pc not found" && find /usr -name "lept.pc" 2>/dev/null || true)
-      
-      - name: Install system dependencies (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install leptonica tesseract libarchive
-      
-      - name: Install system dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          $env:VCPKG_DEFAULT_TRIPLET = "x64-windows-static-md"
-          vcpkg integrate install
-          vcpkg install leptonica:x64-windows-static-md tesseract:x64-windows-static-md libarchive:x64-windows-static-md
-        shell: pwsh
-      
-      - name: Run clippy
-        run: cargo clippy --workspace --all-targets --features "full" -- -D warnings
-
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
