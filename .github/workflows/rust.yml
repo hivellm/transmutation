@@ -51,11 +51,15 @@ jobs:
         run: |
           brew install leptonica tesseract libarchive
       
+      - name: Install vcpkg (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: microsoft/setup-vcpkg@v3
+      
       - name: Install system dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           vcpkg integrate install
-          vcpkg install leptonica:x64-windows tesseract:x64-windows libarchive:x64-windows
+          vcpkg install leptonica:x64-windows-static-md tesseract:x64-windows-static-md libarchive:x64-windows-static-md
         shell: pwsh
       
       - name: Build tests
@@ -103,11 +107,15 @@ jobs:
         run: |
           brew install leptonica tesseract libarchive
       
+      - name: Install vcpkg (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: microsoft/setup-vcpkg@v3
+      
       - name: Install system dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           vcpkg integrate install
-          vcpkg install leptonica:x64-windows tesseract:x64-windows libarchive:x64-windows
+          vcpkg install leptonica:x64-windows-static-md tesseract:x64-windows-static-md libarchive:x64-windows-static-md
         shell: pwsh
       
       - name: Run clippy
