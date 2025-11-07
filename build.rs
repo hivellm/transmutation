@@ -195,28 +195,26 @@ fn check_external_dependencies() {
 
     // Print warnings if any dependencies are missing
     if !warnings.is_empty() {
-        println!("cargo:warning=");
-        println!("cargo:warning=╔════════════════════════════════════════════════════════════╗");
-        println!("cargo:warning=║  ⚠️  Optional External Dependencies Missing             ║");
-        println!("cargo:warning=╚════════════════════════════════════════════════════════════╝");
-        println!("cargo:warning=");
-        println!("cargo:warning=Transmutation will compile, but some features won't work:");
-        println!("cargo:warning=");
+        eprintln!();
+        eprintln!("╔════════════════════════════════════════════════════════════╗");
+        eprintln!("║  ⚠️  Optional External Dependencies Missing             ║");
+        eprintln!("╚════════════════════════════════════════════════════════════╝");
+        eprintln!();
+        eprintln!("Transmutation will compile, but some features won't work:");
+        eprintln!();
 
         for (tool, feature, install_cmd) in &warnings {
-            println!("cargo:warning=  ❌ {tool}: {feature}");
-            println!("cargo:warning=     Install: {install_cmd}");
+            eprintln!("  ❌ {tool}: {feature}");
+            eprintln!("     Install: {install_cmd}");
         }
 
-        println!("cargo:warning=");
-        println!("cargo:warning=📖 For detailed installation instructions:");
-        println!(
-            "cargo:warning=   https://github.com/yourusername/transmutation/blob/main/install/README.md"
-        );
-        println!("cargo:warning=");
-        println!("cargo:warning=💡 Quick install (all dependencies):");
-        println!("cargo:warning={}", get_quick_install_all());
-        println!("cargo:warning=");
+        eprintln!();
+        eprintln!("📖 For detailed installation instructions:");
+        eprintln!("   https://github.com/yourusername/transmutation/blob/main/install/README.md");
+        eprintln!();
+        eprintln!("💡 Quick install (all dependencies):");
+        eprintln!("{}", get_quick_install_all());
+        eprintln!();
     }
 }
 
