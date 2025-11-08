@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "installedAt": "2025-10-27T02:20:56.425Z",
-  "updatedAt": "2025-11-06T18:35:03.218Z",
+  "version": "0.17.2",
+  "installedAt": "2025-11-06T18:35:04.584Z",
+  "updatedAt": "2025-11-07T23:45:58.429Z",
   "projectId": "transmutation",
   "mode": "full",
   "features": {
@@ -30,15 +30,5 @@
     "taskExecution": 3600000,
     "cliResponse": 180000,
     "testRun": 600000
-  },
-  "languages": [
-    "rust"
-  ],
-  "frameworks": [],
-  "modules": [
-    "openspec",
-    "context7"
-  ],
-  "modular": true,
-  "rulebookDir": "rulebook"
+  }
 }
