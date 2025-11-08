@@ -92,7 +92,7 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 ```powershell
 # Download from releases or build:
 .\build-msi.ps1
-msiexec /i target\wix\transmutation-0.1.1-x86_64.msi
+msiexec /i target\wix\transmutation-0.2.0-x86_64.msi
 ```
 See [`docs/MSI_BUILD.md`](docs/MSI_BUILD.md) for details.
 
@@ -100,14 +100,14 @@ See [`docs/MSI_BUILD.md`](docs/MSI_BUILD.md) for details.
 ```bash
 # Add to Cargo.toml
 [dependencies]
-transmutation = "0.1"
+transmutation = "0.2"
 
 # Core features (always enabled, no flags needed):
 # - PDF, HTML, XML, ZIP, TXT, CSV, TSV, RTF, ODT
 
 # With Office formats (default)
 [dependencies.transmutation]
-version = "0.1"
+version = "0.2"
 features = ["office"]  # DOCX, XLSX, PPTX
 
 # With optional features (requires external tools)
@@ -669,7 +669,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
 
-**Current Version**: 0.1.1 (October 13, 2025)
+**Current Version**: 0.2.0 (November 7, 2025)
 
 ## 🔗 Links
 
@@ -695,11 +695,10 @@ Powered by:
 
 ---
 
-**Status**: ✅ v0.1.1 - Production Ready with Professional Distribution Tools
+**Status**: ✅ v0.2.0 - Release-hardened with dependable CI builds
 
-**Latest Updates (v0.1.1)**:
-- 🪟 Windows MSI Installer with dependency management
-- 🎨 Custom icons and branding
-- 📦 Multi-platform installation scripts
-- 🔧 Automated build and distribution tools
+**Latest Updates (v0.2.0)**:
+- 🛠️ Hardened GitHub Actions jobs with explicit Leptonica/Tesseract dependencies
+- 🧹 Simplified CI matrix by removing the unstable Clippy workflow
+- 🚀 Updated release collateral (README, MSI docs, changelog) for the 0.2.x line
 

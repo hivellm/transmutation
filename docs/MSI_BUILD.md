@@ -98,7 +98,7 @@ The **dependency installer** (`-IncludeDepsInstaller`) adds a PowerShell script 
 
 The MSI will be created at:
 ```
-target/wix/transmutation-0.1.1-x86_64.msi
+target/wix/transmutation-0.2.0-x86_64.msi
 ```
 
 ---
@@ -135,7 +135,7 @@ cargo build --release --features "cli,pdf,office,web"
 
 # 2. Compile WiX source
 "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe" `
-    -dVersion="0.1.1" `
+    -dVersion="0.2.0" `
     -dCargoTargetBinDir="target\release" `
     -dSourceDir="." `
     -out "target\wix\" `
@@ -144,7 +144,7 @@ cargo build --release --features "cli,pdf,office,web"
 # 3. Link MSI
 "C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe" `
     -ext WixUIExtension `
-    -out "target\wix\transmutation-0.1.1-x86_64.msi" `
+    -out "target\wix\transmutation-0.2.0-x86_64.msi" `
     "target\wix\main.wixobj"
 ```
 
@@ -221,7 +221,7 @@ Edit `wix/main.wxs` to customize:
    <Product
      Name='Transmutation'
      Manufacturer='HiveLLM Team'
-     Version='0.1.1'>
+     Version='0.2.0'>
    ```
 
 2. **Installation Directory**:
@@ -260,20 +260,20 @@ Replace default images in `wix/`:
 
 ```powershell
 # Install silently
-msiexec /i target\wix\transmutation-0.1.1-x86_64.msi /qn /l*v install.log
+msiexec /i target\wix\transmutation-0.2.0-x86_64.msi /qn /l*v install.log
 
 # Verify installation
 transmutation --version
 
 # Uninstall silently
-msiexec /x target\wix\transmutation-0.1.1-x86_64.msi /qn
+msiexec /x target\wix\transmutation-0.2.0-x86_64.msi /qn
 ```
 
 ### Interactive Install
 
 ```powershell
 # Double-click the MSI file or:
-msiexec /i target\wix\transmutation-0.1.1-x86_64.msi
+msiexec /i target\wix\transmutation-0.2.0-x86_64.msi
 ```
 
 ### Installation Verification
@@ -300,10 +300,10 @@ For production releases, sign the MSI with a code signing certificate:
 ```powershell
 # Sign MSI (requires certificate)
 signtool sign /f "certificate.pfx" /p "password" /t "http://timestamp.digicert.com" `
-    target\wix\transmutation-0.1.1-x86_64.msi
+    target\wix\transmutation-0.2.0-x86_64.msi
 
 # Verify signature
-signtool verify /pa target\wix\transmutation-0.1.1-x86_64.msi
+signtool verify /pa target\wix\transmutation-0.2.0-x86_64.msi
 ```
 
 ### GitHub Releases

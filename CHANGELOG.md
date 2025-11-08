@@ -11,9 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| [0.2.0](#020---2025-11-07) | 2025-11-07 | **Maintenance** | CI hardening, release docs refresh |
 | [0.1.2](#012---2025-10-13) | 2025-10-13 | **Major** | 27 formats, Phase 3 complete, Audio/Video transcription |
 | [0.1.1](#011---2025-10-13) | 2025-10-13 | **Distribution** | MSI installer, icons, automated scripts |
 | [0.1.0](#010---2025-10-13) | 2025-10-13 | **Initial** | Core PDF/DOCX conversion, 98x faster than Docling |
+
+---
+
+## [0.2.0] - 2025-11-07
+
+### Changed
+- Hardened GitHub Actions workflows by explicitly installing `pkg-config`, Leptonica, and Tesseract dependencies on Linux runners.
+- Simplified CI by removing the unstable multi-platform Clippy job that consistently failed due to missing system packages.
+- Refreshed release documentation (README, MSI build guide, roadmap) to reflect the 0.2.x line.
+
+### Fixed
+- Eliminated `leptonica-sys` build failures on CI by validating the `lept.pc` manifest during workflow setup.
 
 ---
 

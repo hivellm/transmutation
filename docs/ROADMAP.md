@@ -4,7 +4,7 @@
 
 This roadmap outlines the development plan for Transmutation, a high-performance document conversion engine designed for AI/LLM embeddings.
 
-**Current Status (v0.1.2-dev - October 13, 2025)**:
+**Current Status (v0.2.0 - November 7, 2025)**:
 - ✅ **Phase 1**: Foundation & Core Architecture (COMPLETE)
 - ✅ **Phase 1.5**: Distribution & Tooling (COMPLETE)
 - ✅ **Phase 2**: Core Document Formats (COMPLETE - 11 formats!)
@@ -12,7 +12,7 @@ This roadmap outlines the development plan for Transmutation, a high-performance
 - ✅ **Phase 3**: Advanced Features (COMPLETE - Archives ✅, Batch ✅, OCR ✅, ASR ✅)
 - 📝 **Phase 4**: Advanced Optimizations & v1.0.0
 
-**Latest Achievement**: Audio/Video transcription with Whisper! 5 audio + 5 video formats supported!
+**Latest Achievement**: Stabilized GitHub Actions pipelines and published the 0.2.0 release!
 
 **Scope**: Pure Rust library/CLI for document conversion. External integrations handled by HiveLLM Vectorizer.
 
@@ -219,8 +219,8 @@ Total:     ████████████████████  95% Com
 
 ---
 
-**Last Updated**: 2025-10-13  
-**Version**: 0.1.2-dev  
-**Status**: ✅ Phase 1, 1.5, 2, 2.5 Complete | 🔄 Phase 3 (25%)  
+**Last Updated**: 2025-11-07  
+**Version**: 0.2.0  
+**Status**: ✅ Phase 1, 1.5, 2, 2.5, 3 Complete | 📝 Phase 4 (planning)  
 **Scope**: Pure Rust library/CLI (no bindings, no external integrations)
 
