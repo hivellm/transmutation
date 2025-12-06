@@ -11,10 +11,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| [0.3.0](#030---2025-12-06) | 2025-12-06 | **Performance** | PDF memory optimization, cached regex |
 | [0.2.0](#020---2025-11-07) | 2025-11-07 | **Maintenance** | CI hardening, release docs refresh |
 | [0.1.2](#012---2025-10-13) | 2025-10-13 | **Major** | 27 formats, Phase 3 complete, Audio/Video transcription |
 | [0.1.1](#011---2025-10-13) | 2025-10-13 | **Distribution** | MSI installer, icons, automated scripts |
 | [0.1.0](#010---2025-10-13) | 2025-10-13 | **Initial** | Core PDF/DOCX conversion, 98x faster than Docling |
+
+---
+
+## [0.3.0] - 2025-12-06
+
+**Performance & Memory Optimization Release**
+
+This release focuses on significant memory optimizations for PDF conversion, particularly beneficial when processing large documents or using Transmutation as a library.
+
+### Performance
+
+- **Cached Regex Patterns**: All regex patterns in PDF conversion are now compiled once and cached using `OnceLock`, eliminating redundant compilation overhead
+- **Pre-allocated Buffers**: String and Vec allocations now use `with_capacity()` to minimize reallocations during text processing
+- **Optimized Page Processing**: Fixed O(n²) memory issue in `convert_pages_individually` - text extraction now happens once instead of per-page
+- **Reduced Memory Pressure**: PDF bytes are now dropped immediately after text extraction to free memory earlier
+
+### Fixed
+
+- **Memory Explosion on Large PDFs**: Resolved issue where PDFs would cause excessive memory usage when used as a library (e.g., in hivehub-cloud file processor)
+- **Bounded Loop Iterations**: Replaced unbounded `while` loops with bounded `for` loops to prevent potential infinite loops in edge cases
+
+### Changed
+
+- Used `into_owned()` instead of `to_string()` for more efficient `Cow<str>` to `String` conversions
+- Skip lopdf parsing when not using layout analysis (single-document output mode) for faster processing
+
+### Technical Details
+
+Memory improvements summary:
+- Regex compilation: 11 patterns now compiled once per process (was: per conversion)
+- String allocations: Pre-allocated with ~20% overhead estimate
+- Page extraction: O(n) instead of O(n²) for split-pages mode
+- Early memory release: PDF bytes freed before text processing begins
 
 ---
 

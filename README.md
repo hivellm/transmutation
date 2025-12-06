@@ -92,7 +92,7 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 ```powershell
 # Download from releases or build:
 .\build-msi.ps1
-msiexec /i target\wix\transmutation-0.2.0-x86_64.msi
+msiexec /i target\wix\transmutation-0.3.0-x86_64.msi
 ```
 See [`docs/MSI_BUILD.md`](docs/MSI_BUILD.md) for details.
 
@@ -669,7 +669,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
 
-**Current Version**: 0.2.0 (November 7, 2025)
+**Current Version**: 0.3.0 (December 6, 2025)
 
 ## 🔗 Links
 
@@ -695,10 +695,11 @@ Powered by:
 
 ---
 
-**Status**: ✅ v0.2.0 - Release-hardened with dependable CI builds
+**Status**: ✅ v0.3.0 - Performance & Memory Optimization Release
 
-**Latest Updates (v0.2.0)**:
-- 🛠️ Hardened GitHub Actions jobs with explicit Leptonica/Tesseract dependencies
-- 🧹 Simplified CI matrix by removing the unstable Clippy workflow
-- 🚀 Updated release collateral (README, MSI docs, changelog) for the 0.2.x line
+**Latest Updates (v0.3.0)**:
+- ⚡ **Memory Optimization**: Cached regex patterns, pre-allocated buffers
+- 🔧 **Fixed O(n²) Issue**: Page extraction now O(n) for split-pages mode
+- 🚀 **Reduced Memory Pressure**: Early release of PDF bytes after extraction
+- 📉 **Lower Memory Footprint**: Especially beneficial for library usage
 
