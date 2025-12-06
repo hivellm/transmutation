@@ -44,8 +44,10 @@ fn main() {
                 "ARM"
             };
             let build_dir = format!("build_windows_{arch}");
-            let lib_path = Path::new(&format!("{build_dir}/Release/docling_ffi.lib"));
-            let libs_path = Path::new(&format!("libs/docling-ffi-windows_{arch}.lib"));
+            let lib_path_str = format!("{build_dir}/Release/docling_ffi.lib");
+            let libs_path_str = format!("libs/docling-ffi-windows_{arch}.lib");
+            let lib_path = Path::new(&lib_path_str);
+            let libs_path = Path::new(&libs_path_str);
 
             // Check if library exists in either location
             if !lib_path.exists() && !libs_path.exists() {
@@ -70,11 +72,14 @@ fn main() {
             println!("cargo:rustc-link-lib=dylib=docling_ffi");
 
             // Copy DLL to target directory for runtime
-            let dll_src = if Path::new(&format!("libs/docling-ffi-windows_{arch}.dll")).exists() {
-                Path::new(&format!("libs/docling-ffi-windows_{arch}.dll"))
+            let dll_libs_path = format!("libs/docling-ffi-windows_{arch}.dll");
+            let dll_build_path = format!("{build_dir}/Release/docling_ffi.dll");
+            let dll_src_str = if Path::new(&dll_libs_path).exists() {
+                dll_libs_path
             } else {
-                Path::new(&format!("{build_dir}/Release/docling_ffi.dll"))
+                dll_build_path
             };
+            let dll_src = Path::new(&dll_src_str);
 
             let target_dir = std::env::var("OUT_DIR").unwrap();
             let dll_dst = Path::new(&target_dir).join("../../../docling_ffi.dll");
