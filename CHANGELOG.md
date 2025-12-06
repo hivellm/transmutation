@@ -11,11 +11,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| [0.3.1](#031---2025-12-06) | 2025-12-06 | **Bugfix** | Fix UTF-8 boundary panic in PDF conversion |
 | [0.3.0](#030---2025-12-06) | 2025-12-06 | **Performance** | PDF memory optimization, cached regex |
 | [0.2.0](#020---2025-11-07) | 2025-11-07 | **Maintenance** | CI hardening, release docs refresh |
 | [0.1.2](#012---2025-10-13) | 2025-10-13 | **Major** | 27 formats, Phase 3 complete, Audio/Video transcription |
 | [0.1.1](#011---2025-10-13) | 2025-10-13 | **Distribution** | MSI installer, icons, automated scripts |
 | [0.1.0](#010---2025-10-13) | 2025-10-13 | **Initial** | Core PDF/DOCX conversion, 98x faster than Docling |
+
+---
+
+## [0.3.1] - 2025-12-06
+
+**Bugfix Release**
+
+Fixes a panic when processing PDFs containing non-ASCII characters (German umlauts, Chinese, Cyrillic, emojis, etc.) near the 500-byte boundary in the title region.
+
+### Fixed
+
+- **UTF-8 Boundary Panic** ([#1](https://github.com/hivellm/transmutation/issues/1)): Fixed `byte index 500 is not a char boundary` panic when processing PDFs with multibyte UTF-8 characters (e.g., German "Gefährdungen") near the 500-byte split point in title/author detection
+  - Now uses `is_char_boundary()` to find valid UTF-8 boundaries before string slicing
+  - Affects texts with: umlauts (ä, ö, ü), accented chars (é, ñ), Chinese/Japanese/Korean, Cyrillic, Arabic, emojis
+
+### Added
+
+- **UTF-8 Boundary Tests**: 7 new tests covering various multibyte character scenarios:
+  - German text with umlauts at boundary
+  - Chinese characters (3 bytes each) at boundary
+  - Emojis (4 bytes each) at boundary
+  - Cyrillic text (2 bytes each)
+  - Mixed scripts (Latin, Greek, Japanese, Korean, Arabic, emojis)
+  - Short text and exactly 500 ASCII characters edge cases
 
 ---
 

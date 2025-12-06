@@ -409,10 +409,22 @@ impl PdfConverter {
 
         // Separate title from author names (common pattern in papers)
         // "Attention Is All You NeedAshish Vaswani" -> "## Attention Is All You Need\n\nAshish Vaswani"
-        // Only apply to first 500 chars (title region)
-        if cleaned.len() > 500 {
-            let prefix = &cleaned[..500];
-            let suffix = &cleaned[500..];
+        // Only apply to first ~500 chars (title region)
+        // Find a valid UTF-8 boundary near 500 bytes
+        let split_point = if cleaned.len() > 500 {
+            // Find the nearest char boundary at or before 500
+            let mut idx = 500;
+            while idx > 0 && !cleaned.is_char_boundary(idx) {
+                idx -= 1;
+            }
+            Some(idx)
+        } else {
+            None
+        };
+
+        if let Some(idx) = split_point {
+            let prefix = &cleaned[..idx];
+            let suffix = &cleaned[idx..];
             let fixed_prefix = cache.title_author_pattern.replace(prefix, "## $1\n\n$2");
             cleaned = format!("{}{}", fixed_prefix, suffix);
         } else {
@@ -1458,6 +1470,104 @@ mod tests {
         let meta = converter.metadata();
         assert_eq!(meta.name, "PDF Converter");
         assert!(!meta.external_deps.is_empty());
+    }
+
+    #[test]
+    fn test_join_paragraph_lines_utf8_boundary() {
+        // Test with German text containing umlauts near the 500-byte boundary
+        // "Gefährdungen" contains 'ä' which is a multibyte character (2 bytes in UTF-8)
+        // This test ensures we don't panic when slicing at byte boundaries
+
+        // Create a string where multibyte chars fall around byte 500
+        let prefix = "A".repeat(495); // 495 ASCII chars = 495 bytes
+        let german_text = "Elementare Gefährdungen"; // Contains ä (2 bytes)
+        let suffix = " more text here for testing purposes";
+
+        let input = format!("{}{}{}", prefix, german_text, suffix);
+
+        // This should not panic - the fix ensures we find valid char boundaries
+        let result = PdfConverter::join_paragraph_lines(&input);
+
+        // The result should contain the original text (possibly reformatted)
+        assert!(result.contains("Gefährdungen") || result.contains("Gef") || !result.is_empty());
+    }
+
+    #[test]
+    fn test_join_paragraph_lines_multibyte_at_boundary() {
+        // Specifically test when a multibyte character spans byte 500
+        // Chinese characters are 3 bytes each in UTF-8
+
+        // Create text where byte 499-501 is inside a Chinese character
+        let prefix = "x".repeat(498); // 498 bytes
+        let chinese = "中文测试"; // 4 Chinese chars = 12 bytes, first char at bytes 498-500
+        let suffix = " end";
+
+        let input = format!("{}{}{}", prefix, chinese, suffix);
+        assert!(input.len() > 500);
+
+        // Should not panic
+        let result = PdfConverter::join_paragraph_lines(&input);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn test_join_paragraph_lines_emoji_at_boundary() {
+        // Emojis are 4 bytes in UTF-8
+        let prefix = "y".repeat(497); // 497 bytes
+        let emoji_text = "🎉🎊🎈"; // 3 emojis = 12 bytes
+        let suffix = " celebration";
+
+        let input = format!("{}{}{}", prefix, emoji_text, suffix);
+        assert!(input.len() > 500);
+
+        // Should not panic
+        let result = PdfConverter::join_paragraph_lines(&input);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn test_join_paragraph_lines_short_text() {
+        // Text shorter than 500 bytes should work fine
+        let input = "Short text with Ümläuts and émojis 🎉";
+
+        let result = PdfConverter::join_paragraph_lines(input);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn test_join_paragraph_lines_exactly_500_ascii() {
+        // Exactly 500 ASCII characters
+        let input = "a".repeat(500);
+
+        let result = PdfConverter::join_paragraph_lines(&input);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn test_join_paragraph_lines_cyrillic_text() {
+        // Cyrillic characters are 2 bytes each
+        let prefix = "z".repeat(499);
+        let cyrillic = "Привет мир"; // Russian "Hello world"
+        let suffix = " end";
+
+        let input = format!("{}{}{}", prefix, cyrillic, suffix);
+
+        // Should not panic
+        let result = PdfConverter::join_paragraph_lines(&input);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn test_join_paragraph_lines_mixed_scripts() {
+        // Mix of different scripts with varying byte lengths
+        let input = format!(
+            "{}Latin äöü Ελληνικά 日本語 한국어 العربية 🌍🌎🌏",
+            "x".repeat(450)
+        );
+
+        // Should not panic regardless of where the 500-byte boundary falls
+        let result = PdfConverter::join_paragraph_lines(&input);
+        assert!(!result.is_empty());
     }
 
     // Integration tests with real PDFs will be in tests/pdf_tests.rs

@@ -18,7 +18,7 @@ fn main() {
         res.set("LegalCopyright", "Copyright (c) 2025 HiveLLM Team");
         res.set("OriginalFilename", "transmutation.exe");
         if let Err(e) = res.compile() {
-            eprintln!("Warning: Failed to compile Windows resources: {}", e);
+            eprintln!("Warning: Failed to compile Windows resources: {e}");
         }
     }
 
