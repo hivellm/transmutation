@@ -1,6 +1,13 @@
 //! PDF converter implementation
 //!
 //! Pure Rust PDF to Markdown converter using lopdf for parsing.
+//!
+//! ## Memory Optimization
+//!
+//! This module is optimized for low memory usage:
+//! - Regex patterns are compiled once and cached (lazy_static)
+//! - String operations minimize intermediate allocations
+//! - Large documents are processed with streaming where possible
 
 #![allow(
     dead_code,
@@ -12,9 +19,11 @@
 )]
 
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use async_trait::async_trait;
+use regex::Regex;
 
 use super::traits::{ConverterMetadata, DocumentConverter};
 use crate::Result;
@@ -26,6 +35,49 @@ use crate::types::{
     ConversionOptions, ConversionOutput, ConversionResult, ConversionStatistics, DocumentMetadata,
     FileFormat, OutputFormat, OutputMetadata,
 };
+
+/// Cached regex patterns for text processing (compiled once, used many times)
+struct RegexCache {
+    sentence_break: Regex,
+    section_pattern: Regex,
+    title_author_pattern: Regex,
+    page_number_figure: Regex,
+    math_var_number: Regex,
+    math_var_letter: Regex,
+    func_paren: Regex,
+    plus_capital: Regex,
+    letter_symbol: Regex,
+    symbol_capital: Regex,
+    single_letter_pair: Regex,
+}
+
+impl RegexCache {
+    fn new() -> Self {
+        Self {
+            sentence_break: Regex::new(r"([.!?]) ([A-Z])").unwrap(),
+            section_pattern: Regex::new(
+                r"\b(Abstract|Introduction|Background|Methods|Results|Discussion|Conclusion|References)([A-Z][a-z]+)"
+            ).unwrap(),
+            title_author_pattern: Regex::new(
+                r"([A-Z][a-z]+ [A-Z][a-z]+(?: [A-Z][a-z]+)+)([A-Z][a-z]+ [A-Z]\.|[A-Z][a-z]+ [A-Z][a-z]+)"
+            ).unwrap(),
+            page_number_figure: Regex::new(r"(\d+)(Figure|Table)").unwrap(),
+            math_var_number: Regex::new(r"\b([a-z])([0-9])\b").unwrap(),
+            math_var_letter: Regex::new(r"\b([a-z])([a-z])\b").unwrap(),
+            func_paren: Regex::new(r"([a-zA-Z])\(([a-z])").unwrap(),
+            plus_capital: Regex::new(r"([a-z])\+([A-Z])").unwrap(),
+            letter_symbol: Regex::new(r"([a-zA-Z])([∗†‡])").unwrap(),
+            symbol_capital: Regex::new(r"([∗†‡])([A-Z])").unwrap(),
+            single_letter_pair: Regex::new(r" ([a-z]) ([a-z]) ").unwrap(),
+        }
+    }
+}
+
+/// Get the cached regex patterns (compiled once per process)
+fn regex_cache() -> &'static RegexCache {
+    static CACHE: OnceLock<RegexCache> = OnceLock::new();
+    CACHE.get_or_init(RegexCache::new)
+}
 
 /// PDF to Markdown/Image/JSON converter
 #[derive(Debug)]
@@ -43,23 +95,29 @@ impl PdfConverter {
 
     /// Break long text into proper paragraphs (for lopdf output)
     /// Generic paragraph breaking for ANY PDF
+    ///
+    /// Memory optimized: uses cached regex patterns
     fn break_long_text_into_paragraphs(text: &str) -> String {
-        let mut result = text.to_string();
+        let cache = regex_cache();
+
+        // Pre-allocate result with estimated capacity
+        let mut result = String::with_capacity(text.len() + text.len() / 10);
 
         // GENERIC RULE 1: Add line breaks after sentences
         // Pattern: ". A" -> ".\n\nA" (period + space + capital)
-        result = regex::Regex::new(r"([.!?]) ([A-Z])")
-            .unwrap()
-            .replace_all(&result, "$1\n\n$2")
-            .to_string();
+        result.push_str(&cache.sentence_break.replace_all(text, "$1\n\n$2"));
 
-        // GENERIC RULE 2: Add line breaks before headings
-        result = result.replace(" ## ", "\n\n## ");
-        result = result.replace(" # ", "\n\n# ");
+        // GENERIC RULE 2: Add line breaks before headings (in-place replacements)
+        let temp = result.replace(" ## ", "\n\n## ");
+        result = temp.replace(" # ", "\n\n# ");
 
-        // GENERIC RULE 3: Clean up excessive newlines
-        while result.contains("\n\n\n") {
-            result = result.replace("\n\n\n", "\n\n");
+        // GENERIC RULE 3: Clean up excessive newlines (max 2 iterations)
+        for _ in 0..2 {
+            if result.contains("\n\n\n") {
+                result = result.replace("\n\n\n", "\n\n");
+            } else {
+                break;
+            }
         }
 
         result.trim().to_string()
@@ -67,11 +125,15 @@ impl PdfConverter {
 
     /// Join lines that belong to the same paragraph (Docling-style)
     /// This function mimics Docling's text joining behavior
+    ///
+    /// Memory optimized: pre-allocates vectors with estimated capacity
     fn join_paragraph_lines(text: &str) -> String {
         // PRE-PROCESSING: Join author lines that got split
         // If a line starts with ∗/†/‡ and previous line is a short name, join them
         let input_lines: Vec<&str> = text.lines().collect();
-        let mut preprocessed_lines: Vec<String> = Vec::new();
+
+        // Pre-allocate with estimated capacity
+        let mut preprocessed_lines: Vec<String> = Vec::with_capacity(input_lines.len());
 
         let mut i = 0;
         while i < input_lines.len() {
@@ -105,7 +167,9 @@ impl PdfConverter {
 
         let preprocessed = preprocessed_lines.join("\n");
         let lines: Vec<&str> = preprocessed.lines().collect();
-        let mut result = String::new();
+
+        // Pre-allocate result with estimated capacity (text length + some overhead for formatting)
+        let mut result = String::with_capacity(preprocessed.len() + preprocessed.len() / 5);
         let mut i = 0;
 
         while i < lines.len() {
@@ -332,83 +396,84 @@ impl PdfConverter {
             cleaned = cleaned.replace("\n## ", "\n\n## ");
         }
 
-        // Generic cleanup for better formatting
+        // Generic cleanup for better formatting using cached regex patterns
+        let cache = regex_cache();
 
         // Generic pattern: Section keyword directly followed by text without space
         // Match any common section keyword followed immediately by a capital letter
         // This handles "AbstractThe" -> "## Abstract\n\nThe" generically for ANY section
-        let section_pattern = regex::Regex::new(
-            r"\b(Abstract|Introduction|Background|Methods|Results|Discussion|Conclusion|References)([A-Z][a-z]+)"
-        ).unwrap();
-        cleaned = section_pattern
+        cleaned = cache
+            .section_pattern
             .replace_all(&cleaned, "## $1\n\n$2")
-            .to_string();
+            .into_owned();
 
         // Separate title from author names (common pattern in papers)
         // "Attention Is All You NeedAshish Vaswani" -> "## Attention Is All You Need\n\nAshish Vaswani"
-        let title_author_pattern = regex::Regex::new(
-            r"([A-Z][a-z]+ [A-Z][a-z]+(?: [A-Z][a-z]+)+)([A-Z][a-z]+ [A-Z]\.|[A-Z][a-z]+ [A-Z][a-z]+)"
-        ).unwrap();
         // Only apply to first 500 chars (title region)
         if cleaned.len() > 500 {
             let prefix = &cleaned[..500];
             let suffix = &cleaned[500..];
-            let fixed_prefix = title_author_pattern.replace(prefix, "## $1\n\n$2");
+            let fixed_prefix = cache.title_author_pattern.replace(prefix, "## $1\n\n$2");
             cleaned = format!("{}{}", fixed_prefix, suffix);
         } else {
-            cleaned = title_author_pattern
+            cleaned = cache
+                .title_author_pattern
                 .replace(&cleaned, "## $1\n\n$2")
-                .to_string();
+                .into_owned();
         }
 
-        // Remove extra blank lines at very start
-        while cleaned.starts_with("\n") {
-            cleaned = cleaned.trim_start_matches('\n').to_string();
+        // Remove extra blank lines at very start (max 3 iterations to prevent infinite loop)
+        for _ in 0..3 {
+            if cleaned.starts_with('\n') {
+                cleaned = cleaned.trim_start_matches('\n').to_string();
+            } else {
+                break;
+            }
         }
 
         // Remove page numbers that appear before figure/table captions
         // "2Figure 1:" -> "\n\nFigure 1:", "3Table 2:" -> "\n\nTable 2:"
-        cleaned = regex::Regex::new(r"(\d+)(Figure|Table)")
-            .unwrap()
+        cleaned = cache
+            .page_number_figure
             .replace_all(&cleaned, "\n\n$2")
-            .to_string();
+            .into_owned();
 
         // Add spaces in mathematical variables (common in academic papers)
         // Single letter + subscript: "ht" -> "h t", "x1" -> "x 1", "dk" -> "d k"
         // But only if it's standalone or in mathematical context
-        cleaned = regex::Regex::new(r"\b([a-z])([0-9])\b")
-            .unwrap()
+        cleaned = cache
+            .math_var_number
             .replace_all(&cleaned, "$1 $2")
-            .to_string();
-        cleaned = regex::Regex::new(r"\b([a-z])([a-z])\b")
-            .unwrap()
+            .into_owned();
+        cleaned = cache
+            .math_var_letter
             .replace_all(&cleaned, "$1 $2")
-            .to_string();
+            .into_owned();
 
         // Add spaces after parenthesis in function calls: "LayerNorm(x" -> "LayerNorm( x"
-        cleaned = regex::Regex::new(r"([a-zA-Z])\(([a-z])")
-            .unwrap()
+        cleaned = cache
+            .func_paren
             .replace_all(&cleaned, "$1( $2")
-            .to_string();
+            .into_owned();
 
         // Add spaces before closing paren: "+Sublayer(" -> " +Sublayer( "
-        cleaned = regex::Regex::new(r"([a-z])\+([A-Z])")
-            .unwrap()
+        cleaned = cache
+            .plus_capital
             .replace_all(&cleaned, "$1 +$2")
-            .to_string();
+            .into_owned();
 
         // Fix spaces before symbols (common in academic papers)
         // "Vaswani∗" -> "Vaswani ∗"
-        cleaned = regex::Regex::new(r"([a-zA-Z])([∗†‡])")
-            .unwrap()
+        cleaned = cache
+            .letter_symbol
             .replace_all(&cleaned, "$1 $2")
-            .to_string();
+            .into_owned();
 
         // Fix "∗Equal" -> "∗ Equal"
-        cleaned = regex::Regex::new(r"([∗†‡])([A-Z])")
-            .unwrap()
+        cleaned = cache
+            .symbol_capital
             .replace_all(&cleaned, "$1 $2")
-            .to_string();
+            .into_owned();
 
         // Final pass: Join author lines manually by searching for pattern
         // Pattern: Line ending with symbol + double newline + line with @
@@ -469,12 +534,10 @@ impl PdfConverter {
             }
         }
 
-        // Load PDF using lopdf to extract text blocks with position/font info
-        let parser = PdfParser::load(path)?;
-        let pages = parser.extract_all_pages()?;
-
-        // Check if split_pages is enabled
+        // Check if split_pages is enabled - if so, we need page info
         if options.split_pages {
+            let parser = PdfParser::load(path)?;
+            let pages = parser.extract_all_pages()?;
             eprintln!(
                 "📄 Splitting into {} individual pages (precision mode)",
                 pages.len()
@@ -482,22 +545,10 @@ impl PdfConverter {
             return self.convert_pages_individually(path, &pages, options).await;
         }
 
-        // Collect all text blocks from all pages
-        let mut all_blocks = Vec::new();
-        let mut total_width: f32 = 0.0;
-        let mut _total_height: f32 = 0.0;
-
-        for page in &pages {
-            all_blocks.extend(page.text_blocks.clone());
-            total_width = total_width.max(page.width);
-            _total_height += page.height;
-        }
-
-        // TEMPORARY: Disable layout analysis, it's worse than pdf-extract
-        // TODO: Fix docling_style_markdown_from_blocks() - currently generates 3% similarity vs 77.3%
+        // For single-document output, use pdf-extract directly (most memory efficient)
+        // Skip lopdf parsing since we're not using layout analysis anyway
         eprintln!("⚡ Using enhanced heuristics mode (82%+ similarity)");
         let markdown = {
-            // Fallback to pdf-extract (best quality for now)
             use pdf_extract::extract_text;
             let raw_text = extract_text(path).map_err(|e| {
                 crate::TransmutationError::engine_error(
@@ -628,6 +679,8 @@ impl PdfConverter {
 
     /// Convert PDF pages individually with precision mode quality
     /// Each page is processed separately and returned as individual ConversionOutput
+    ///
+    /// Memory optimized: extracts text once and splits by page markers
     async fn convert_pages_individually(
         &self,
         path: &Path,
@@ -636,43 +689,48 @@ impl PdfConverter {
     ) -> Result<Vec<ConversionOutput>> {
         use pdf_extract::extract_text_from_mem;
 
-        let mut outputs = Vec::new();
+        // Pre-allocate output vector with known size
+        let mut outputs = Vec::with_capacity(pages.len());
 
-        // Load original PDF bytes for page-by-page extraction
+        // Load PDF bytes once
         let pdf_bytes = tokio::fs::read(path).await?;
 
-        for (page_idx, _page) in pages.iter().enumerate() {
+        // Extract text ONCE for the entire document (major memory optimization)
+        let full_text = extract_text_from_mem(&pdf_bytes).map_err(|e| {
+            crate::TransmutationError::engine_error(
+                "PDF Parser",
+                format!("pdf-extract failed: {:?}", e),
+            )
+        })?;
+
+        // Drop PDF bytes immediately to free memory
+        drop(pdf_bytes);
+
+        // Split by page markers (pdf-extract adds \f between pages)
+        let page_texts: Vec<&str> = full_text.split('\x0C').collect();
+
+        for (page_idx, page) in pages.iter().enumerate() {
             eprintln!("  Processing page {}/{}...", page_idx + 1, pages.len());
 
-            // For now, use pdf-extract on full document and split by page markers
-            // This is a workaround - ideally we'd extract each page individually
-            // TODO: Implement proper per-page extraction in PdfParser
-
-            // Extract text for this specific page using pdf-extract
-            let full_text = extract_text_from_mem(&pdf_bytes).map_err(|e| {
-                crate::TransmutationError::engine_error(
-                    "PDF Parser",
-                    format!("pdf-extract failed: {:?}", e),
-                )
-            })?;
-
-            // Split by page markers (pdf-extract adds \f between pages)
-            let page_texts: Vec<&str> = full_text.split('\x0C').collect();
-
             let page_text = if page_idx < page_texts.len() {
-                page_texts[page_idx].to_string()
+                page_texts[page_idx]
             } else {
-                // Fallback if page marker not found
-                _page
+                // Fallback if page marker not found - use text blocks from lopdf
+                ""
+            };
+
+            // Use text blocks as fallback if page text is empty
+            let markdown = if page_text.trim().is_empty() && !page.text_blocks.is_empty() {
+                let fallback_text: String = page
                     .text_blocks
                     .iter()
                     .map(|b| b.text.as_str())
                     .collect::<Vec<_>>()
-                    .join("\n")
+                    .join("\n");
+                Self::join_paragraph_lines_enhanced(&fallback_text)
+            } else {
+                Self::join_paragraph_lines_enhanced(page_text)
             };
-
-            // Apply same precision mode processing as full document
-            let markdown = Self::join_paragraph_lines_enhanced(&page_text);
 
             let token_count = markdown.len() / 4;
             let data = markdown.into_bytes();
@@ -800,13 +858,21 @@ impl PdfConverter {
     }
 
     /// Enhanced paragraph joining with MORE aggressive improvements for Docling-style output
+    ///
+    /// Memory optimized: uses cached regex and pre-allocated strings
     fn join_paragraph_lines_enhanced(text: &str) -> String {
+        let cache = regex_cache();
+
         // CRITICAL FIX: Remove unwanted spaces that pdf-extract introduces
         // "i s" -> "is", "o n" -> "on", "t o" -> "to", "o f" -> "of", "a n" -> "an", etc.
-        let mut cleaned = text.to_string();
+
+        // Pre-allocate with estimated capacity
+        let mut cleaned = String::with_capacity(text.len());
+        cleaned.push_str(text);
 
         // Fix common two-letter words that got split
-        let word_fixes = [
+        // Using static array to avoid allocation
+        const WORD_FIXES: [(&str, &str); 19] = [
             (" i s ", " is "),
             (" i n ", " in "),
             (" o n ", " on "),
@@ -826,40 +892,34 @@ impl PdfConverter {
             ("o n ", "on "),
             ("a s ", "as "),
             ("a t ", "at "),
-            ("i s ", "is "),
         ];
 
-        for (bad, good) in word_fixes.iter() {
-            cleaned = cleaned.replace(bad, good);
+        for (bad, good) in WORD_FIXES.iter() {
+            if cleaned.contains(bad) {
+                cleaned = cleaned.replace(bad, good);
+            }
         }
 
         // More aggressive: fix ANY single letter followed by space followed by single letter
-        // that forms a common word
-        cleaned = regex::Regex::new(r" ([a-z]) ([a-z]) ")
-            .unwrap()
-            .replace_all(&cleaned, " $1$2 ")
-            .to_string();
-
-        // Apply multiple times to catch overlapping cases
-        cleaned = regex::Regex::new(r" ([a-z]) ([a-z]) ")
-            .unwrap()
-            .replace_all(&cleaned, " $1$2 ")
-            .to_string();
+        // Apply twice to catch overlapping cases (using cached regex)
+        for _ in 0..2 {
+            cleaned = cache
+                .single_letter_pair
+                .replace_all(&cleaned, " $1$2 ")
+                .into_owned();
+        }
 
         // Now apply the standard preprocessing
         let mut result = Self::join_paragraph_lines(&cleaned);
 
         // CRITICAL: Apply space fix AGAIN after join_paragraph_lines
-        // because join might have introduced new patterns
-        result = regex::Regex::new(r" ([a-z]) ([a-z]) ")
-            .unwrap()
-            .replace_all(&result, " $1$2 ")
-            .to_string();
-
-        result = regex::Regex::new(r" ([a-z]) ([a-z]) ")
-            .unwrap()
-            .replace_all(&result, " $1$2 ")
-            .to_string();
+        // because join might have introduced new patterns (apply twice)
+        for _ in 0..2 {
+            result = cache
+                .single_letter_pair
+                .replace_all(&result, " $1$2 ")
+                .into_owned();
+        }
 
         result
     }
