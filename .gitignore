@@ -89,3 +89,4 @@ data/
 
 # Docling parse script/link
 docling_parse
+.claude/
