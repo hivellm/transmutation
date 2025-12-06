@@ -69,6 +69,8 @@ If `openspec/` directory exists:
 
 **ONLY after ALL above steps pass:**
 
+**⚠️ CRITICAL: All commit messages MUST be in English**
+
 ```bash
 git add .
 git commit -m "<type>(<scope>): <description>
@@ -82,6 +84,8 @@ Closes #<issue> (if applicable)"
 ```
 
 **Commit Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`
+
+**Language Requirement**: Commit messages must be written in English. Never use Portuguese, Spanish, or any other language.
 
 ### Step 6: Report to User
 

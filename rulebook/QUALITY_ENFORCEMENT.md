@@ -33,6 +33,26 @@
 - DO use proven, established solutions from decades of experience
 - DO fix root causes, not symptoms
 
+### Temporary Files and Scripts - STRICTLY FORBIDDEN
+- **NEVER** create temporary files in project root or any directory outside `/scripts`
+- **NEVER** create test files, log files, or debug files outside `/scripts`
+- **NEVER** leave temporary files after use - they MUST be deleted immediately
+- **ALWAYS** create all scripts inside `/scripts` directory
+- **ALWAYS** remove temporary files immediately after use (MANDATORY)
+- **ALWAYS** clean up test artifacts, log files, and debug files before committing
+- **ALWAYS** use `/scripts` directory for any temporary scripts or test files
+
+**Why This Matters:**
+LLM assistants often create temporary files for testing but forget to remove them, accumulating dozens of junk files that pollute the repository. All temporary work MUST be done in `/scripts` and cleaned up immediately.
+
+**Examples:**
+- ❌ Creating `test.js`, `debug.log`, `temp.json` in project root
+- ❌ Leaving test files after debugging
+- ❌ Creating scripts outside `/scripts` directory
+- ✅ Creating `/scripts/test-feature.js` and removing it after use
+- ✅ Using `/scripts` for all temporary work
+- ✅ Cleaning up all temporary files before committing
+
 ## Enforcement
 
 These rules apply to ALL implementations:

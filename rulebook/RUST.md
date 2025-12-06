@@ -66,6 +66,136 @@ mod tests {
 }
 ```
 
+### Test Categories: S2S and Slow Tests
+
+**CRITICAL**: Tests must be categorized based on execution time and dependencies.
+
+#### Test Time Limits
+
+- **Fast Tests**: Must complete in ≤ 10-20 seconds
+- **Slow Tests**: Any test taking > 10-20 seconds must be marked as slow
+- **S2S Tests**: Tests requiring active server/database must be isolated and run on-demand
+
+#### S2S (Server-to-Server) Tests
+
+**Tests that require active servers, databases, or external services must be isolated using Cargo features.**
+
+**Implementation**:
+
+1. **Create `s2s` feature in `Cargo.toml`**:
+```toml
+[features]
+default = []
+s2s = []  # Enable server-to-server tests
+```
+
+2. **Mark S2S tests with feature flag**:
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Regular fast test (always runs)
+    #[test]
+    fn test_local_computation() {
+        // Fast test, no external dependencies
+    }
+
+    // S2S test (only runs with --features s2s)
+    #[cfg(feature = "s2s")]
+    #[tokio::test]
+    async fn test_database_connection() {
+        // Requires active database server
+        let db = connect_to_database().await?;
+        // ... test implementation
+    }
+
+    #[cfg(feature = "s2s")]
+    #[tokio::test]
+    async fn test_api_integration() {
+        // Requires active API server
+        let client = create_api_client().await?;
+        // ... test implementation
+    }
+}
+```
+
+3. **Run tests**:
+```bash
+# Regular tests (excludes S2S)
+cargo test
+
+# Include S2S tests (requires active servers)
+cargo test --features s2s
+
+# CI/CD: Run S2S tests only when servers are available
+cargo test --features s2s --test-args '--test-threads=1'
+```
+
+#### Slow Tests
+
+**Tests that take > 10-20 seconds must be marked and run separately.**
+
+**Implementation**:
+
+1. **Create `slow` feature in `Cargo.toml`**:
+```toml
+[features]
+default = []
+slow = []  # Enable slow tests
+```
+
+2. **Mark slow tests**:
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Fast test (always runs)
+    #[test]
+    fn test_quick_operation() {
+        // Completes in < 1 second
+    }
+
+    // Slow test (only runs with --features slow)
+    #[cfg(feature = "slow")]
+    #[test]
+    fn test_heavy_computation() {
+        // Takes 30+ seconds
+        // Heavy processing, large dataset, etc.
+    }
+
+    #[cfg(feature = "slow")]
+    #[tokio::test]
+    async fn test_large_file_processing() {
+        // Processes large files, takes > 20 seconds
+    }
+}
+```
+
+3. **Run tests**:
+```bash
+# Regular tests (excludes slow)
+cargo test
+
+# Include slow tests
+cargo test --features slow
+
+# Run both S2S and slow tests
+cargo test --features s2s,slow
+```
+
+#### Best Practices
+
+- ✅ **Always run fast tests** in CI/CD by default
+- ✅ **Isolate S2S tests** - never run them in standard test suite
+- ✅ **Mark slow tests** - prevent CI/CD timeouts
+- ✅ **Document requirements** - specify which servers/services are needed for S2S tests
+- ✅ **Use timeouts** - Set appropriate timeouts for S2S tests: `tokio::time::timeout(Duration::from_secs(30), test_fn).await?`
+- ❌ **Never mix** fast and slow/S2S tests in same test run
+- ❌ **Never require** external services for standard test suite
+- ❌ **Never exceed** 10-20 seconds for regular tests
+
 ## Async Programming
 
 **CRITICAL**: Follow Tokio best practices for async code.

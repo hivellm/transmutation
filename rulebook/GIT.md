@@ -184,6 +184,8 @@ git pull --ff-only origin main
 
 **CRITICAL**: Commit after every important implementation:
 
+**⚠️ IMPORTANT: All commit messages MUST be in English**
+
 ```bash
 # After implementing a feature/fix:
 
@@ -196,7 +198,7 @@ npm run build         # Ensure build succeeds
 # 2. If ALL checks pass, stage changes
 git add .
 
-# 3. Commit with conventional commit message
+# 3. Commit with conventional commit message (ENGLISH ONLY)
 git commit -m "feat: Add user authentication
 
 - Implement login/logout functionality
@@ -204,11 +206,15 @@ git commit -m "feat: Add user authentication
 - Include comprehensive tests (95%+ coverage)
 - Update documentation"
 
-# Alternative for smaller changes:
+# Alternative for smaller changes (ENGLISH ONLY):
 git commit -m "fix: Correct validation logic in user form"
 
 # For signed commits (recommended for production):
 git commit -S -m "feat: Add feature"
+
+# ❌ NEVER use other languages:
+# ❌ git commit -m "feat: Adiciona autenticação de usuário"
+# ❌ git commit -m "fix: Corrige lógica de validação"
 ```
 
 ## Advanced Git Safeguards
@@ -309,6 +315,8 @@ git push origin main
 
 **MUST** follow conventional commit format:
 
+**⚠️ CRITICAL: All commit messages MUST be in English**
+
 ```bash
 # Format: <type>(<scope>): <subject>
 #
@@ -328,12 +336,22 @@ build:    # Build system changes
 ci:       # CI/CD changes
 chore:    # Maintenance tasks
 
-# Examples:
+# Language Requirement:
+# ✅ ALWAYS use English for commit messages
+# ❌ NEVER use Portuguese, Spanish, or any other language
+# ❌ NEVER mix languages in commit messages
+
+# Examples (CORRECT - English):
 git commit -m "feat(auth): Add OAuth2 login support"
 git commit -m "fix(api): Handle null response in user endpoint"
 git commit -m "docs: Update README with installation steps"
 git commit -m "test: Add integration tests for payment flow"
 git commit -m "chore: Update dependencies to latest versions"
+
+# Examples (INCORRECT - Other languages):
+# ❌ git commit -m "feat: Adiciona suporte de login OAuth2"
+# ❌ git commit -m "fix: Corrige resposta nula no endpoint"
+# ❌ git commit -m "docs: Atualiza README com passos de instalação"
 ```
 
 ## Version Management
@@ -822,6 +840,7 @@ Auto Mode:
 - **ALWAYS** check if .git exists before init commands
 - **ALWAYS** run tests before commit
 - **ALWAYS** use conventional commit messages
+- **ALWAYS** write commit messages in English (never in Portuguese, Spanish, or other languages)
 - **ALWAYS** update CHANGELOG for versions
 - **ALWAYS** ask before executing `git checkout`
 - **ALWAYS** ask before executing `git reset`
@@ -852,6 +871,8 @@ Auto Mode:
 - **NEVER** commit without passing tests
 - **NEVER** commit with linting errors
 - **NEVER** commit with build failures
+- **NEVER** write commit messages in languages other than English
+- **NEVER** mix languages in commit messages
 - **NEVER** create tag without quality checks
 - **NEVER** push automatically with SSH password
 - **NEVER** push if uncertain about CI/CD success
