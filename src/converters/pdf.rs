@@ -211,7 +211,7 @@ impl PdfConverter {
                 "Appendix",
                 "Summary",
             ];
-            let is_common_section = common_sections.iter().any(|&s| trimmed == s);
+            let is_common_section = common_sections.contains(&trimmed);
 
             // RULE 1b: Detect paper titles (short lines early in document that look like titles)
             // Pattern: "Attention Is All You Need", "Transformer Architecture", etc.

@@ -233,7 +233,7 @@ impl Chunker {
     fn estimate_tokens(&self, text: &str) -> usize {
         // Simple heuristic: average of 4 characters per token
         // This is a rough approximation; for accurate counting, use tiktoken-rs
-        (text.len() + 3) / 4
+        text.len().div_ceil(4)
     }
 }
 

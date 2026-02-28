@@ -150,10 +150,7 @@ impl From<ort::Error> for TransmutationError {
 
 impl From<zip::result::ZipError> for TransmutationError {
     fn from(err: zip::result::ZipError) -> Self {
-        TransmutationError::IoError(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            err.to_string(),
-        ))
+        TransmutationError::IoError(std::io::Error::other(err.to_string()))
     }
 }
 
