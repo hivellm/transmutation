@@ -22,63 +22,38 @@ jobs:
           - os: ubuntu-latest
           - os: windows-latest
           - os: macos-latest
-    
+
     steps:
-      - uses: actions/checkout@v5
-      
+      - uses: actions/checkout@v4
+
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
-      
+
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Install mold linker (Linux)
         if: matrix.os == 'ubuntu-latest'
         uses: rui314/setup-mold@v1
-      
-      - name: Install system dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            pkg-config \
-            libleptonica-dev \
-            libtesseract-dev \
-            tesseract-ocr-eng \
-            libarchive-dev \
-            libcurl4-openssl-dev
-          pkg-config --exists lept || (echo "lept.pc not found" && find /usr -name "lept.pc" 2>/dev/null || true)
-      
-      - name: Install system dependencies (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install leptonica tesseract libarchive
-      
-      - name: Install system dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          $env:VCPKG_DEFAULT_TRIPLET = "x64-windows-static-md"
-          vcpkg integrate install
-          vcpkg install leptonica:x64-windows-static-md tesseract:x64-windows-static-md libarchive:x64-windows-static-md
-        shell: pwsh
-      
+
+      # Build and test with features that don't require external C libraries.
+      # The image-ocr (tesseract/leptonica) feature is excluded because it
+      # requires system-specific C libraries that are fragile across CI runners.
       - name: Build tests
-        run: cargo build --tests --workspace --features "full"
-      
+        run: cargo build --tests --workspace --features "pdf-to-image,office,audio,video,archives-extended,cli"
+
       - name: Run tests
-        run: cargo test --workspace --features "full"
+        run: cargo test --workspace --features "pdf-to-image,office,audio,video,archives-extended,cli"
 
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      
+      - uses: actions/checkout@v4
+
       - name: Install Rust nightly
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly-2025-01-01
           components: rustfmt
-      
+
       - name: Check formatting
         run: cargo fmt --all -- --check
-

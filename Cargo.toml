@@ -114,7 +114,7 @@ umya-spreadsheet = { version = "2.3", optional = true }
 
 # Markdown
 pulldown-cmark = "0.13"
-comrak = "0.29"
+comrak = { version = "0.29", default-features = false }
 regex = "1.11"
 once_cell = "1.20"
 

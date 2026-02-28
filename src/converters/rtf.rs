@@ -56,50 +56,46 @@ impl RtfConverter {
                     brace_depth -= 1;
                     in_control_word = false;
                 }
-                '\\' => {
-                    // Check for control word
-                    if i + 1 < chars.len() {
-                        let next_ch = chars[i + 1];
+                '\\' if i + 1 < chars.len() => {
+                    let next_ch = chars[i + 1];
 
-                        // Escape sequences
-                        if next_ch == '\\' || next_ch == '{' || next_ch == '}' {
-                            text_content.push(next_ch);
-                            skip_next = true;
-                        } else if next_ch == '\'' {
-                            // Hex escape \'XX
-                            if i + 3 < chars.len() {
-                                i += 3; // Skip \'XX
-                            }
-                        } else if next_ch == 'p'
-                            && i + 3 < chars.len()
-                            && chars[i + 2] == 'a'
-                            && chars[i + 3] == 'r'
-                        {
-                            // Paragraph break
-                            text_content.push_str("\n\n");
-                            i += 3;
-                        } else if next_ch == 't'
-                            && i + 3 < chars.len()
-                            && chars[i + 2] == 'a'
-                            && chars[i + 3] == 'b'
-                        {
-                            // Tab
-                            text_content.push('\t');
-                            i += 3;
-                        } else {
-                            // Skip control word
-                            in_control_word = true;
-                            i += 1;
-                            while i < chars.len() && (chars[i].is_alphanumeric() || chars[i] == '*')
-                            {
-                                i += 1;
-                            }
-                            // Skip optional space after control word
-                            if i < chars.len() && chars[i] == ' ' {
-                                i += 1;
-                            }
-                            i -= 1; // Adjust because we'll increment at the end
+                    // Escape sequences
+                    if next_ch == '\\' || next_ch == '{' || next_ch == '}' {
+                        text_content.push(next_ch);
+                        skip_next = true;
+                    } else if next_ch == '\'' {
+                        // Hex escape \'XX
+                        if i + 3 < chars.len() {
+                            i += 3; // Skip \'XX
                         }
+                    } else if next_ch == 'p'
+                        && i + 3 < chars.len()
+                        && chars[i + 2] == 'a'
+                        && chars[i + 3] == 'r'
+                    {
+                        // Paragraph break
+                        text_content.push_str("\n\n");
+                        i += 3;
+                    } else if next_ch == 't'
+                        && i + 3 < chars.len()
+                        && chars[i + 2] == 'a'
+                        && chars[i + 3] == 'b'
+                    {
+                        // Tab
+                        text_content.push('\t');
+                        i += 3;
+                    } else {
+                        // Skip control word
+                        in_control_word = true;
+                        i += 1;
+                        while i < chars.len() && (chars[i].is_alphanumeric() || chars[i] == '*') {
+                            i += 1;
+                        }
+                        // Skip optional space after control word
+                        if i < chars.len() && chars[i] == ' ' {
+                            i += 1;
+                        }
+                        i -= 1; // Adjust because we'll increment at the end
                     }
                 }
                 _ if brace_depth > 0 && !in_control_word && ch >= ' ' => {

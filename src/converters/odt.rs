@@ -72,10 +72,8 @@ impl OdtConverter {
                         current_text.clear();
                     }
                 }
-                Ok(Event::Text(e)) => {
-                    if in_paragraph || in_heading {
-                        current_text.push_str(&e.unescape().unwrap_or_default());
-                    }
+                Ok(Event::Text(e)) if in_paragraph || in_heading => {
+                    current_text.push_str(&e.unescape().unwrap_or_default());
                 }
                 Ok(Event::End(e)) => {
                     let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
