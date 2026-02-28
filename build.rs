@@ -4,8 +4,10 @@
 use std::process::Command;
 
 fn main() {
-    // Embed icon and metadata into Windows executable
-    #[cfg(target_os = "windows")]
+    // Embed icon and metadata into Windows executable (only for CLI binary builds)
+    // When used as a library dependency, skip resource compilation to avoid
+    // duplicate resource errors (see: https://github.com/hivellm/transmutation/issues/3)
+    #[cfg(all(target_os = "windows", feature = "cli"))]
     {
         let mut res = winres::WindowsResource::new();
         res.set_icon("assets/icon.ico");

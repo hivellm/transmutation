@@ -145,8 +145,8 @@ mockall = "0.13"
 tokio-test = "0.4"
 
 [build-dependencies]
-# Windows resource compiler for embedding icons
-winres = "0.1"
+# Windows resource compiler for embedding icons (only needed for CLI binary)
+winres = { version = "0.1", optional = true }
 
 [features]
 default = ["office"]  # Core formats (PDF, HTML, XML, ZIP) are always enabled
@@ -167,7 +167,7 @@ archives-extended = ["tar", "flate2", "sevenz-rust"]  # Extended archive support
 docling-ffi = ["dep:ort", "dep:ndarray", "dep:rstar", "dep:pdfium-render"]  # Enable C++ docling-parse + ONNX ML models
 
 # CLI
-cli = ["clap", "indicatif", "console", "colored"]
+cli = ["clap", "indicatif", "console", "colored", "winres"]
 
 # All features (no external integrations - Transmutation is a library/CLI)
 full = [
