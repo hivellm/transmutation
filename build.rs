@@ -92,6 +92,8 @@ fn main() {
 
         #[cfg(target_os = "linux")]
         {
+            use std::path::Path;
+
             // Detect architecture
             let arch = if cfg!(target_arch = "x86_64") {
                 "x86"
@@ -102,7 +104,31 @@ fn main() {
             };
             let build_dir = format!("build_linux_{arch}");
 
-            // Try multiple locations for the library
+            // Check if library exists in any known location
+            let lib_build = format!("{build_dir}/libdocling_ffi.so");
+            let lib_libs = format!("libs/libdocling_ffi.so");
+            let lib_legacy = "cpp/build/libdocling_ffi.so";
+            let lib_docling = format!("docling-parse/build_linux_{arch}_docling/libdocling_ffi.so");
+
+            if !Path::new(&lib_build).exists()
+                && !Path::new(&lib_libs).exists()
+                && !Path::new(lib_legacy).exists()
+                && !Path::new(&lib_docling).exists()
+            {
+                eprintln!("========================================");
+                eprintln!("ERROR: libdocling_ffi.so not found!");
+                eprintln!("========================================");
+                eprintln!("The 'docling-ffi' feature requires a pre-built C++ library.");
+                eprintln!("Please build it first: ./scripts/build_cpp.sh");
+                eprintln!();
+                eprintln!("If installing via 'cargo install', note that docling-ffi");
+                eprintln!("requires cloning the repo and building the C++ library locally.");
+                eprintln!("See: https://github.com/hivellm/transmutation/blob/main/docs/FFI.md");
+                eprintln!("========================================");
+                panic!("C++ library not built - see instructions above");
+            }
+
+            // Library search paths
             println!("cargo:rustc-link-search=native=libs"); // Pre-built library location
             println!("cargo:rustc-link-search=native={build_dir}");
             println!("cargo:rustc-link-search=native=cpp/build"); // Legacy location
@@ -117,6 +143,8 @@ fn main() {
 
         #[cfg(target_os = "macos")]
         {
+            use std::path::Path;
+
             // Detect architecture
             let arch = if cfg!(target_arch = "x86_64") {
                 "x86"
@@ -126,6 +154,31 @@ fn main() {
                 "ARM"
             }; // Default to ARM for Apple Silicon
             let build_dir = format!("build_macos_{arch}");
+
+            // Check if library exists in any known location
+            let lib_build = format!("{build_dir}/libdocling_ffi.dylib");
+            let lib_libs = format!("libs/libdocling_ffi.dylib");
+            let lib_legacy = "cpp/build/libdocling_ffi.dylib";
+            let lib_docling =
+                format!("docling-parse/build_macos_{arch}_docling/libdocling_ffi.dylib");
+
+            if !Path::new(&lib_build).exists()
+                && !Path::new(&lib_libs).exists()
+                && !Path::new(lib_legacy).exists()
+                && !Path::new(&lib_docling).exists()
+            {
+                eprintln!("========================================");
+                eprintln!("ERROR: libdocling_ffi.dylib not found!");
+                eprintln!("========================================");
+                eprintln!("The 'docling-ffi' feature requires a pre-built C++ library.");
+                eprintln!("Please build it first: ./scripts/build_cpp.sh");
+                eprintln!();
+                eprintln!("If installing via 'cargo install', note that docling-ffi");
+                eprintln!("requires cloning the repo and building the C++ library locally.");
+                eprintln!("See: https://github.com/hivellm/transmutation/blob/main/docs/FFI.md");
+                eprintln!("========================================");
+                panic!("C++ library not built - see instructions above");
+            }
 
             println!("cargo:rustc-link-search=native=libs");
             println!("cargo:rustc-link-search=native={build_dir}");
