@@ -11,12 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| [0.3.2](#032---2026-02-28) | 2026-02-28 | **Bugfix** | Fix duplicate resource & docling-ffi build errors |
 | [0.3.1](#031---2025-12-06) | 2025-12-06 | **Bugfix** | Fix UTF-8 boundary panic in PDF conversion |
 | [0.3.0](#030---2025-12-06) | 2025-12-06 | **Performance** | PDF memory optimization, cached regex |
 | [0.2.0](#020---2025-11-07) | 2025-11-07 | **Maintenance** | CI hardening, release docs refresh |
 | [0.1.2](#012---2025-10-13) | 2025-10-13 | **Major** | 27 formats, Phase 3 complete, Audio/Video transcription |
 | [0.1.1](#011---2025-10-13) | 2025-10-13 | **Distribution** | MSI installer, icons, automated scripts |
 | [0.1.0](#010---2025-10-13) | 2025-10-13 | **Initial** | Core PDF/DOCX conversion, 98x faster than Docling |
+
+---
+
+## [0.3.2] - 2026-02-28
+
+**Bugfix Release**
+
+Fixes build failures when using transmutation as a library dependency on Windows, and improves error messages for the `docling-ffi` feature on macOS and Linux.
+
+### Fixed
+
+- **Duplicate Resource Error on Windows** ([#3](https://github.com/hivellm/transmutation/issues/3)): When using transmutation as a library dependency, the `build.rs` unconditionally compiled Windows resources (icon/metadata via `winres`), causing duplicate resource link errors if the consuming project also embeds its own resources. Now `winres` is an optional build-dependency gated behind the `cli` feature, so resource compilation only happens when building the CLI binary.
+
+- **Cryptic Linker Error for docling-ffi on macOS/Linux** ([#2](https://github.com/hivellm/transmutation/issues/2)): Installing with `--features docling-ffi` on macOS produced an unhelpful `ld: library 'docling_ffi' not found` error. Added explicit library existence checks for macOS (`.dylib`) and Linux (`.so`), matching the pattern already used on Windows. The build now fails early with clear instructions pointing to `build_cpp.sh` and `docs/FFI.md`.
+
+### Changed
+
+- `winres` build-dependency is now optional (only included when `cli` feature is active)
+- `cli` feature now includes `winres` in its dependency list
 
 ---
 
