@@ -1,6 +1,6 @@
 [package]
 name = "transmutation"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2024"
 authors = ["HiveLLM Team <team@hivellm.org>"]
 license = "MIT"
@@ -93,7 +93,7 @@ rstar = { version = "0.12", optional = true }
 # Document parsing - Core formats (always enabled)
 # PDF
 lopdf = "0.35"
-pdf-extract = "0.7"
+pdf-extract = "0.8"
 pdfium-render = { version = "0.8", optional = true }  # Only for PDF rendering to images
 
 # HTML/XML

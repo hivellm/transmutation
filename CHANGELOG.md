@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| [0.3.3](#033---2026-06-18) | 2026-06-18 | **Bugfix** | Update pdf-extract 0.7 → 0.8 to fix PDF parsing crashes |
 | [0.3.2](#032---2026-02-28) | 2026-02-28 | **Bugfix** | Fix duplicate resource & docling-ffi build errors |
 | [0.3.1](#031---2025-12-06) | 2025-12-06 | **Bugfix** | Fix UTF-8 boundary panic in PDF conversion |
 | [0.3.0](#030---2025-12-06) | 2025-12-06 | **Performance** | PDF memory optimization, cached regex |
@@ -18,6 +19,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | [0.1.2](#012---2025-10-13) | 2025-10-13 | **Major** | 27 formats, Phase 3 complete, Audio/Video transcription |
 | [0.1.1](#011---2025-10-13) | 2025-10-13 | **Distribution** | MSI installer, icons, automated scripts |
 | [0.1.0](#010---2025-10-13) | 2025-10-13 | **Initial** | Core PDF/DOCX conversion, 98x faster than Docling |
+
+---
+
+## [0.3.3] - 2026-06-18
+
+**Bugfix Release**
+
+Updates the `pdf-extract` dependency to fix application crashes when parsing certain PDF files.
+
+### Fixed
+
+- **Application Crash on Some PDFs** ([#4](https://github.com/hivellm/transmutation/issues/4)): Certain PDF files caused the application to crash during parsing with `pdf-extract` 0.7.x. Bumped `pdf-extract` from `0.7` to `0.8`, which resolves the upstream parsing bugs. The extraction API (`extract_text`, `extract_text_from_mem`) is unchanged, so no source changes were required.
+
+### Changed
+
+- `pdf-extract` dependency updated from `0.7` to `0.8` (resolves to 0.8.2)
 
 ---
 
