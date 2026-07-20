@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| [0.3.4](#034---2026-07-20) | 2026-07-20 | **Maintenance** | Dependency refresh, clippy CI fix, automated crates.io publishing |
 | [0.3.3](#033---2026-06-18) | 2026-06-18 | **Bugfix** | Update pdf-extract 0.7 → 0.8 to fix PDF parsing crashes |
 | [0.3.2](#032---2026-02-28) | 2026-02-28 | **Bugfix** | Fix duplicate resource & docling-ffi build errors |
 | [0.3.1](#031---2025-12-06) | 2025-12-06 | **Bugfix** | Fix UTF-8 boundary panic in PDF conversion |
@@ -19,6 +20,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | [0.1.2](#012---2025-10-13) | 2025-10-13 | **Major** | 27 formats, Phase 3 complete, Audio/Video transcription |
 | [0.1.1](#011---2025-10-13) | 2025-10-13 | **Distribution** | MSI installer, icons, automated scripts |
 | [0.1.0](#010---2025-10-13) | 2025-10-13 | **Initial** | Core PDF/DOCX conversion, 98x faster than Docling |
+
+---
+
+## [0.3.4] - 2026-07-20
+
+**Maintenance Release**
+
+Refreshes the dependency tree, fixes the Clippy CI job, and adds automated
+publishing to crates.io via Trusted Publishing (OIDC). No public API changes.
+
+### Added
+
+- **Automated crates.io publishing**: New `.github/workflows/publish.yml` workflow
+  publishes the crate on GitHub Release using [Trusted Publishing](https://crates.io/docs/trusted-publishing)
+  (short-lived OIDC token, no long-lived `CARGO_REGISTRY_TOKEN` secret required).
+  The workflow also verifies the release tag matches the `Cargo.toml` version.
+
+### Fixed
+
+- **Clippy CI failure**: `examples/debug_lopdf_pages.rs` triggered
+  `clippy::useless_borrows_in_formatting` (`-D warnings`), breaking the Clippy
+  job. Removed the redundant `&` in the `println!` argument.
+
+### Changed
+
+- **Dependency refresh**: Updated all dependencies to their latest
+  semver-compatible versions (`Cargo.lock`).
+- `dirs` bumped `5.0` → `6.0`.
+- `colored` bumped `2.2` → `3.0` (CLI feature only).
 
 ---
 

@@ -1,0 +1,66 @@
+name: Publish to crates.io
+
+# Publishes the crate to crates.io using Trusted Publishing (OIDC).
+#
+# Setup (one-time, on crates.io):
+#   1. Go to https://crates.io/crates/transmutation/settings (owner access required).
+#   2. Under "Trusted Publishing", add a GitHub publisher with:
+#        - Repository owner: hivellm
+#        - Repository name:  transmutation
+#        - Workflow filename: publish.yml
+#        - Environment:       release   (must match the `environment:` below)
+#   3. No CARGO_REGISTRY_TOKEN secret is needed — the token is minted per run
+#      via OIDC and is short-lived.
+#
+# Trigger: publishing a GitHub Release. Create a release from a `vX.Y.Z` tag
+# that matches the version in Cargo.toml.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish (Trusted Publishing)
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write   # required for OIDC token exchange with crates.io
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Verify tag matches Cargo.toml version
+        if: github.event_name == 'release'
+        run: |
+          CARGO_VERSION="$(cargo metadata --no-deps --format-version 1 \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["packages"][0]["version"])')"
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "Cargo.toml version: $CARGO_VERSION"
+          echo "Release tag:        $TAG"
+          if [ "$CARGO_VERSION" != "$TAG" ]; then
+            echo "::error::Tag ($TAG) does not match Cargo.toml version ($CARGO_VERSION)"
+            exit 1
+          fi
+
+      - name: Package (verify build with default features)
+        run: cargo package
+
+      - name: Authenticate to crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish
+        run: cargo publish --no-verify
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}

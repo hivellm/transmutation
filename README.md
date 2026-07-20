@@ -92,22 +92,27 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 ```powershell
 # Download from releases or build:
 .\build-msi.ps1
-msiexec /i target\wix\transmutation-0.3.0-x86_64.msi
+msiexec /i target\wix\transmutation-0.3.4-x86_64.msi
 ```
 See [`docs/MSI_BUILD.md`](docs/MSI_BUILD.md) for details.
 
-**Cargo:**
+**CLI (via Cargo):**
+```bash
+cargo install transmutation --features cli
+```
+
+**Library (via Cargo):**
 ```bash
 # Add to Cargo.toml
 [dependencies]
-transmutation = "0.2"
+transmutation = "0.3"
 
 # Core features (always enabled, no flags needed):
 # - PDF, HTML, XML, ZIP, TXT, CSV, TSV, RTF, ODT
 
 # With Office formats (default)
 [dependencies.transmutation]
-version = "0.2"
+version = "0.3"
 features = ["office"]  # DOCX, XLSX, PPTX
 
 # With optional features (requires external tools)
