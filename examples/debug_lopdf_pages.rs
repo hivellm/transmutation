@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Text length: {} chars", page.text.len());
         println!("Lines count: {}", page.text.lines().count());
         println!("First 300 chars:");
-        println!("{}", &page.text.chars().take(300).collect::<String>());
+        println!("{}", page.text.chars().take(300).collect::<String>());
         println!("\nFirst 10 lines:");
         for (j, line) in page.text.lines().take(10).enumerate() {
             println!("  {}: [{}]", j + 1, line);

@@ -1,6 +1,6 @@
 [package]
 name = "transmutation"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2024"
 authors = ["HiveLLM Team <team@hivellm.org>"]
 license = "MIT"
@@ -125,13 +125,13 @@ rayon = "1.10"
 num_cpus = "1.16"
 
 # System directories
-dirs = "5.0"
+dirs = "6.0"
 
 # CLI dependencies
 clap = { version = "4.5", features = ["derive", "cargo", "env"], optional = true }
 indicatif = { version = "0.17", optional = true }
 console = { version = "0.15", optional = true }
-colored = { version = "2.2", optional = true }
+colored = { version = "3.0", optional = true }
 
 # Note: External integrations removed (cache, HTTP, metrics)
 # Transmutation is a library/CLI - external features are handled by HiveLLM Vectorizer
