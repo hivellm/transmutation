@@ -20,6 +20,15 @@ use crate::types::{
 #[derive(Debug)]
 pub struct DocxConverter;
 
+/// Result of rendering a DOCX to Markdown, including the structural information
+/// (page and table counts) needed to populate conversion metadata/statistics.
+#[cfg(feature = "office")]
+struct DocxRender {
+    outputs: Vec<ConversionOutput>,
+    page_count: usize,
+    table_count: usize,
+}
+
 impl DocxConverter {
     /// Create a new DOCX converter
     pub fn new() -> Self {
@@ -190,14 +199,14 @@ impl DocxConverter {
         Ok(outputs)
     }
 
-    /// Convert DOCX to Markdown using simple text extraction
-    /// Uses docx-rs for parsing Word documents
+    /// Convert DOCX to Markdown, preserving headings, lists and tables.
+    /// Uses docx-rs for parsing Word documents.
     #[cfg(feature = "office")]
     async fn convert_to_markdown(
         &self,
         path: &Path,
         options: &ConversionOptions,
-    ) -> Result<Vec<ConversionOutput>> {
+    ) -> Result<DocxRender> {
         eprintln!("📄 Reading DOCX file with docx-rs...");
 
         // Read DOCX file
@@ -213,117 +222,345 @@ impl DocxConverter {
 
         eprintln!("✓ DOCX parsed successfully");
 
-        // Extract all paragraphs first
-        let mut all_paragraphs = Vec::new();
+        // Determine how many pages the document spans (see `count_pages`).
+        let page_count = count_pages(&file_data);
+
+        // Render the document body into Markdown "blocks". A block is either a
+        // heading, a paragraph, a whole list (multiple lines) or a table.
+        let mut blocks: Vec<String> = Vec::new();
+        let mut list_buf: Vec<String> = Vec::new();
+        let mut counters: Vec<usize> = Vec::new();
+        let mut active_num: Option<usize> = None;
+        let mut table_count = 0usize;
 
         for child in &docx.document.children {
-            let text = self.extract_text_from_child(child);
-            if !text.is_empty() {
-                all_paragraphs.push(text);
+            match child {
+                docx_rs::DocumentChild::Paragraph(para) => {
+                    if let Some((num_id, level)) = paragraph_numbering(para) {
+                        // List item. Numbering ids restart their counters when a
+                        // new list begins (i.e. when the numbering id changes).
+                        if active_num != Some(num_id) {
+                            counters.clear();
+                            active_num = Some(num_id);
+                        }
+                        let text = paragraph_plain_text(para);
+                        let indent = "  ".repeat(level);
+                        let marker = match list_kind(&docx.numberings, num_id, level) {
+                            ListKind::Bullet => "- ".to_string(),
+                            ListKind::Ordered => {
+                                format!("{}. ", next_ordered_number(&mut counters, level))
+                            }
+                        };
+                        list_buf.push(format!("{}{}{}", indent, marker, text));
+                    } else {
+                        flush_list(&mut blocks, &mut list_buf);
+                        active_num = None;
+                        counters.clear();
+
+                        let text = paragraph_plain_text(para);
+                        if text.is_empty() {
+                            continue;
+                        }
+                        let heading = para
+                            .property
+                            .style
+                            .as_ref()
+                            .and_then(|s| heading_level(&s.val));
+                        match heading {
+                            Some(level) => blocks.push(format!("{} {}", "#".repeat(level), text)),
+                            None => blocks.push(text),
+                        }
+                    }
+                }
+                docx_rs::DocumentChild::Table(table) => {
+                    flush_list(&mut blocks, &mut list_buf);
+                    active_num = None;
+                    counters.clear();
+
+                    let md = table_to_markdown(table);
+                    if !md.is_empty() {
+                        table_count += 1;
+                        blocks.push(md);
+                    }
+                }
+                _ => {}
             }
         }
+        flush_list(&mut blocks, &mut list_buf);
 
-        // If split_pages enabled, divide into chunks (10-15 paragraphs per "page")
-        if options.split_pages && all_paragraphs.len() > 15 {
-            eprintln!("📄 Splitting DOCX into logical pages (chunks)...");
-            let paragraphs_per_page = 15;
-            let mut outputs = Vec::new();
-
-            for (chunk_idx, chunk) in all_paragraphs.chunks(paragraphs_per_page).enumerate() {
-                let mut markdown = chunk.join("\n\n");
-
-                // Clean up excessive newlines
-                while markdown.contains("\n\n\n") {
-                    markdown = markdown.replace("\n\n\n", "\n\n");
-                }
-
-                let markdown = markdown.trim().to_string();
-                let token_count = markdown.len() / 4;
-                let data = markdown.into_bytes();
-                let size_bytes = data.len() as u64;
-
-                outputs.push(ConversionOutput {
-                    page_number: chunk_idx + 1,
-                    data,
-                    metadata: OutputMetadata {
-                        size_bytes,
-                        chunk_count: 1,
-                        token_count: Some(token_count),
-                    },
-                });
-            }
-
-            eprintln!("✓ Split into {} logical pages", outputs.len());
-            return Ok(outputs);
+        // Split into pages if requested and the document actually spans several.
+        if options.split_pages && page_count > 1 && blocks.len() > 1 {
+            eprintln!("📄 Splitting DOCX into {} pages...", page_count);
+            let outputs = distribute_blocks(&blocks, page_count)
+                .into_iter()
+                .enumerate()
+                .map(|(idx, page_blocks)| make_output(idx + 1, page_blocks.join("\n\n")))
+                .collect();
+            return Ok(DocxRender {
+                outputs,
+                page_count,
+                table_count,
+            });
         }
 
         // Single output (default)
-        let markdown = all_paragraphs.join("\n\n");
-
-        // Clean up excessive newlines
-        let mut markdown = markdown;
-        while markdown.contains("\n\n\n") {
-            markdown = markdown.replace("\n\n\n", "\n\n");
-        }
-
-        let markdown = markdown.trim().to_string();
-
+        let markdown = blocks.join("\n\n");
         eprintln!("✓ Converted to Markdown: {} chars", markdown.len());
 
-        let token_count = markdown.len() / 4;
-        let data = markdown.into_bytes();
-        let size_bytes = data.len() as u64;
+        Ok(DocxRender {
+            outputs: vec![make_output(0, markdown)],
+            page_count,
+            table_count,
+        })
+    }
+}
 
-        Ok(vec![ConversionOutput {
-            page_number: 0,
-            data,
-            metadata: OutputMetadata {
-                size_bytes,
-                chunk_count: 1,
-                token_count: Some(token_count),
-            },
-        }])
+// --------------------------------------------------------------------------
+// Markdown rendering helpers (behind the `office` feature)
+// --------------------------------------------------------------------------
+
+/// Whether a numbered paragraph is part of a bullet or an ordered list.
+#[cfg(feature = "office")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ListKind {
+    Bullet,
+    Ordered,
+}
+
+/// Flush the accumulated list lines into `blocks` as a single block.
+#[cfg(feature = "office")]
+fn flush_list(blocks: &mut Vec<String>, list_buf: &mut Vec<String>) {
+    if !list_buf.is_empty() {
+        blocks.push(list_buf.join("\n"));
+        list_buf.clear();
+    }
+}
+
+/// Detect the heading level of a paragraph style id.
+///
+/// Word uses style ids such as `Heading1`..`Heading9`; display names like
+/// `heading 1` also occur, so we normalize whitespace/separators and case.
+/// The `Title` style is treated as a level-1 heading.
+#[cfg(feature = "office")]
+fn heading_level(style_id: &str) -> Option<usize> {
+    let normalized: String = style_id
+        .chars()
+        .filter(|c| !c.is_whitespace() && *c != '-' && *c != '_')
+        .collect::<String>()
+        .to_ascii_lowercase();
+
+    if normalized == "title" {
+        return Some(1);
     }
 
-    /// Extract text from document child (simplified approach)
-    #[cfg(feature = "office")]
-    fn extract_text_from_child(&self, child: &docx_rs::DocumentChild) -> String {
-        use docx_rs::DocumentChild;
+    let rest = normalized.strip_prefix("heading")?;
+    let level: usize = rest.parse().ok()?;
+    (1..=9).contains(&level).then_some(level)
+}
 
-        match child {
-            DocumentChild::Paragraph(para) => self.extract_paragraph_text(para),
-            DocumentChild::Table(table) => self.extract_table_text(table),
-            _ => String::new(),
+/// Extract the numbering id and (0-based) indent level from a paragraph, if it
+/// participates in a list.
+#[cfg(feature = "office")]
+fn paragraph_numbering(para: &docx_rs::Paragraph) -> Option<(usize, usize)> {
+    let np = para.property.numbering_property.as_ref()?;
+    let id = np.id.as_ref()?.id;
+    let level = np.level.as_ref().map(|l| l.val).unwrap_or(0);
+    Some((id, level))
+}
+
+/// Classify a list by looking up its numbering definition. A `bullet` number
+/// format is an unordered list, anything else (decimal, lowerLetter, ...) is an
+/// ordered list. Unknown definitions default to a bullet list.
+#[cfg(feature = "office")]
+fn list_kind(numberings: &docx_rs::Numberings, num_id: usize, level: usize) -> ListKind {
+    let abstract_id = numberings
+        .numberings
+        .iter()
+        .find(|n| n.id == num_id)
+        .map(|n| n.abstract_num_id);
+
+    if let Some(abstract_id) = abstract_id {
+        if let Some(abstract_num) = numberings
+            .abstract_nums
+            .iter()
+            .find(|a| a.id == abstract_id)
+        {
+            let level_def = abstract_num
+                .levels
+                .iter()
+                .find(|l| l.level == level)
+                .or_else(|| abstract_num.levels.first());
+            if let Some(level_def) = level_def {
+                if level_def.format.val.eq_ignore_ascii_case("bullet") {
+                    return ListKind::Bullet;
+                }
+                return ListKind::Ordered;
+            }
         }
     }
 
-    /// Extract text from paragraph
-    #[cfg(feature = "office")]
-    fn extract_paragraph_text(&self, para: &docx_rs::Paragraph) -> String {
-        use docx_rs::ParagraphChild;
+    ListKind::Bullet
+}
 
-        let mut text = String::new();
+/// Advance the ordered-list counters to produce the next number at `level`
+/// (0-based), resetting any deeper levels. Returns the number to render.
+#[cfg(feature = "office")]
+fn next_ordered_number(counters: &mut Vec<usize>, level: usize) -> usize {
+    if counters.len() > level + 1 {
+        counters.truncate(level + 1);
+    }
+    while counters.len() < level + 1 {
+        counters.push(0);
+    }
+    counters[level] += 1;
+    counters[level]
+}
 
-        for child in &para.children {
-            if let ParagraphChild::Run(run) = child {
-                for run_child in &run.children {
-                    if let docx_rs::RunChild::Text(t) = run_child {
-                        text.push_str(&t.text);
-                    }
+/// Concatenate the plain text of all runs in a paragraph.
+#[cfg(feature = "office")]
+fn paragraph_plain_text(para: &docx_rs::Paragraph) -> String {
+    use docx_rs::{ParagraphChild, RunChild};
+
+    let mut text = String::new();
+    for child in &para.children {
+        if let ParagraphChild::Run(run) = child {
+            for run_child in &run.children {
+                match run_child {
+                    RunChild::Text(t) => text.push_str(&t.text),
+                    RunChild::Tab(_) => text.push('\t'),
+                    _ => {}
                 }
             }
         }
+    }
+    text.trim().to_string()
+}
 
-        text.trim().to_string()
+/// Render a table as a GitHub-flavored Markdown table. The first row is treated
+/// as the header row.
+#[cfg(feature = "office")]
+fn table_to_markdown(table: &docx_rs::Table) -> String {
+    use docx_rs::{TableCellContent, TableChild, TableRowChild};
+
+    let mut rows: Vec<Vec<String>> = Vec::new();
+    for row_child in &table.rows {
+        let TableChild::TableRow(row) = row_child;
+        let mut cells: Vec<String> = Vec::new();
+        for cell_child in &row.cells {
+            let TableRowChild::TableCell(cell) = cell_child;
+            let mut parts: Vec<String> = Vec::new();
+            for content in &cell.children {
+                if let TableCellContent::Paragraph(p) = content {
+                    let text = paragraph_plain_text(p);
+                    if !text.is_empty() {
+                        parts.push(text);
+                    }
+                }
+            }
+            let text = parts.join(" ").replace('\n', " ").replace('|', "\\|");
+            cells.push(text.trim().to_string());
+        }
+        rows.push(cells);
     }
 
-    /// Extract text from table (simplified - just get text, skip table structure for now)
-    #[cfg(feature = "office")]
-    fn extract_table_text(&self, _table: &docx_rs::Table) -> String {
-        // TODO: Implement proper table extraction
-        // For now, just indicate a table was present
-        String::from("[Table content]")
+    if rows.is_empty() {
+        return String::new();
     }
+    let col_count = rows.iter().map(|r| r.len()).max().unwrap_or(0);
+    if col_count == 0 {
+        return String::new();
+    }
+
+    let render_row = |cells: &[String]| -> String {
+        let mut c = cells.to_vec();
+        c.resize(col_count, String::new());
+        format!("| {} |", c.join(" | "))
+    };
+
+    let mut out = String::new();
+    out.push_str(&render_row(&rows[0]));
+    out.push('\n');
+    out.push('|');
+    for _ in 0..col_count {
+        out.push_str(" --- |");
+    }
+    for row in &rows[1..] {
+        out.push('\n');
+        out.push_str(&render_row(row));
+    }
+    out
+}
+
+/// Count how many pages the document spans.
+///
+/// Word documents do not store rendered pages, but they record where pages
+/// ended during the last render (`lastRenderedPageBreak`) and any manual page
+/// breaks (`<w:br w:type="page"/>`). We read `word/document.xml` from the docx
+/// zip and count those markers; the page count is the number of markers + 1.
+#[cfg(feature = "office")]
+fn count_pages(file_data: &[u8]) -> usize {
+    use std::io::Read;
+
+    fn markers(file_data: &[u8]) -> Option<usize> {
+        let reader = std::io::Cursor::new(file_data);
+        let mut archive = zip::ZipArchive::new(reader).ok()?;
+        let mut document = archive.by_name("word/document.xml").ok()?;
+        let mut xml = String::new();
+        document.read_to_string(&mut xml).ok()?;
+
+        // Prefer Word's own pagination hints when present.
+        let rendered = xml.matches("lastRenderedPageBreak").count();
+        if rendered > 0 {
+            return Some(rendered);
+        }
+        // Otherwise fall back to explicit manual page breaks.
+        Some(xml.matches("w:type=\"page\"").count())
+    }
+
+    markers(file_data).unwrap_or(0) + 1
+}
+
+/// Collapse runs of blank lines and trim the result.
+#[cfg(feature = "office")]
+fn clean_markdown(mut markdown: String) -> String {
+    while markdown.contains("\n\n\n") {
+        markdown = markdown.replace("\n\n\n", "\n\n");
+    }
+    markdown.trim().to_string()
+}
+
+/// Build a single `ConversionOutput` from a Markdown string.
+#[cfg(feature = "office")]
+fn make_output(page_number: usize, markdown: String) -> ConversionOutput {
+    let markdown = clean_markdown(markdown);
+    let token_count = markdown.len() / 4;
+    let data = markdown.into_bytes();
+    let size_bytes = data.len() as u64;
+    ConversionOutput {
+        page_number,
+        data,
+        metadata: OutputMetadata {
+            size_bytes,
+            chunk_count: 1,
+            token_count: Some(token_count),
+        },
+    }
+}
+
+/// Distribute rendered blocks contiguously across `pages` pages.
+#[cfg(feature = "office")]
+fn distribute_blocks(blocks: &[String], pages: usize) -> Vec<Vec<String>> {
+    let pages = pages.clamp(1, blocks.len().max(1));
+    let per_page = blocks.len().div_ceil(pages).max(1);
+    let mut result: Vec<Vec<String>> = blocks
+        .chunks(per_page)
+        .map(|chunk| chunk.to_vec())
+        .collect();
+    result.retain(|page| !page.is_empty());
+    if result.is_empty() {
+        result.push(Vec::new());
+    }
+    result
 }
 
 impl Default for DocxConverter {
@@ -356,12 +593,14 @@ impl DocumentConverter for DocxConverter {
         // Get input file size
         let input_size = tokio::fs::metadata(input).await?.len();
 
-        // Convert based on output format
-        let content = match output_format {
+        // Convert based on output format. Also surface the structural counts so
+        // that document metadata/statistics reflect reality.
+        let (content, page_count, table_count) = match output_format {
             OutputFormat::Markdown { .. } => {
                 #[cfg(feature = "office")]
                 {
-                    self.convert_to_markdown(input, &options).await?
+                    let rendered = self.convert_to_markdown(input, &options).await?;
+                    (rendered.outputs, rendered.page_count, rendered.table_count)
                 }
                 #[cfg(not(feature = "office"))]
                 {
@@ -377,8 +616,11 @@ impl DocumentConverter for DocxConverter {
             } => {
                 #[cfg(feature = "pdf-to-image")]
                 {
-                    self.convert_to_images(input, _format, _quality, _dpi, &options)
-                        .await?
+                    let outputs = self
+                        .convert_to_images(input, _format, _quality, _dpi, &options)
+                        .await?;
+                    let pages = outputs.len();
+                    (outputs, pages, 0)
                 }
                 #[cfg(not(feature = "pdf-to-image"))]
                 {
@@ -405,7 +647,7 @@ impl DocumentConverter for DocxConverter {
             author: None,
             created: None,
             modified: None,
-            page_count: 1, // DOCX doesn't have strict pages
+            page_count,
             language: None,
             custom: std::collections::HashMap::new(),
         };
@@ -416,8 +658,8 @@ impl DocumentConverter for DocxConverter {
             input_size_bytes: input_size,
             output_size_bytes: output_size,
             duration,
-            pages_processed: 1,
-            tables_extracted: 0, // TODO: Count tables
+            pages_processed: page_count,
+            tables_extracted: table_count,
             images_extracted: 0,
             cache_hit: false,
         };
@@ -458,5 +700,237 @@ mod tests {
         let meta = converter.metadata();
         assert_eq!(meta.name, "DOCX Converter");
         assert!(meta.external_deps.contains(&"docx-rs".to_string()));
+    }
+
+    #[cfg(feature = "office")]
+    #[test]
+    fn test_heading_level_detection() {
+        assert_eq!(heading_level("Heading1"), Some(1));
+        assert_eq!(heading_level("Heading3"), Some(3));
+        assert_eq!(heading_level("heading 2"), Some(2));
+        assert_eq!(heading_level("Heading-4"), Some(4));
+        assert_eq!(heading_level("Title"), Some(1));
+        assert_eq!(heading_level("Normal"), None);
+        assert_eq!(heading_level("BodyText"), None);
+        assert_eq!(heading_level("Heading0"), None);
+        assert_eq!(heading_level("Heading10"), None);
+    }
+
+    #[cfg(feature = "office")]
+    #[test]
+    fn test_next_ordered_number_increments_and_resets() {
+        let mut counters: Vec<usize> = Vec::new();
+        // Top-level list counts up.
+        assert_eq!(next_ordered_number(&mut counters, 0), 1);
+        assert_eq!(next_ordered_number(&mut counters, 0), 2);
+        // Descending a level starts a fresh counter at 1.
+        assert_eq!(next_ordered_number(&mut counters, 1), 1);
+        assert_eq!(next_ordered_number(&mut counters, 1), 2);
+        // Returning to the shallower level continues where it left off.
+        assert_eq!(next_ordered_number(&mut counters, 0), 3);
+        // And the deeper level has been reset.
+        assert_eq!(next_ordered_number(&mut counters, 1), 1);
+    }
+
+    #[cfg(feature = "office")]
+    #[test]
+    fn test_list_kind_bullet_vs_ordered() {
+        use docx_rs::*;
+
+        let numberings = Numberings::new()
+            .add_abstract_numbering(AbstractNumbering::new(10).add_level(Level::new(
+                0,
+                Start::new(1),
+                NumberFormat::new("decimal"),
+                LevelText::new("%1."),
+                LevelJc::new("left"),
+            )))
+            .add_abstract_numbering(AbstractNumbering::new(11).add_level(Level::new(
+                0,
+                Start::new(1),
+                NumberFormat::new("bullet"),
+                LevelText::new("\u{2022}"),
+                LevelJc::new("left"),
+            )))
+            .add_numbering(Numbering::new(1, 10))
+            .add_numbering(Numbering::new(2, 11));
+
+        assert_eq!(list_kind(&numberings, 1, 0), ListKind::Ordered);
+        assert_eq!(list_kind(&numberings, 2, 0), ListKind::Bullet);
+        // Unknown numbering id defaults to a bullet list.
+        assert_eq!(list_kind(&numberings, 99, 0), ListKind::Bullet);
+    }
+
+    #[cfg(feature = "office")]
+    #[test]
+    fn test_table_to_markdown_renders_grid() {
+        use docx_rs::*;
+
+        let cell = |text: &str| {
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text(text)))
+        };
+        let table = Table::new(vec![
+            TableRow::new(vec![cell("Name"), cell("Role")]),
+            TableRow::new(vec![cell("Ada"), cell("Engineer")]),
+        ]);
+
+        let md = table_to_markdown(&table);
+        let lines: Vec<&str> = md.lines().collect();
+        assert_eq!(lines[0], "| Name | Role |");
+        assert_eq!(lines[1], "| --- | --- |");
+        assert_eq!(lines[2], "| Ada | Engineer |");
+    }
+
+    #[cfg(feature = "office")]
+    fn pack_docx(docx: docx_rs::Docx) -> Vec<u8> {
+        let mut cursor = std::io::Cursor::new(Vec::new());
+        docx.build().pack(&mut cursor).expect("pack docx");
+        cursor.into_inner()
+    }
+
+    #[cfg(feature = "office")]
+    #[test]
+    fn test_count_pages_counts_manual_breaks() {
+        use docx_rs::*;
+
+        let one_page = pack_docx(
+            Docx::new().add_paragraph(Paragraph::new().add_run(Run::new().add_text("only page"))),
+        );
+        assert_eq!(count_pages(&one_page), 1);
+
+        let two_pages = pack_docx(
+            Docx::new()
+                .add_paragraph(
+                    Paragraph::new()
+                        .add_run(Run::new().add_text("page one"))
+                        .add_run(Run::new().add_break(BreakType::Page)),
+                )
+                .add_paragraph(Paragraph::new().add_run(Run::new().add_text("page two"))),
+        );
+        assert_eq!(count_pages(&two_pages), 2);
+    }
+
+    #[cfg(feature = "office")]
+    #[tokio::test]
+    async fn test_convert_preserves_structure() {
+        use std::io::Write;
+
+        use docx_rs::*;
+
+        let docx = Docx::new()
+            .add_abstract_numbering(AbstractNumbering::new(10).add_level(Level::new(
+                0,
+                Start::new(1),
+                NumberFormat::new("decimal"),
+                LevelText::new("%1."),
+                LevelJc::new("left"),
+            )))
+            .add_abstract_numbering(AbstractNumbering::new(11).add_level(Level::new(
+                0,
+                Start::new(1),
+                NumberFormat::new("bullet"),
+                LevelText::new("\u{2022}"),
+                LevelJc::new("left"),
+            )))
+            .add_numbering(Numbering::new(1, 10))
+            .add_numbering(Numbering::new(2, 11))
+            .add_paragraph(
+                Paragraph::new()
+                    .style("Heading1")
+                    .add_run(Run::new().add_text("Title")),
+            )
+            .add_paragraph(Paragraph::new().add_run(Run::new().add_text("Intro paragraph.")))
+            .add_paragraph(
+                Paragraph::new()
+                    .style("Heading2")
+                    .add_run(Run::new().add_text("Section")),
+            )
+            .add_paragraph(
+                Paragraph::new()
+                    .numbering(NumberingId::new(1), IndentLevel::new(0))
+                    .add_run(Run::new().add_text("First")),
+            )
+            .add_paragraph(
+                Paragraph::new()
+                    .numbering(NumberingId::new(1), IndentLevel::new(0))
+                    .add_run(Run::new().add_text("Second")),
+            )
+            .add_paragraph(
+                Paragraph::new()
+                    .numbering(NumberingId::new(2), IndentLevel::new(0))
+                    .add_run(Run::new().add_text("Bullet A")),
+            )
+            .add_paragraph(
+                Paragraph::new()
+                    .numbering(NumberingId::new(2), IndentLevel::new(0))
+                    .add_run(Run::new().add_text("Bullet B")),
+            )
+            .add_table(Table::new(vec![
+                TableRow::new(vec![
+                    TableCell::new()
+                        .add_paragraph(Paragraph::new().add_run(Run::new().add_text("H1"))),
+                    TableCell::new()
+                        .add_paragraph(Paragraph::new().add_run(Run::new().add_text("H2"))),
+                ]),
+                TableRow::new(vec![
+                    TableCell::new()
+                        .add_paragraph(Paragraph::new().add_run(Run::new().add_text("a"))),
+                    TableCell::new()
+                        .add_paragraph(Paragraph::new().add_run(Run::new().add_text("b"))),
+                ]),
+            ]));
+
+        let bytes = pack_docx(docx);
+        let mut tmp = tempfile::Builder::new().suffix(".docx").tempfile().unwrap();
+        tmp.write_all(&bytes).unwrap();
+        tmp.flush().unwrap();
+
+        let converter = DocxConverter::new();
+        let result = converter
+            .convert(
+                tmp.path(),
+                OutputFormat::Markdown {
+                    split_pages: false,
+                    optimize_for_llm: true,
+                },
+                ConversionOptions::default(),
+            )
+            .await
+            .unwrap();
+
+        let markdown = String::from_utf8(result.content[0].data.clone()).unwrap();
+
+        // Headings with correct level.
+        assert!(markdown.contains("# Title"), "missing H1:\n{markdown}");
+        assert!(markdown.contains("## Section"), "missing H2:\n{markdown}");
+        // Ordered list restarts at 1.
+        assert!(
+            markdown.contains("1. First"),
+            "missing ordered 1:\n{markdown}"
+        );
+        assert!(
+            markdown.contains("2. Second"),
+            "missing ordered 2:\n{markdown}"
+        );
+        // Bullet list is rendered as bullets.
+        assert!(
+            markdown.contains("- Bullet A"),
+            "missing bullet:\n{markdown}"
+        );
+        assert!(
+            markdown.contains("- Bullet B"),
+            "missing bullet:\n{markdown}"
+        );
+        // Table content is present.
+        assert!(
+            markdown.contains("| H1 | H2 |"),
+            "missing table header:\n{markdown}"
+        );
+        assert!(
+            markdown.contains("| a | b |"),
+            "missing table row:\n{markdown}"
+        );
+        // Table was counted.
+        assert_eq!(result.statistics.tables_extracted, 1);
     }
 }
