@@ -416,24 +416,38 @@ fn next_ordered_number(counters: &mut Vec<usize>, level: usize) -> usize {
     counters[level]
 }
 
-/// Concatenate the plain text of all runs in a paragraph.
+/// Concatenate the plain text of a paragraph, descending into hyperlinks so
+/// their visible link text is preserved (cross-references and links store their
+/// text in a nested `Hyperlink` child rather than a top-level `Run`).
 #[cfg(feature = "office")]
 fn paragraph_plain_text(para: &docx_rs::Paragraph) -> String {
+    let mut text = String::new();
+    collect_children_text(&para.children, &mut text);
+    text.trim().to_string()
+}
+
+/// Recursively collect run text from a list of paragraph children.
+#[cfg(feature = "office")]
+fn collect_children_text(children: &[docx_rs::ParagraphChild], text: &mut String) {
     use docx_rs::{ParagraphChild, RunChild};
 
-    let mut text = String::new();
-    for child in &para.children {
-        if let ParagraphChild::Run(run) = child {
-            for run_child in &run.children {
-                match run_child {
-                    RunChild::Text(t) => text.push_str(&t.text),
-                    RunChild::Tab(_) => text.push('\t'),
-                    _ => {}
+    for child in children {
+        match child {
+            ParagraphChild::Run(run) => {
+                for run_child in &run.children {
+                    match run_child {
+                        RunChild::Text(t) => text.push_str(&t.text),
+                        RunChild::Tab(_) => text.push('\t'),
+                        _ => {}
+                    }
                 }
             }
+            // Hyperlinks (including cross-references) carry their visible text
+            // in nested paragraph children.
+            ParagraphChild::Hyperlink(link) => collect_children_text(&link.children, text),
+            _ => {}
         }
     }
-    text.trim().to_string()
 }
 
 /// Render a table as a GitHub-flavored Markdown table. The first row is treated
@@ -779,6 +793,26 @@ mod tests {
         assert_eq!(lines[0], "| Name | Role |");
         assert_eq!(lines[1], "| --- | --- |");
         assert_eq!(lines[2], "| Ada | Engineer |");
+    }
+
+    #[cfg(feature = "office")]
+    #[test]
+    fn test_paragraph_plain_text_includes_hyperlink_text() {
+        use docx_rs::*;
+
+        // A paragraph like: "See section" + hyperlink("Background") + "for details".
+        let para = Paragraph::new()
+            .add_run(Run::new().add_text("See section "))
+            .add_hyperlink(
+                Hyperlink::new("_bookmark1", HyperlinkType::Anchor)
+                    .add_run(Run::new().add_text("Background")),
+            )
+            .add_run(Run::new().add_text(" for details"));
+
+        assert_eq!(
+            paragraph_plain_text(&para),
+            "See section Background for details"
+        );
     }
 
     #[cfg(feature = "office")]
