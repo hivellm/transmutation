@@ -23,6 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Structure-aware DOCX → Markdown**: headings (with level), bullet vs.
+  ordered lists (ordered lists restart at 1 per list, nested levels are
+  indented), and real Markdown tables. Hyperlink and cross-reference text is
+  preserved. Page count is now derived from the document instead of being
+  hard-coded to 1 (`metadata.page_count` / `statistics.pages_processed`), and
+  `statistics.tables_extracted` is populated.
+
+### Fixed
+
+- DOCX conversion no longer drops table cell content (previously replaced with
+  a `[Table content]` placeholder), heading levels, or hyperlink /
+  cross-reference text.
+
+---
+
 ## [0.3.4] - 2026-07-20
 
 **Maintenance Release**
