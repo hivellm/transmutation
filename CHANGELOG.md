@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| [0.3.5](#035---2026-08-09) | 2026-08-09 | **Feature + Security** | Structure-aware DOCX, DOCX DoS fix, full dependency update (MSRV 1.88) |
 | [0.3.4](#034---2026-07-20) | 2026-07-20 | **Maintenance** | Dependency refresh, clippy CI fix, automated crates.io publishing |
 | [0.3.3](#033---2026-06-18) | 2026-06-18 | **Bugfix** | Update pdf-extract 0.7 → 0.8 to fix PDF parsing crashes |
 | [0.3.2](#032---2026-02-28) | 2026-02-28 | **Bugfix** | Fix duplicate resource & docling-ffi build errors |
@@ -23,7 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.3.5] - 2026-08-09
+
+**Feature + Security Release**
+
+Makes DOCX → Markdown structure-aware, hardens document parsing against crafted
+input, and brings every dependency up to date (raising the MSRV to Rust 1.88).
 
 ### Added
 
@@ -47,6 +53,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `"  ".repeat(level)` and the ordered-list counter allocation, so a crafted
   `.docx` could exhaust memory during conversion. Page counting also now reads
   `word/document.xml` with an upper size bound.
+- **Resolved all `cargo audit` advisories** via dependency upgrades:
+  - `lopdf` → 0.44 — stack overflow on deeply nested PDF objects (RUSTSEC-2026-0187).
+  - `quick-xml` → 0.41 — quadratic time on duplicate attributes (RUSTSEC-2026-0194)
+    and unbounded namespace-declaration allocation DoS (RUSTSEC-2026-0195).
+  - `time` (transitive) → ≥ 0.3.47 — stack-exhaustion DoS (RUSTSEC-2026-0009).
+  - Remaining advisories are two *unmaintained* transitive crates with no fix
+    available (`paste`, `ttf-parser`, both via `imageproc`/`nalgebra`); no
+    known vulnerability.
+
+### Changed
+
+- **MSRV raised to Rust 1.88** (`rust-version`), required by the latest
+  `imageproc`, `image`, `umya-spreadsheet` and `zip`.
+- **Dependency refresh — all direct dependencies updated to their latest
+  versions**, including major bumps: `lopdf` 0.35 → 0.44, `pdf-extract` 0.8 →
+  0.12, `scraper` 0.21 → 0.27, `html5ever` 0.29 → 0.39, `quick-xml` 0.37 → 0.41,
+  `zip` 6 → 8, `umya-spreadsheet` 2.3 → 3.0, `comrak` 0.29 → 0.54,
+  `file-format` 0.26 → 0.29, `imageproc` 0.25 → 0.27, `pdfium-render` 0.8 → 0.9,
+  `tracing-opentelemetry` 0.30 → 0.33, `sha2` 0.10 → 0.11, `indicatif` 0.17 →
+  0.18, `console` 0.15 → 0.16, `criterion` 0.6 → 0.8, `mockall` 0.13 → 0.15.
+  Source updated for the `umya-spreadsheet` 3.0 and `quick-xml` 0.41 API
+  changes; behavior unchanged.
+- The `docling-ffi`-only dependencies (`ort`, `ndarray`, `rstar`) are
+  intentionally held at their current versions: that feature requires an
+  external C++ toolchain and is not built in CI, so newer majors cannot be
+  verified here.
 
 ---
 

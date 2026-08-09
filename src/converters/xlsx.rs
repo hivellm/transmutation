@@ -32,7 +32,7 @@ impl XlsxConverter {
     }
 
     /// Read XLSX file and extract sheets using umya-spreadsheet
-    fn read_xlsx(&self, path: &Path) -> Result<umya_spreadsheet::Spreadsheet> {
+    fn read_xlsx(&self, path: &Path) -> Result<umya_spreadsheet::Workbook> {
         eprintln!("📊 Reading XLSX file (umya-spreadsheet)...");
 
         let book = umya_spreadsheet::reader::xlsx::read(path).map_err(|e| {
@@ -42,22 +42,22 @@ impl XlsxConverter {
             )
         })?;
 
-        eprintln!("      ✓ Found {} sheets", book.get_sheet_count());
+        eprintln!("      ✓ Found {} sheets", book.sheet_count());
         Ok(book)
     }
 
     /// Convert XLSX to Markdown tables
-    fn to_markdown(&self, book: &umya_spreadsheet::Spreadsheet) -> String {
+    fn to_markdown(&self, book: &umya_spreadsheet::Workbook) -> String {
         let mut markdown = String::new();
         markdown.push_str("# Spreadsheet\n\n");
 
-        for (idx, sheet) in book.get_sheet_collection().iter().enumerate() {
-            let sheet_name = sheet.get_name();
+        for (idx, sheet) in book.sheet_collection().iter().enumerate() {
+            let sheet_name = sheet.name();
             markdown.push_str(&format!("## Sheet {}: {}\n\n", idx + 1, sheet_name));
 
             // Get sheet dimensions
-            let highest_row = sheet.get_highest_row();
-            let highest_col = sheet.get_highest_column();
+            let highest_row = sheet.highest_row();
+            let highest_col = sheet.highest_column();
 
             if highest_row == 0 || highest_col == 0 {
                 markdown.push_str("*(Empty sheet)*\n\n");
@@ -70,8 +70,8 @@ impl XlsxConverter {
                     // Header row
                     markdown.push('|');
                     for col in 1..=highest_col {
-                        let cell = sheet.get_cell((col, row));
-                        let value = cell.map(|c| c.get_value().to_string()).unwrap_or_default();
+                        let cell = sheet.cell((col, row));
+                        let value = cell.map(|c| c.value().to_string()).unwrap_or_default();
                         markdown.push_str(&format!(" {} |", value));
                     }
                     markdown.push('\n');
@@ -86,8 +86,8 @@ impl XlsxConverter {
                     // Data rows
                     markdown.push('|');
                     for col in 1..=highest_col {
-                        let cell = sheet.get_cell((col, row));
-                        let value = cell.map(|c| c.get_value().to_string()).unwrap_or_default();
+                        let cell = sheet.cell((col, row));
+                        let value = cell.map(|c| c.value().to_string()).unwrap_or_default();
                         markdown.push_str(&format!(" {} |", value));
                     }
                     markdown.push('\n');
@@ -101,19 +101,19 @@ impl XlsxConverter {
     }
 
     /// Convert XLSX to CSV (first sheet only)
-    fn to_csv(&self, book: &umya_spreadsheet::Spreadsheet, delimiter: char) -> String {
+    fn to_csv(&self, book: &umya_spreadsheet::Workbook, delimiter: char) -> String {
         let mut csv = String::new();
 
         // Get first sheet
-        if let Some(sheet) = book.get_sheet_collection().first() {
-            let highest_row = sheet.get_highest_row();
-            let highest_col = sheet.get_highest_column();
+        if let Some(sheet) = book.sheet_collection().first() {
+            let highest_row = sheet.highest_row();
+            let highest_col = sheet.highest_column();
 
             for row in 1..=highest_row {
                 let mut values = Vec::new();
                 for col in 1..=highest_col {
-                    let cell = sheet.get_cell((col, row));
-                    let value = cell.map(|c| c.get_value().to_string()).unwrap_or_default();
+                    let cell = sheet.cell((col, row));
+                    let value = cell.map(|c| c.value().to_string()).unwrap_or_default();
 
                     // Quote values with commas
                     if value.contains(delimiter) || value.contains('"') {
@@ -131,23 +131,23 @@ impl XlsxConverter {
     }
 
     /// Convert XLSX to JSON
-    fn to_json(&self, book: &umya_spreadsheet::Spreadsheet) -> Result<String> {
+    fn to_json(&self, book: &umya_spreadsheet::Workbook) -> Result<String> {
         use serde_json::json;
 
         let mut sheets_json = Vec::new();
 
-        for sheet in book.get_sheet_collection() {
-            let sheet_name = sheet.get_name();
-            let highest_row = sheet.get_highest_row();
-            let highest_col = sheet.get_highest_column();
+        for sheet in book.sheet_collection() {
+            let sheet_name = sheet.name();
+            let highest_row = sheet.highest_row();
+            let highest_col = sheet.highest_column();
 
             let mut rows = Vec::new();
 
             for row in 1..=highest_row {
                 let mut row_data = Vec::new();
                 for col in 1..=highest_col {
-                    let cell = sheet.get_cell((col, row));
-                    let value = cell.map(|c| c.get_value().to_string()).unwrap_or_default();
+                    let cell = sheet.cell((col, row));
+                    let value = cell.map(|c| c.value().to_string()).unwrap_or_default();
                     row_data.push(value);
                 }
                 rows.push(row_data);
@@ -164,7 +164,7 @@ impl XlsxConverter {
         let result = json!({
             "spreadsheet": {
                 "sheets": sheets_json,
-                "sheet_count": book.get_sheet_count(),
+                "sheet_count": book.sheet_count(),
             }
         });
 
@@ -247,7 +247,7 @@ impl DocumentConverter for XlsxConverter {
                 data: output_data,
                 metadata: OutputMetadata {
                     size_bytes: output_size,
-                    chunk_count: book.get_sheet_count(),
+                    chunk_count: book.sheet_count(),
                     token_count: None,
                 },
             }],
@@ -256,7 +256,7 @@ impl DocumentConverter for XlsxConverter {
                 author: None,
                 created: None,
                 modified: None,
-                page_count: book.get_sheet_count(),
+                page_count: book.sheet_count(),
                 language: None,
                 custom: std::collections::HashMap::new(),
             },
@@ -264,8 +264,8 @@ impl DocumentConverter for XlsxConverter {
                 input_size_bytes: fs::metadata(input).await?.len(),
                 output_size_bytes: output_size,
                 duration: std::time::Duration::from_secs(0),
-                pages_processed: book.get_sheet_count(),
-                tables_extracted: book.get_sheet_count(),
+                pages_processed: book.sheet_count(),
+                tables_extracted: book.sheet_count(),
                 images_extracted: 0,
                 cache_hit: false,
             },

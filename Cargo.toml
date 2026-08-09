@@ -1,6 +1,6 @@
 [package]
 name = "transmutation"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2024"
 authors = ["HiveLLM Team <team@hivellm.org>"]
 license = "MIT"
@@ -11,7 +11,7 @@ documentation = "https://docs.rs/transmutation"
 keywords = ["document", "conversion", "pdf", "llm", "embedding"]
 categories = ["parser-implementations", "text-processing", "multimedia"]
 readme = "README.md"
-rust-version = "1.85"
+rust-version = "1.88"
 exclude = [
     "data/*",
     "docling_parse",
@@ -42,7 +42,7 @@ required-features = ["cli"]
 
 [dependencies]
 # Async runtime
-tokio = { version = "1.47", features = ["full"] }
+tokio = { version = "1.53", features = ["full"] }
 async-trait = "0.1"
 futures = "0.3"
 
@@ -56,21 +56,21 @@ serde_json = "1.0"
 
 # File I/O and path handling
 walkdir = "2.5"
-tempfile = "3.20"
+tempfile = "3.27"
 mime = "0.3"
 mime_guess = "2.0"
 
 # Hashing and crypto
-sha2 = "0.10"
-blake3 = "1.5"
+sha2 = "0.11"
+blake3 = "1.8"
 
 # Logging and tracing
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-tracing-opentelemetry = { version = "0.30", optional = true }
+tracing-opentelemetry = { version = "0.33", optional = true }
 
 # File type detection
-file-format = "0.26"
+file-format = "0.29"
 
 # NOTE: We are NOT integrating with Docling - we are building a pure Rust competitor
 # The docling repository is for reference only, not as a dependency
@@ -81,7 +81,7 @@ leptess = { version = "0.14", optional = true }
 
 # Image processing
 image = { version = "0.25", features = ["png", "jpeg", "gif", "bmp", "tiff", "webp"] }
-imageproc = "0.25"
+imageproc = "0.27"
 
 # ML & Computer Vision (for docling-ffi feature)
 ort = { version = "2.0.0-rc.10", optional = true, features = ["download-binaries"] }
@@ -92,56 +92,56 @@ rstar = { version = "0.12", optional = true }
 
 # Document parsing - Core formats (always enabled)
 # PDF
-lopdf = "0.35"
-pdf-extract = "0.8"
-pdfium-render = { version = "0.8", optional = true }  # Only for PDF rendering to images
+lopdf = "0.44"
+pdf-extract = "0.12"
+pdfium-render = { version = "0.9", optional = true }  # Only for PDF rendering to images
 
 # HTML/XML
-scraper = "0.21"
-html5ever = "0.29"
-quick-xml = "0.37"
+scraper = "0.27"
+html5ever = "0.39"
+quick-xml = "0.41"
 roxmltree = { version = "0.21", optional = true }
 
 # Archives (ZIP always enabled for core functionality)
-zip = "6.0"
+zip = "8.6"
 tar = { version = "0.4", optional = true }
-flate2 = { version = "1.0", optional = true }
+flate2 = { version = "1.1", optional = true }
 sevenz-rust = { version = "0.6", optional = true }
 
 # Office formats (optional)
 docx-rs = { version = "0.4", optional = true }
-umya-spreadsheet = { version = "2.3", optional = true }
+umya-spreadsheet = { version = "3.0", optional = true }
 
 # Markdown
 pulldown-cmark = "0.13"
-comrak = { version = "0.29", default-features = false }
-regex = "1.11"
-once_cell = "1.20"
+comrak = { version = "0.54", default-features = false }
+regex = "1.13"
+once_cell = "1.21"
 
 # Note: Audio/Video use external ffmpeg and whisper CLI tools (no Rust crates needed)
 
 # Parallelism
-rayon = "1.10"
-num_cpus = "1.16"
+rayon = "1.12"
+num_cpus = "1.17"
 
 # System directories
 dirs = "6.0"
 
 # CLI dependencies
-clap = { version = "4.5", features = ["derive", "cargo", "env"], optional = true }
-indicatif = { version = "0.17", optional = true }
-console = { version = "0.15", optional = true }
-colored = { version = "3.0", optional = true }
+clap = { version = "4.6", features = ["derive", "cargo", "env"], optional = true }
+indicatif = { version = "0.18", optional = true }
+console = { version = "0.16", optional = true }
+colored = { version = "3.1", optional = true }
 
 # Note: External integrations removed (cache, HTTP, metrics)
 # Transmutation is a library/CLI - external features are handled by HiveLLM Vectorizer
 
 [dev-dependencies]
-criterion = { version = "0.6", features = ["async_tokio", "html_reports"] }
+criterion = { version = "0.8", features = ["async_tokio", "html_reports"] }
 pretty_assertions = "1.4"
-proptest = "1.6"
-tempfile = "3.20"
-mockall = "0.13"
+proptest = "1.11"
+tempfile = "3.27"
+mockall = "0.15"
 tokio-test = "0.4"
 
 [build-dependencies]
@@ -208,13 +208,18 @@ rustdoc-args = ["--cfg", "docsrs"]
 # WORKSPACE LINTS (Based on Qdrant standards)
 # =============================================================================
 [lints.clippy]
+# With the MSRV now at 1.88, let-chains are stable, so clippy's `collapsible_if`
+# starts suggesting the collapse of nested `if`/`if let` (deeply nested in the
+# PDF/HTML parsers). Adopting let-chains across the codebase is a separate
+# refactor; keep the lint off here rather than churn unrelated code in a
+# dependency-update change.
+collapsible_if = "allow"
 cast_lossless = "warn"
 doc_link_with_quotes = "warn"
 enum_glob_use = "warn"
 explicit_into_iter_loop = "warn"
 filter_map_next = "warn"
 flat_map_option = "warn"
-from_iter_instead_of_collect = "warn"
 implicit_clone = "warn"
 inconsistent_struct_constructor = "warn"
 inefficient_to_string = "warn"

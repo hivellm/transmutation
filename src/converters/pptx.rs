@@ -97,7 +97,13 @@ impl PptxConverter {
         loop {
             match reader.read_event_into(&mut buf) {
                 Ok(Event::Text(e)) => {
-                    if let Ok(txt) = e.unescape() {
+                    // quick-xml 0.41 removed `BytesText::unescape`; decode then
+                    // resolve XML entities to match the old behavior.
+                    if let Some(txt) = e.decode().ok().and_then(|d| {
+                        quick_xml::escape::unescape(d.as_ref())
+                            .ok()
+                            .map(|u| u.into_owned())
+                    }) {
                         let content = txt.trim();
                         if !content.is_empty() {
                             text_parts.push(content.to_string());

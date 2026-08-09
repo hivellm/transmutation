@@ -92,7 +92,7 @@ See [BENCHMARK_COMPARISON.md](BENCHMARK_COMPARISON.md) for detailed results.
 ```powershell
 # Download from releases or build:
 .\build-msi.ps1
-msiexec /i target\wix\transmutation-0.3.4-x86_64.msi
+msiexec /i target\wix\transmutation-0.3.5-x86_64.msi
 ```
 See [`docs/MSI_BUILD.md`](docs/MSI_BUILD.md) for details.
 
@@ -674,7 +674,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
 
-**Current Version**: 0.3.0 (December 6, 2025)
+**Current Version**: 0.3.5 (August 9, 2026)
 
 ## 🔗 Links
 
@@ -700,11 +700,11 @@ Powered by:
 
 ---
 
-**Status**: ✅ v0.3.0 - Performance & Memory Optimization Release
+**Status**: ✅ v0.3.5 - Feature + Security Release
 
-**Latest Updates (v0.3.0)**:
-- ⚡ **Memory Optimization**: Cached regex patterns, pre-allocated buffers
-- 🔧 **Fixed O(n²) Issue**: Page extraction now O(n) for split-pages mode
-- 🚀 **Reduced Memory Pressure**: Early release of PDF bytes after extraction
-- 📉 **Lower Memory Footprint**: Especially beneficial for library usage
+**Latest Updates (v0.3.5)**:
+- 📄 **Structure-aware DOCX**: real headings, bullet/ordered lists, Markdown tables, hyperlink text, derived page count
+- 🔒 **Hardened parsing**: DOCX list-level clamp (memory-exhaustion DoS fix) + resolved all `cargo audit` advisories
+- ⬆️ **Full dependency update**: all crates on latest (lopdf, quick-xml, scraper, zip, umya-spreadsheet, …)
+- 🦀 **MSRV**: now Rust 1.88
 
