@@ -68,7 +68,13 @@ impl XmlConverter {
                     current_element = String::from_utf8_lossy(e.name().as_ref()).to_string();
                 }
                 Ok(Event::Text(e)) => {
-                    if let Ok(text) = e.unescape() {
+                    // quick-xml 0.41 removed `BytesText::unescape`; decode the
+                    // bytes then resolve XML entities to match the old behavior.
+                    if let Some(text) = e.decode().ok().and_then(|d| {
+                        quick_xml::escape::unescape(d.as_ref())
+                            .ok()
+                            .map(|u| u.into_owned())
+                    }) {
                         let content = text.trim();
                         if !content.is_empty() && !current_element.is_empty() {
                             text_parts.push(format!("**{}**: {}", current_element, content));

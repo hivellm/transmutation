@@ -73,7 +73,18 @@ impl OdtConverter {
                     }
                 }
                 Ok(Event::Text(e)) if in_paragraph || in_heading => {
-                    current_text.push_str(&e.unescape().unwrap_or_default());
+                    // quick-xml 0.41 removed `BytesText::unescape`; decode then
+                    // resolve XML entities to match the old behavior.
+                    let text = e
+                        .decode()
+                        .ok()
+                        .and_then(|d| {
+                            quick_xml::escape::unescape(d.as_ref())
+                                .ok()
+                                .map(|u| u.into_owned())
+                        })
+                        .unwrap_or_default();
+                    current_text.push_str(&text);
                 }
                 Ok(Event::End(e)) => {
                     let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
