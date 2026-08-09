@@ -358,13 +358,26 @@ fn heading_level(style_id: &str) -> Option<usize> {
     (1..=9).contains(&level).then_some(level)
 }
 
+/// Word supports nine list levels (`w:ilvl` values `0`..=`8`). The level is read
+/// from untrusted document input as an unbounded `usize`, so we clamp it: an
+/// otherwise-unchecked value would drive `"  ".repeat(level)` and the ordered
+/// counter `Vec` to arbitrary size, letting a crafted `.docx` exhaust memory.
+#[cfg(feature = "office")]
+const MAX_LIST_LEVEL: usize = 8;
+
 /// Extract the numbering id and (0-based) indent level from a paragraph, if it
-/// participates in a list.
+/// participates in a list. The level is clamped to [`MAX_LIST_LEVEL`] so a
+/// crafted document cannot request unbounded indentation/allocation.
 #[cfg(feature = "office")]
 fn paragraph_numbering(para: &docx_rs::Paragraph) -> Option<(usize, usize)> {
     let np = para.property.numbering_property.as_ref()?;
     let id = np.id.as_ref()?.id;
-    let level = np.level.as_ref().map(|l| l.val).unwrap_or(0);
+    let level = np
+        .level
+        .as_ref()
+        .map(|l| l.val)
+        .unwrap_or(0)
+        .min(MAX_LIST_LEVEL);
     Some((id, level))
 }
 
@@ -515,12 +528,22 @@ fn table_to_markdown(table: &docx_rs::Table) -> String {
 fn count_pages(file_data: &[u8]) -> usize {
     use std::io::Read;
 
+    // Upper bound on how much of `word/document.xml` we decompress here. This
+    // is only a heuristic marker count, so a cap that dwarfs any realistic
+    // document body still prevents a decompression-bomb entry from exhausting
+    // memory during page counting.
+    const MAX_DOCUMENT_XML_BYTES: u64 = 128 * 1024 * 1024;
+
     fn markers(file_data: &[u8]) -> Option<usize> {
         let reader = std::io::Cursor::new(file_data);
         let mut archive = zip::ZipArchive::new(reader).ok()?;
-        let mut document = archive.by_name("word/document.xml").ok()?;
-        let mut xml = String::new();
-        document.read_to_string(&mut xml).ok()?;
+        let document = archive.by_name("word/document.xml").ok()?;
+        let mut buf = Vec::new();
+        document
+            .take(MAX_DOCUMENT_XML_BYTES)
+            .read_to_end(&mut buf)
+            .ok()?;
+        let xml = String::from_utf8_lossy(&buf);
 
         // Prefer Word's own pagination hints when present.
         let rendered = xml.matches("lastRenderedPageBreak").count();
@@ -966,5 +989,69 @@ mod tests {
         );
         // Table was counted.
         assert_eq!(result.statistics.tables_extracted, 1);
+    }
+
+    /// A crafted document can request an arbitrarily deep list level
+    /// (`w:ilvl w:val="..."`), which is read as an unbounded `usize`. Without
+    /// clamping, that value drives `"  ".repeat(level)` and the ordered-counter
+    /// `Vec`, so a single paragraph could exhaust memory. The level must be
+    /// clamped to `MAX_LIST_LEVEL`.
+    #[cfg(feature = "office")]
+    #[tokio::test]
+    async fn test_deep_list_level_is_clamped() {
+        use std::io::Write;
+
+        use docx_rs::*;
+
+        let docx = Docx::new()
+            .add_abstract_numbering(AbstractNumbering::new(30).add_level(Level::new(
+                0,
+                Start::new(1),
+                NumberFormat::new("bullet"),
+                LevelText::new("\u{2022}"),
+                LevelJc::new("left"),
+            )))
+            .add_numbering(Numbering::new(1, 30))
+            // A leading paragraph so the list item is an interior line; the
+            // final trim would otherwise strip the indentation of the very
+            // first line and mask what we are asserting.
+            .add_paragraph(Paragraph::new().add_run(Run::new().add_text("Intro.")))
+            .add_paragraph(
+                Paragraph::new()
+                    .numbering(NumberingId::new(1), IndentLevel::new(100_000))
+                    .add_run(Run::new().add_text("Deep item")),
+            );
+
+        let bytes = pack_docx(docx);
+        let mut tmp = tempfile::Builder::new().suffix(".docx").tempfile().unwrap();
+        tmp.write_all(&bytes).unwrap();
+        tmp.flush().unwrap();
+
+        let converter = DocxConverter::new();
+        let result = converter
+            .convert(
+                tmp.path(),
+                OutputFormat::Markdown {
+                    split_pages: false,
+                    optimize_for_llm: true,
+                },
+                ConversionOptions::default(),
+            )
+            .await
+            .unwrap();
+
+        let markdown = String::from_utf8(result.content[0].data.clone()).unwrap();
+        let line = markdown
+            .lines()
+            .find(|l| l.contains("Deep item"))
+            .expect("list item present");
+        // Indentation is 2 spaces per level, capped at MAX_LIST_LEVEL — never
+        // the 200_000 spaces the raw document requested.
+        let indent = line.len() - line.trim_start().len();
+        assert_eq!(
+            indent,
+            MAX_LIST_LEVEL * 2,
+            "list level was not clamped: {indent} leading spaces"
+        );
     }
 }

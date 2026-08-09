@@ -40,6 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a `[Table content]` placeholder), heading levels, or hyperlink /
   cross-reference text.
 
+### Security
+
+- **DOCX list level is clamped** to Word's supported range (0–8). The list
+  level is read from untrusted document input as an unbounded integer and drove
+  `"  ".repeat(level)` and the ordered-list counter allocation, so a crafted
+  `.docx` could exhaust memory during conversion. Page counting also now reads
+  `word/document.xml` with an upper size bound.
+
 ---
 
 ## [0.3.4] - 2026-07-20
