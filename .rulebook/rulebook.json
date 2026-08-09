@@ -1,22 +1,15 @@
 {
-  "version": "1.2.0",
-  "installedAt": "2025-11-07T23:45:58.422Z",
-  "updatedAt": "2025-12-06T17:56:16.187Z",
-  "projectId": "transmutation",
+  "version": "7.0.1",
+  "installedAt": "2025-12-06T17:56:16.180Z",
+  "updatedAt": "2026-08-09T22:20:56.788Z",
+  "projectId": "Transmutation",
   "mode": "full",
   "features": {
-    "watcher": false,
-    "agent": false,
     "logging": true,
-    "telemetry": false,
-    "notifications": false,
-    "dryRun": false,
     "gitHooks": true,
-    "repl": false,
     "templates": true,
     "context": true,
     "health": true,
-    "plugins": false,
     "parallel": true,
     "smartContinue": true
   },
@@ -29,5 +22,6 @@
     "taskExecution": 3600000,
     "cliResponse": 180000,
     "testRun": 600000
-  }
+  },
+  "agentsMode": "lean"
 }

@@ -90,3 +90,13 @@ data/
 # Docling parse script/link
 docling_parse
 .claude/
+
+# Rulebook - ignore runtime data, keep specs and tasks
+/.rulebook/*
+!/.rulebook/specs/
+!/.rulebook/tasks/
+!/.rulebook/tasks/**/*.md
+!/.rulebook/rulebook.json
+
+CLAUDE.local.md
+.rulebook/backup/
