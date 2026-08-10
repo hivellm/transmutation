@@ -45,6 +45,11 @@ input, and brings every dependency up to date (raising the MSRV to Rust 1.88).
 - DOCX conversion no longer drops table cell content (previously replaced with
   a `[Table content]` placeholder), heading levels, or hyperlink /
   cross-reference text.
+- **Release CI**: the Windows binary and the Debian package are now built with
+  the `cli` feature. The `transmutation` binary declares
+  `required-features = ["cli"]`, so the `upload-rust-binary-action` (Windows)
+  and `cargo deb` (musl) steps failed with `target transmutation requires the
+  features: cli`; both now pass `cli`, matching the Linux/macOS jobs.
 
 ### Security
 
