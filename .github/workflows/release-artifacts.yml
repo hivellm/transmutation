@@ -58,7 +58,7 @@ jobs:
       - name: Build Debian Package
         run: |
           cargo install cargo-deb
-          cargo deb --no-strip --target x86_64-unknown-linux-musl
+          cargo deb --no-strip --features cli --target x86_64-unknown-linux-musl
       - name: Upload Debian package
         uses: svenstaro/upload-release-action@v2
         with:
@@ -143,6 +143,7 @@ jobs:
         with:
           bin: transmutation
           token: ${{ secrets.GITHUB_TOKEN }}
+          features: cli
 
   # MSI build disabled temporarily - needs WiX Toolset configuration
   # build-windows-msi:
